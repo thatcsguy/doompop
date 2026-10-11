@@ -226,7 +226,7 @@ for li, l in enumerate(lines):
         m["start"], m["end"], m["conf"] = r3(m["start"]), r3(m["end"]), round(m["conf"], 2)
     data_lines.append({"text": l["text"], "section": l["section"], "start": merged[0]["start"], "end": merged[-1]["end"], "words": merged})
 
-write_json(d / "data" / "lyrics.json", {"meta": {"method": "MMS_FA CTC forced alignment of the vocal stem, cross-checked with faster-whisper " + a.whisper, "source": src.name}, "lines": data_lines})
+write_json(d / "data" / "lyrics.json", {"meta": {"method": "MMS_FA CTC forced alignment of the vocal stem" + ("" if a.no_whisper else ", cross-checked with faster-whisper " + a.whisper), "source": src.name}, "lines": data_lines})
 
 # ---- review list ----------------------------------------------------------------------------
 rev = [f"# Lyric timing review: {a.slug}", "", f"{len(flat)} words, {len(flags)} flagged. Check these by ear (scrub the preview to the time).", ""]
