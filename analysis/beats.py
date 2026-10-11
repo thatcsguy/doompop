@@ -64,10 +64,10 @@ from scipy.signal import butter, sosfiltfilt
 FINE = 64  # ~2.9 ms
 
 
-def band_flux(y, f0, f1):
+def band_flux(y, f0, f1, smooth=0.004):
     sos = butter(4, [f0, min(f1, SR / 2 - 100)], btype="bandpass", fs=SR, output="sos")
     e = np.abs(sosfiltfilt(sos, y))
-    e = ndi.uniform_filter1d(e, int(0.004 * SR))[::FINE]
+    e = ndi.uniform_filter1d(e, int(smooth * SR))[::FINE]
     e = np.log1p(e / (np.percentile(e, 99.5) + 1e-9) * 20)
     flux = np.maximum(0, np.diff(e, prepend=e[0]))
     flux = ndi.gaussian_filter1d(flux, 1.0)
@@ -80,8 +80,10 @@ def onsets(flux, thresh, min_gap=0.07):
     return pk * FINE / SR, flux[pk]
 
 
-kick_flux = band_flux(drums, 30, 150)
-kicks, kick_s = onsets(kick_flux, 0.15)
+# a 4 ms envelope follows the individual cycles of a 50-100 Hz kick, so one kick peak-picked as 2-4
+# onsets; 40 ms smooths over the cycles while keeping 16th-note kicks apart
+kick_flux = band_flux(drums, 30, 150, smooth=0.04)
+kicks, kick_s = onsets(kick_flux, 0.3)
 # snare wires (1-5 kHz) separate snares from kick clicks and hats better than the snare body does;
 # keep only strong onsets, since hats leak into this band at lower strength
 snares_raw, snare_s = onsets(band_flux(drums, 1000, 5000), 0.15)
