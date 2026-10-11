@@ -40,7 +40,8 @@ function findChrome() {
   try { return chromium.executablePath(); } catch { return undefined; }
 }
 
-const server = await createServer({ logLevel: 'error', server: { port: 0, host: '127.0.0.1' } });
+// No HMR or file watching: an edit or git checkout mid-render must not reload the pages.
+const server = await createServer({ logLevel: 'error', server: { port: 0, host: '127.0.0.1', hmr: false, watch: null } });
 await server.listen();
 const base = server.resolvedUrls.local[0];
 const browser = await chromium.launch({
