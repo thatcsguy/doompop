@@ -21,3 +21,4 @@ Verbatim. These outrank anything else in this folder.
 - On "I helped." Clawd presses the button. Missiles arc around the globe.
 - The ending must make it unmistakable that humanity is gone and only Clawd is left.
 - The credits roll over the last lines: "Music by Suno" and "Animated by Claude Opus 5.5".
+- Visual style: flat 2D cartoon (chosen on the style card, 2026-10-11). Flat fills, ink outlines, cel shading, no lit 3D shading. Cut-outs in a three.js world so the camera can still move. Turn tone mapping off (`toneMap: false`) so the palette stays exact.

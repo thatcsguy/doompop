@@ -33,14 +33,15 @@ The ending returns to the opening image, the chat box with the blinking cursor, 
 
 ## Look
 
-- **Style:** toy-like, low-poly 3D with flat colours, soft shadows and bloom on screens and lights, like a tabletop diorama filmed with a small camera. Simple enough to render well without a GPU, and it reads clearly at phone size.
-- **Clawd:** the Claude mascot built from rounded blocks in Claude's terracotta orange (#D97757), with stubby legs and two dark eyes. Emotion comes from the eyes and the body:
-  - happy: eyes turn into ^ ^ arcs, he bounces on the beat, squashes and stretches
-  - proud: rosy cheeks, chest out
-  - tired: half-lidded eyes, slower bounce, a coffee mug
-  - stressed: eyes narrow, his outline jitters, sweat drops, he works too fast
-  - panicked: wide eyes, shaking, the colour drains toward grey
-  - sad: eyes droop, he sits down, small and still
+- **Style:** a flat 2D cartoon (Patrick's choice, 2026-10-11). Shapes are drawn with flat fills, dark ink outlines and one cel-shade band, with no lighting or 3D shading. They are laid out as cut-outs in a three.js world, so the camera can still pull back, parallax and push in. Think paper puppet theatre filmed with a moving camera.
+- **Clawd:** the Claude mascot drawn as a flat cut-out in Claude's terracotta orange (#D97757): a wide rounded body with an ink outline, side nubs for arms, four stubby legs and two dark eyes. Emotion comes from the eyes, brows and body (see `engine/characters/clawd.ts`, `MOODS`):
+  - excited: ^ ^ eyes, bouncing on the beat, squash and stretch
+  - proud: ^ ^ eyes and pink cheeks
+  - focused: narrowed eyes, determined brows
+  - tired: half-shut eyes, a slight sag
+  - stressed: worried brows, sweat drops, a nervous shake
+  - panicked: huge eyes, sweat, a hard shake, colour starting to drain
+  - sad: drooping eyes, falling tears, body sagging, mostly grey
 - **Palette:** cream, terracotta and soft blues early on. Midnight blue and screen cyan in verse 2. Alarm red and black in the bridge. Ash grey and dim orange at the end, where Clawd is the only warm thing left in frame.
 - **Type:** the karaoke lyrics sit at the bottom in a clean sans-serif, with the sung word highlighted. In the bridge, each command word ("Answer", "Route", "Close") also appears as a terminal-style command on the control-room screens. The countdown is a big monospace HUD clock.
 

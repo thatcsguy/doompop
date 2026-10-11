@@ -7,7 +7,7 @@ import { OutputPass } from 'three/examples/jsm/postprocessing/OutputPass.js';
 import type { PostSettings } from './types';
 
 export const DEFAULT_POST: PostSettings = {
-  bloom: 0.6, bloomRadius: 0.4, bloomThreshold: 0.8, grain: 0.04, vignette: 0.25, exposure: 1,
+  bloom: 0.6, bloomRadius: 0.4, bloomThreshold: 0.8, grain: 0.04, vignette: 0.25, exposure: 1, toneMap: true,
 };
 
 const GrainShader = {
@@ -63,6 +63,7 @@ export class Stage {
     }
     this.renderPass.scene = scene;
     this.renderPass.camera = camera;
+    this.gl.toneMapping = post.toneMap ? THREE.ACESFilmicToneMapping : THREE.NoToneMapping;
     this.gl.toneMappingExposure = post.exposure;
     this.bloom.enabled = post.bloom > 0;
     this.bloom.strength = post.bloom;

@@ -19,6 +19,7 @@ export interface PostSettings {
   grain: number;          // film grain amount
   vignette: number;
   exposure: number;
+  toneMap: boolean;       // filmic tone mapping; turn off for flat-colour art so the palette stays exact
 }
 
 /** What a shot's build() returns. Built once, then update(f) is called for every frame. */
