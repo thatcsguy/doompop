@@ -19,8 +19,8 @@ video as three.js code, and every frame is a pure function of song time.
 ## Requirements
 
 Node 20+, ffmpeg (with libx264), Chrome or Chromium (set `CHROME_PATH` if it isn't found),
-and [uv](https://docs.astral.sh/uv/) for the analysis tools. `npm install` once. Audio files are in
-Git LFS (`git lfs install` before cloning).
+and [uv](https://docs.astral.sh/uv/) for the analysis tools. `npm install` once. Song audio is committed
+as plain files (no Git LFS needed).
 
 ## Preview keys
 
