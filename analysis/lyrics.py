@@ -60,8 +60,10 @@ for raw in (d / "lyrics.txt").read_text().splitlines():
     if not s or s.startswith("#"):
         continue
     m = re.fullmatch(r"\[(.+?)\]", s)
-    if m:
-        section = m.group(1)
+    if m:  # [Verse 1 — mood] starts a section; other bracketed lines ([quiet, trembling]) are delivery notes
+        name = re.split(r"\s+[—–-]\s+", m.group(1))[0].strip()
+        if re.match(r"(?i)(intro|verse|pre-?chorus|chorus|post-?chorus|bridge|hook|refrain|interlude|break|drop|outro|final)", name):
+            section = name
         continue
     s = re.sub(r"\(.*?\)", "", s).strip() or s  # parenthesised backing vocals are usually not in the lead stem
     toks = [t for t in s.split() if norm(t)]
