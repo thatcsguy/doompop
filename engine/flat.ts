@@ -83,3 +83,46 @@ export function inkedCircle(r: number, fill: THREE.ColorRepresentation | THREE.M
   g.add(outline, body);
   return Object.assign(g, { fill: body, outline });
 }
+
+/**
+ * A plane whose texture is a 2D canvas you redraw every frame: the easiest way to get hand-drawn
+ * looking art (scribbles, UI, type) into the 3D world. draw() must depend only on f.
+ * Units: the plane is w x h world units; the canvas is (w * ppu) x (h * ppu) pixels.
+ */
+export function canvasPlane<F>(w: number, h: number, ppu: number, draw: (g: CanvasRenderingContext2D, f: F, W: number, H: number) => void) {
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(w * ppu);
+  canvas.height = Math.round(h * ppu);
+  const g = canvas.getContext('2d')!;
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  const mesh = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+  return {
+    mesh,
+    update(f: F) {
+      g.setTransform(1, 0, 0, 1, 0, 0);
+      g.clearRect(0, 0, canvas.width, canvas.height);
+      draw(g, f, canvas.width, canvas.height);
+      tex.needsUpdate = true;
+    },
+  };
+}
+
+/** A static texture drawn once (letter tiles, signs, labels). */
+export function staticPlane(w: number, h: number, ppu: number, draw: (g: CanvasRenderingContext2D, W: number, H: number) => void) {
+  const canvas = document.createElement('canvas');
+  canvas.width = Math.round(w * ppu);
+  canvas.height = Math.round(h * ppu);
+  draw(canvas.getContext('2d')!, canvas.width, canvas.height);
+  const tex = new THREE.CanvasTexture(canvas);
+  tex.colorSpace = THREE.SRGBColorSpace;
+  tex.anisotropy = 4;
+  return new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshBasicMaterial({ map: tex, transparent: true, side: THREE.DoubleSide, depthWrite: false }));
+}
+
+/** Rounded-rect path on a 2D canvas (for canvas-drawn art in the same style). */
+export function rrPath(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, r: number) {
+  g.beginPath();
+  g.roundRect(x, y, w, h, r);
+}

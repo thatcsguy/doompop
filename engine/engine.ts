@@ -70,7 +70,7 @@ export class Engine {
     const i = this.shotIndexAt(t), shot = this.shots[i], world = this.world(shot);
     const f = this.frame(shot, t);
     if (world.overlay) { o.save(); world.overlay(o, f); o.restore(); }
-    if (world.lyrics !== false) drawLyrics(o, f, this.lyricStyle);
+    if (world.lyrics !== false) drawLyrics(o, f, world.lyricStyle ? { ...this.lyricStyle, ...world.lyricStyle } : this.lyricStyle);
     this.drawTransitionFlash(o, shot, t);
     return this.out;
   }

@@ -78,6 +78,11 @@ export class SongClock {
   lineAt(t: number, lead = 0.25, hold = 0.4): Line | undefined {
     return this.lyrics.lines.find(l => t >= l.start - lead && t < l.end + hold);
   }
+  /** Start time of a sung word: line n (1-based, as in the storyboard), word i (0-based). */
+  w(n: number, i = 0): number { return this.lyrics.lines[n - 1].words[i].start; }
+  /** Start / end of lyric line n (1-based). */
+  lineStart(n: number): number { return this.lyrics.lines[n - 1].start; }
+  lineEnd(n: number): number { return this.lyrics.lines[n - 1].end; }
   /** The word being sung at t, if any. */
   wordAt(t: number) { return this.words.find(w => t >= w.start && t < w.end); }
 

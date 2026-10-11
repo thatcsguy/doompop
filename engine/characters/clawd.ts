@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { noise1 } from '../rng';
 import { clamp, lerp } from '../ease';
-import { INK, arcShape, circleShape, dropShape, inkedRect, ownMat, roundedRectShape, shapeMesh } from '../flat';
+import { INK, dropShape, inkedRect, ownMat, roundedRectShape, shapeMesh } from '../flat';
 
 export const CLAWD_ORANGE = '#d97757';
 const SHADE = '#b85c3f', GREY = '#8d8781', GREY_SHADE = '#6f6964';
@@ -50,14 +50,14 @@ export interface Pose {
 }
 export const REST: Pose = { bounce: 0, squash: 0, lean: 0, turn: 0, armL: 0, armR: 0, walk: 0 };
 
-const W = 1.3, H = 0.8, R = 0.16, BODY_Y = 0.62;
+const W = 1.3, H = 0.8, R = 0.015, BODY_Y = 0.62; // blocky: near-square corners
 
 export class Clawd {
   readonly root = new THREE.Group();
   private body = new THREE.Group();
   private bodyFill: THREE.MeshBasicMaterial;
   private shadeFill: THREE.MeshBasicMaterial;
-  private eyes: { box: THREE.Mesh; arc: THREE.Mesh; group: THREE.Group }[] = [];
+  private eyes: { box: THREE.Mesh; arc: THREE.Object3D; group: THREE.Group }[] = [];
   private brows: THREE.Mesh[] = [];
   private cheeks: THREE.Mesh[] = [];
   private sweat: THREE.Group[] = [];
@@ -74,7 +74,7 @@ export class Clawd {
 
     // legs: four stubs, drawn behind the body
     for (const x of [-0.46, -0.17, 0.17, 0.46]) {
-      const leg = inkedRect(0.15, 0.3, 0.05, this.shadeFill, 0.04);
+      const leg = inkedRect(0.15, 0.3, 0.01, this.shadeFill, 0.04);
       leg.position.set(x, 0.15, -0.01);
       this.root.add(leg);
       this.legs.push(leg);
@@ -83,7 +83,7 @@ export class Clawd {
     for (const side of [-1, 1]) {
       const pivot = new THREE.Group();
       pivot.position.set(side * (W / 2 - 0.02), BODY_Y + 0.02, -0.005);
-      const arm = inkedRect(0.24, 0.2, 0.07, this.bodyFill, 0.04);
+      const arm = inkedRect(0.24, 0.2, 0.01, this.bodyFill, 0.04);
       arm.position.x = side * 0.1;
       pivot.add(arm);
       this.body.add(pivot);
@@ -93,30 +93,35 @@ export class Clawd {
     const torso = inkedRect(W, H, R, this.bodyFill, 0.05);
     torso.position.y = BODY_Y;
     this.body.add(torso);
-    const shade = new THREE.Shape();
+    const shade = new THREE.Shape(); // square corners to match the body
     const sx = -W / 2, sy = BODY_Y - H / 2, sh = 0.2;
     shade.moveTo(sx, sy + sh); shade.lineTo(sx + W, sy + sh); shade.lineTo(sx + W, sy + R);
     shade.absarc(sx + W - R, sy + R, R, 0, -Math.PI / 2, true); shade.lineTo(sx + R, sy);
     shade.absarc(sx + R, sy + R, R, -Math.PI / 2, -Math.PI, true); shade.lineTo(sx, sy + sh);
     this.body.add(shapeMesh(shade, this.shadeFill, 0.006));
-    this.body.add(shapeMesh(roundedRectShape(0.26, 0.07, 0.035, -0.36, BODY_Y + 0.28), ownMat('#ffffff', 0.3), 0.008));
+    this.body.add(shapeMesh(roundedRectShape(0.26, 0.06, 0.005, -0.36, BODY_Y + 0.28), ownMat('#ffffff', 0.3), 0.008));
 
     const eyeInk = ownMat(INK);
     for (const side of [-1, 1]) {
       const g = new THREE.Group();
       g.position.set(side * 0.27, BODY_Y + 0.08, 0.012);
-      const box = shapeMesh(roundedRectShape(0.12, 0.21, 0.03), eyeInk);
-      const arc = shapeMesh(arcShape(0.075, 0.04, 0.12 * Math.PI, 0.88 * Math.PI), eyeInk);
-      arc.position.y = -0.04;
+      const box = shapeMesh(roundedRectShape(0.12, 0.21, 0.005), eyeInk);
+      const arc = new THREE.Group(); // happy eyes: a blocky ^ chevron of two bars
+      for (const k of [-1, 1]) {
+        const bar = shapeMesh(roundedRectShape(0.11, 0.045, 0.004), eyeInk);
+        bar.position.set(k * 0.036, -0.005, 0);
+        bar.rotation.z = -k * 0.75;
+        arc.add(bar);
+      }
       g.add(box, arc);
       this.body.add(g);
       this.eyes.push({ box, arc, group: g });
 
-      const brow = shapeMesh(roundedRectShape(0.18, 0.04, 0.02), eyeInk, 0.012);
+      const brow = shapeMesh(roundedRectShape(0.18, 0.045, 0.004), eyeInk, 0.012);
       this.body.add(brow);
       this.brows.push(brow);
 
-      const cheek = shapeMesh(circleShape(0.075), ownMat('#ff8fa3', 0, true), 0.01, 20);
+      const cheek = shapeMesh(roundedRectShape(0.15, 0.09, 0.005), ownMat('#ff8fa3', 0, true), 0.01);
       cheek.position.set(side * 0.45, BODY_Y - 0.06, 0.01);
       this.body.add(cheek);
       this.cheeks.push(cheek);

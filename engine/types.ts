@@ -34,6 +34,8 @@ export interface ShotWorld {
   post?(f: Frame): Partial<PostSettings>;
   /** Set false to hide the default lyric layer during this shot (e.g. when the shot draws its own). */
   lyrics?: boolean;
+  /** Per-shot overrides of the song's lyric style (e.g. light text on a dark set). */
+  lyricStyle?: Partial<LyricStyle>;
 }
 
 export type Transition = { type: 'cut' } | { type: 'fade'; dur: number } | { type: 'flash'; dur: number; color?: string };
