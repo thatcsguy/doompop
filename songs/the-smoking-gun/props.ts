@@ -1,11 +1,12 @@
 // Small props for "The Smoking Gun", each a flat cut-out with set(...) that sets everything it
 // animates from song time: the pager, the idea bulb, handcuffs, the master switch, a glowing trace
-// line through the club, a finger-snap burst and rain.
+// line through the club, a finger-snap burst and rain; the martini on the bar and the big
+// top-down turntable.
 import * as THREE from 'three';
 import { INK, arcShape, canvasPlane, circleShape, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh, staticPlane } from '../../engine/flat';
 import { clamp, easeOutBack, easeOutCubic, lerp } from '../../engine/ease';
 import { hash } from '../../engine/rng';
-import { CRT_FONT, PAL, UI_FONT, cutout, glowMat, halo, lightMat, ownGlow, radialTexture, setGlow, solid } from './look';
+import { CRT_FONT, PAL, TERM_FONT, UI_FONT, cutout, glowMat, halo, lightMat, ownGlow, radialTexture, setGlow, solid } from './look';
 
 // ---------------------------------------------------------------------------------------------
 /** A chunky 80s pager standing on its belt clip, with a green LCD and a red LED. */
@@ -17,7 +18,7 @@ export class Pager {
   private lcdLast = '';
   static readonly TEXT = 'PROD DOWN';
 
-  constructor() {
+  constructor(readonly text = Pager.TEXT, readonly clock = '02:14 AM') {
     this.root.add(this.body);
     const shell = inkedRect(1.0, 0.56, 0.1, '#2b2836', 0.04);
     shell.position.y = 0.3;
@@ -33,11 +34,11 @@ export class Pager {
       for (let x = 0; x < W; x += 6) g.fillRect(x, 0, 1, H);
       g.fillStyle = '#1d2b12'; g.textBaseline = 'middle';
       g.font = `400 ${H * 0.28}px ${CRT_FONT}`;
-      g.textAlign = 'left'; g.fillText('02:14 AM', W * 0.05, H * 0.2);
+      g.textAlign = 'left'; g.fillText(clock, W * 0.05, H * 0.2);
       g.textAlign = 'right'; g.fillText(st.blink ? '((!))' : '', W * 0.95, H * 0.2);
       g.font = `400 ${H * 0.56}px ${CRT_FONT}`;
       g.textAlign = 'left';
-      g.fillText(Pager.TEXT.slice(0, st.chars), W * 0.05, H * 0.66);
+      g.fillText(text.slice(0, st.chars), W * 0.05, H * 0.66);
     });
     solid(this.lcd.mesh);
     this.lcd.mesh.position.set(-0.07, 0.33, 0.008);
@@ -53,7 +54,7 @@ export class Pager {
     }
   }
 
-  /** buzz: 0..1 vibration; chars: letters of PROD DOWN shown; ledOn: red LED. */
+  /** buzz: 0..1 vibration; chars: letters of the message shown; ledOn: red LED. */
   set(t: number, buzz: number, chars: number, ledOn: boolean) {
     const j = buzz * 0.03;
     this.body.position.set(Math.sin(t * 157) * j, Math.abs(Math.sin(t * 113)) * j * 0.6, 0);
@@ -349,4 +350,96 @@ export function sweatDrop() {
   ink.moveTo(0, 0.16); ink.quadraticCurveTo(0.095, 0.03, 0.085, -0.01); ink.absarc(0, -0.01, 0.085, 0, -Math.PI, true); ink.quadraticCurveTo(-0.095, 0.03, 0, 0.16);
   g.add(shapeMesh(ink, INK, 0, 10), shapeMesh(s, ownMat('#8fd8ff'), 0.002, 10));
   return g;
+}
+
+// ---------------------------------------------------------------------------------------------
+/** A martini on the bar: a V bowl of pink, an olive on a pick, a stem and a foot. */
+export function martini() {
+  const g = new THREE.Group();
+  const bowl = new THREE.Shape();
+  bowl.moveTo(-0.26, 0.62); bowl.lineTo(0.26, 0.62); bowl.lineTo(0, 0.3); bowl.closePath();
+  const bowlInk = new THREE.Shape();
+  bowlInk.moveTo(-0.3, 0.645); bowlInk.lineTo(0.3, 0.645); bowlInk.lineTo(0, 0.26); bowlInk.closePath();
+  const drink = new THREE.Shape();
+  drink.moveTo(-0.2, 0.56); drink.lineTo(0.2, 0.56); drink.lineTo(0, 0.33); drink.closePath();
+  g.add(shapeMesh(bowlInk, '#2b1d16', 0), shapeMesh(bowl, ownMat('#cfe6ff', 0.55, true), 0.002), shapeMesh(drink, glowMat('#ff5fb0', 1.3), 0.004));
+  const stem = inkedRect(0.03, 0.26, 0.01, '#cfe6ff', 0.02);
+  stem.position.y = 0.16;
+  const foot = inkedRect(0.26, 0.03, 0.01, '#cfe6ff', 0.02);
+  foot.position.y = 0.02;
+  const pick = shapeMesh(roundedRectShape(0.015, 0.36, 0.005, 0.08, 0.62), '#e8d8a8', 0.006);
+  pick.rotation.z = -0.35;
+  const olive = shapeMesh(new THREE.Shape().absarc(0, 0, 0.05, 0, Math.PI * 2, false), '#5fbf4a', 0.007);
+  olive.position.set(0.02, 0.52, 0.007);
+  g.add(stem, foot, pick, olive);
+  return g;
+}
+
+// ---------------------------------------------------------------------------------------------
+/** A turntable seen from above, big: platter, record with a /checkout label, tonearm. */
+export class Turntable {
+  readonly root = new THREE.Group();
+  readonly record = new THREE.Group();
+  readonly arm = new THREE.Group();
+  readonly head = new THREE.Group();
+  readonly paw = new THREE.Group();
+  readonly spark: Burst;
+  constructor() {
+    const plinth = inkedRect(4.2, 3.2, 0.12, '#231a3d', 0.06);
+    this.root.add(plinth);
+    this.root.add(shapeMesh(roundedRectShape(4.0, 0.08, 0.04, 0, -1.48), glowMat(PAL.pink, 1.8), 0.004));
+    const platter = inkedCircle(1.18, '#3a3550', 0.05);
+    platter.position.set(-0.45, 0, 0.004);
+    this.root.add(platter);
+    for (let i = 0; i < 48; i++) {
+      const a = (i / 48) * Math.PI * 2;
+      const d = shapeMesh(circleShape(0.022), '#9a96b0', 0.008, 6);
+      d.position.set(-0.45 + Math.cos(a) * 1.12, Math.sin(a) * 1.12, 0.008);
+      this.root.add(d);
+    }
+    this.record.position.set(-0.45, 0, 0.01);
+    this.record.add(shapeMesh(circleShape(1.05), '#0c0a12', 0, 64));
+    for (let r = 0.42; r < 1.02; r += 0.045) this.record.add(shapeMesh(arcShape(r, 0.006, 0, Math.PI * 2), '#25213a', 0.001, 48));
+    const shine = shapeMesh(arcShape(0.75, 0.32, 0.3, 0.75), lightMat('#b9a8ff', 0.18), 0.002, 16);
+    this.record.add(shine);
+    const shine2 = shapeMesh(arcShape(0.75, 0.32, 0.3 + Math.PI, 0.75 + Math.PI), lightMat('#b9a8ff', 0.18), 0.002, 16);
+    this.record.add(shine2);
+    const label = staticPlane(0.76, 0.76, 500, (g, W, H) => {
+      g.fillStyle = PAL.pink; g.beginPath(); g.arc(W / 2, H / 2, W / 2 - 2, 0, Math.PI * 2); g.fill();
+      g.fillStyle = '#ffe9f6'; g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.font = `700 ${H * 0.13}px ${TERM_FONT}`; g.fillText('/checkout', W / 2, H * 0.33);
+      g.font = `800 ${H * 0.07}px ${UI_FONT}`; g.fillText('PROD MIX  ·  SIDE A', W / 2, H * 0.7);
+      g.fillStyle = '#d9d2e8'; g.beginPath(); g.arc(W / 2, H / 2, W * 0.04, 0, Math.PI * 2); g.fill();
+    });
+    cutout(label, 0.5);
+    label.position.z = 0.004;
+    this.record.add(label);
+    this.root.add(this.record);
+    // tonearm: pivot top right; +y in the arm group runs from the pivot to the headshell
+    const base = inkedCircle(0.22, '#4a4560', 0.04);
+    base.position.set(1.45, 1.05, 0.02);
+    this.root.add(base);
+    this.arm.position.set(1.45, 1.05, 0.03);
+    const tube = inkedRect(0.07, 1.55, 0.03, '#d8d4e6', 0.03);
+    tube.position.y = -0.78;
+    this.arm.add(tube);
+    const cw = inkedRect(0.2, 0.26, 0.04, '#6a6480', 0.03);
+    cw.position.y = 0.22;
+    this.arm.add(cw);
+    this.head.position.set(0, -1.6, 0.01);
+    this.head.add(inkedRect(0.2, 0.3, 0.03, '#2b2838', 0.03));
+    this.arm.add(this.head);
+    this.root.add(this.arm);
+    // Clawd's paw on the headshell (comes in from the right)
+    const arm = inkedRect(1.6, 0.42, 0.04, '#d97757', 0.05);
+    arm.position.set(0.85, 0, 0);
+    const paw = inkedRect(0.5, 0.46, 0.06, '#d97757', 0.05);
+    paw.position.set(0.12, 0, 0.004);
+    this.paw.add(arm, paw);
+    this.paw.position.z = 0.06;
+    this.root.add(this.paw);
+    this.spark = new Burst(PAL.cyan, 10);
+    this.spark.root.position.z = 0.08;
+    this.root.add(this.spark.root);
+  }
 }

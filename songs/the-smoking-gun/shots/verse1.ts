@@ -12,7 +12,7 @@ import { PAL, TERM_FONT, UI_FONT, aimCam, cutout, frameCam, glowMat, lightMat, r
 import { BOARD, BOOTH_SPOT, CONSOLE, METER, RISER, SUSPECT_PINS, WALL_Z, allRed, aliveFloor, clearBooth, deadFloor, tileCenter, type ClubState, type Painter } from '../club';
 import { DiscoClawd, DISCO_MOODS, REST, dance, mixMood, type DiscoLook, type Pose } from '../clawd-disco';
 import { Bouncer, Cache, Field, Fn, sp } from '../suspects';
-import { Bulb, Burst, Cuffs, GlowPath, MasterSwitch, lightPool, sweatDrop } from '../props';
+import { Bulb, Burst, Cuffs, GlowPath, MasterSwitch, Turntable, lightPool, sweatDrop } from '../props';
 import { shake, shot } from './common';
 
 const P = (p: Partial<Pose>): Pose => ({ ...REST, ...p });
@@ -49,75 +49,6 @@ function litTiles(base: Painter, lit: (ix: number, iz: number, f: Frame) => numb
     if (k <= 0) return base(ix, iz, f);
     return { color, power: lerp(1, 1.55, k) };
   };
-}
-
-// ---------------------------------------------------------------------------------------------
-/** A turntable seen from above, big: platter, record with a /checkout label, tonearm. */
-class Turntable {
-  readonly root = new THREE.Group();
-  readonly record = new THREE.Group();
-  readonly arm = new THREE.Group();
-  readonly head = new THREE.Group();
-  readonly paw = new THREE.Group();
-  readonly spark: Burst;
-  constructor() {
-    const plinth = inkedRect(4.2, 3.2, 0.12, '#231a3d', 0.06);
-    this.root.add(plinth);
-    this.root.add(shapeMesh(roundedRectShape(4.0, 0.08, 0.04, 0, -1.48), glowMat(PAL.pink, 1.8), 0.004));
-    const platter = inkedCircle(1.18, '#3a3550', 0.05);
-    platter.position.set(-0.45, 0, 0.004);
-    this.root.add(platter);
-    for (let i = 0; i < 48; i++) {
-      const a = (i / 48) * Math.PI * 2;
-      const d = shapeMesh(circleShape(0.022), '#9a96b0', 0.008, 6);
-      d.position.set(-0.45 + Math.cos(a) * 1.12, Math.sin(a) * 1.12, 0.008);
-      this.root.add(d);
-    }
-    this.record.position.set(-0.45, 0, 0.01);
-    this.record.add(shapeMesh(circleShape(1.05), '#0c0a12', 0, 64));
-    for (let r = 0.42; r < 1.02; r += 0.045) this.record.add(shapeMesh(arcShape(r, 0.006, 0, Math.PI * 2), '#25213a', 0.001, 48));
-    const shine = shapeMesh(arcShape(0.75, 0.32, 0.3, 0.75), lightMat('#b9a8ff', 0.18), 0.002, 16);
-    this.record.add(shine);
-    const shine2 = shapeMesh(arcShape(0.75, 0.32, 0.3 + Math.PI, 0.75 + Math.PI), lightMat('#b9a8ff', 0.18), 0.002, 16);
-    this.record.add(shine2);
-    const label = staticPlane(0.76, 0.76, 500, (g, W, H) => {
-      g.fillStyle = PAL.pink; g.beginPath(); g.arc(W / 2, H / 2, W / 2 - 2, 0, Math.PI * 2); g.fill();
-      g.fillStyle = '#ffe9f6'; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.font = `700 ${H * 0.13}px ${TERM_FONT}`; g.fillText('/checkout', W / 2, H * 0.33);
-      g.font = `800 ${H * 0.07}px ${UI_FONT}`; g.fillText('PROD MIX  ·  SIDE A', W / 2, H * 0.7);
-      g.fillStyle = '#d9d2e8'; g.beginPath(); g.arc(W / 2, H / 2, W * 0.04, 0, Math.PI * 2); g.fill();
-    });
-    cutout(label, 0.5);
-    label.position.z = 0.004;
-    this.record.add(label);
-    this.root.add(this.record);
-    // tonearm: pivot top right; +y in the arm group runs from the pivot to the headshell
-    const base = inkedCircle(0.22, '#4a4560', 0.04);
-    base.position.set(1.45, 1.05, 0.02);
-    this.root.add(base);
-    this.arm.position.set(1.45, 1.05, 0.03);
-    const tube = inkedRect(0.07, 1.55, 0.03, '#d8d4e6', 0.03);
-    tube.position.y = -0.78;
-    this.arm.add(tube);
-    const cw = inkedRect(0.2, 0.26, 0.04, '#6a6480', 0.03);
-    cw.position.y = 0.22;
-    this.arm.add(cw);
-    this.head.position.set(0, -1.6, 0.01);
-    this.head.add(inkedRect(0.2, 0.3, 0.03, '#2b2838', 0.03));
-    this.arm.add(this.head);
-    this.root.add(this.arm);
-    // Clawd's paw on the headshell (comes in from the right)
-    const arm = inkedRect(1.6, 0.42, 0.04, '#d97757', 0.05);
-    arm.position.set(0.85, 0, 0);
-    const paw = inkedRect(0.5, 0.46, 0.06, '#d97757', 0.05);
-    paw.position.set(0.12, 0, 0.004);
-    this.paw.add(arm, paw);
-    this.paw.position.z = 0.06;
-    this.root.add(this.paw);
-    this.spark = new Burst(PAL.cyan, 10);
-    this.spark.root.position.z = 0.08;
-    this.root.add(this.spark.root);
-  }
 }
 
 /** The Function's surface under the magnifier: dust, cobwebs, a spider and the git blame sticker. */

@@ -279,10 +279,10 @@ export function frozenPose(i: number): Body {
   return b;
 }
 
-/** Dancing: a style per dancer, all locked to the beat. */
-export function dancePose(i: number, beat: number, energy = 1): Body {
-  const style = Math.floor(hash(i, 31) * 5);
-  const b = Math.max(0, beat + (hash(i, 32) < 0.5 ? 0 : 0.5) * (style === 4 ? 1 : 0));
+/** Dancing: a style per dancer (or one style for everyone, in unison), all locked to the beat. */
+export function dancePose(i: number, beat: number, energy = 1, unison?: number): Body {
+  const style = unison ?? Math.floor(hash(i, 31) * 5);
+  const b = Math.max(0, beat + (unison === undefined && hash(i, 32) >= 0.5 && style === 4 ? 0.5 : 0));
   const n = Math.floor(b), ph = b - n;
   const hop = 4 * ph * (1 - ph);
   const e = energy;

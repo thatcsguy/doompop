@@ -11,7 +11,7 @@ import { PAL, aimCam, beamTexture, glowMat, lightMat, ownGlow, radialTexture, se
 import { BAR } from '../club';
 import { FACADE_Z, buzzOn } from '../street';
 import { DiscoClawd, DISCO_MOODS, REST, ARM_LEN } from '../clawd-disco';
-import { Burst, Pager, lightPool } from '../props';
+import { Burst, Pager, lightPool, martini } from '../props';
 import { getStreet, shot } from './common';
 
 /** PROD keeps dropping out once it's lit: brief dark gaps, never more than ~2 a second. */
@@ -23,28 +23,6 @@ function sputter(t: number) {
 function openFlicker(t: number) {
   const slot = Math.floor(t / 0.8), ph = t / 0.8 - slot;
   return hash(slot, 98) < 0.35 && ph < 0.12 ? 0.9 : 0.12;
-}
-
-/** A martini on the bar: a V bowl of pink, an olive on a pick, a stem and a foot. */
-function martini() {
-  const g = new THREE.Group();
-  const bowl = new THREE.Shape();
-  bowl.moveTo(-0.26, 0.62); bowl.lineTo(0.26, 0.62); bowl.lineTo(0, 0.3); bowl.closePath();
-  const bowlInk = new THREE.Shape();
-  bowlInk.moveTo(-0.3, 0.645); bowlInk.lineTo(0.3, 0.645); bowlInk.lineTo(0, 0.26); bowlInk.closePath();
-  const drink = new THREE.Shape();
-  drink.moveTo(-0.2, 0.56); drink.lineTo(0.2, 0.56); drink.lineTo(0, 0.33); drink.closePath();
-  g.add(shapeMesh(bowlInk, '#2b1d16', 0), shapeMesh(bowl, ownMat('#cfe6ff', 0.55, true), 0.002), shapeMesh(drink, glowMat('#ff5fb0', 1.3), 0.004));
-  const stem = inkedRect(0.03, 0.26, 0.01, '#cfe6ff', 0.02);
-  stem.position.y = 0.16;
-  const foot = inkedRect(0.26, 0.03, 0.01, '#cfe6ff', 0.02);
-  foot.position.y = 0.02;
-  const pick = shapeMesh(roundedRectShape(0.015, 0.36, 0.005, 0.08, 0.62), '#e8d8a8', 0.006);
-  pick.rotation.z = -0.35;
-  const olive = shapeMesh(new THREE.Shape().absarc(0, 0, 0.05, 0, Math.PI * 2, false), '#5fbf4a', 0.007);
-  olive.position.set(0.02, 0.52, 0.007);
-  g.add(stem, foot, pick, olive);
-  return g;
 }
 
 export function introShots(audio: AudioData): Shot[] {

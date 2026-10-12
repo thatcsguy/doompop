@@ -26,5 +26,14 @@ export const DISCO_LYRICS: DiscoSpec = {
     14: { x: 0.5, y: 0.13, color: PAL.pink, words: { 3: { anim: 'stamp', scale: 1.4, color: PAL.gold } } },
     15: { x: 0.5, y: 0.13, color: PAL.cyan, words: { 1: { anim: 'stamp', scale: 1.5, color: PAL.gold } } },
     16: { x: 0.5, y: 0.13, color: PAL.violetNeon, hold: 0.2, words: { 4: { shake: 1, scale: 1.4, color: PAL.red, core: 0.3 } } },
+    // chorus 1: big neon, each line's key word stamped in the colour of its evidence
+    17: { x: 0.5, y: 0.13, color: PAL.cyan, words: { 1: { color: PAL.green }, 3: { anim: 'slide' }, 4: { anim: 'slide' }, 5: { anim: 'stamp', color: PAL.gold, scale: 1.25 } } },
+    18: { x: 0.5, y: 0.1, size: 90, maxWidth: 0.92, color: PAL.pink, words: { 1: { color: PAL.cyan, scale: 1.1 }, 4: { anim: 'stamp', color: PAL.gold, scale: 1.3 } } },
+    19: { x: 0.5, y: 0.12, size: 90, maxWidth: 0.92, color: PAL.violetNeon, words: { 1: { color: PAL.gold, scale: 1.15 }, 4: { anim: 'stamp', color: PAL.red, scale: 1.4, core: 0.3 } } },
+    20: { x: 0.05, y: 0.6, align: 'left', size: 92, maxWidth: 0.42, color: PAL.pink, words: { 1: { color: PAL.cyan }, 3: { anim: 'stamp', color: PAL.gold, scale: 1.55 } } },
+    21: { x: 0.5, y: 0.125, color: PAL.violetNeon, words: { 1: { color: PAL.cyan }, 4: { anim: 'stamp', color: PAL.gold, scale: 1.35 } } },
+    22: { x: 0.05, y: 0.13, align: 'left', maxWidth: 0.9, color: PAL.pink, words: { 1: { scale: 1.1 }, 3: { anim: 'stamp', color: PAL.gold, scale: 1.7 } } },
+    23: { x: 0.5, y: 0.12, color: PAL.pink, size: 90, hold: 0.06, words: { 3: { scale: 1.1 }, 4: { anim: 'stamp', color: PAL.gold, scale: 1.3 } } },
+    24: { x: 0.5, y: 0.85, color: PAL.gold, size: 110, tilt: -0.03, words: { 1: { color: '#e6e0f2', core: 0.75 }, 2: { anim: 'stamp', scale: 1.7, color: PAL.red, core: 0.3, shake: 0.4 } } },
   },
 };

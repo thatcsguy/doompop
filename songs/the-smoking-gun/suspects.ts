@@ -23,13 +23,14 @@ export interface SuspectState {
   shrug: number;      // 0..1
   shades: number;     // 0 on, 1 lowered (peering over)
   wag: number;        // finger wag amount 0..1 (Cache) / wave (Handler)
-  cuffs: number;      // Function: 1 = cuffed (paws together), 0 = free
+  cuffs: number;      // Function, Cache: 1 = cuffed (paws together in front), 0 = free
   mouth: number;      // -1 frown .. 1 grin
   rim: number;        // rim light strength
   turn: number;       // paper-puppet flip
+  hold: number;       // Handler: 1 = arms free and posed from armL/armR (escorting), no waving
 }
 export const SUSPECT_REST: SuspectState = {
-  armL: -0.95, armR: -0.95, bob: 0, lean: 0, squash: 0, look: 0, brow: 0, open: 1, shrug: 0, shades: 0, wag: 0, cuffs: 0, mouth: 0, rim: 1, turn: 0,
+  armL: -0.95, armR: -0.95, bob: 0, lean: 0, squash: 0, look: 0, brow: 0, open: 1, shrug: 0, shades: 0, wag: 0, cuffs: 0, mouth: 0, rim: 1, turn: 0, hold: 0,
 };
 export const sp = (p: Partial<SuspectState>): SuspectState => ({ ...SUSPECT_REST, ...p });
 
@@ -320,12 +321,13 @@ export class Bouncer {
     this.root.scale.set((flip < 0 ? -1 : 1) * Math.max(0.08, Math.abs(flip)), 1, 1);
     this.body.position.y = s.bob;
     this.body.rotation.z = s.lean;
-    // wag > 0: uncross and wave the right arm through ("come on in")
-    const wave = clamp(s.wag);
-    this.crossed.visible = wave < 0.5;
-    this.armL.visible = this.armR.visible = wave >= 0.5;
-    this.armL.rotation.z = -0.15;
-    this.armR.rotation.z = lerp(0.2, 1.7, wave) + Math.sin(t * 9) * 0.35 * wave;
+    // wag > 0: uncross and wave the right arm through ("come on in"); hold: arms posed directly
+    // (0 = hanging down, positive = out to that side and up), for escorting someone out
+    const wave = clamp(s.wag), hold = s.hold >= 0.5;
+    this.crossed.visible = wave < 0.5 && !hold;
+    this.armL.visible = this.armR.visible = wave >= 0.5 || hold;
+    this.armL.rotation.z = hold ? -s.armL : -0.15;
+    this.armR.rotation.z = hold ? s.armR : lerp(0.2, 1.7, wave) + Math.sin(t * 9) * 0.35 * wave;
     this.mouth.scale.x = 1 + s.mouth * 0.3;
     this.rim.set(s.rim, t);
   }
@@ -346,8 +348,10 @@ export class Cache {
   static readonly W = 1.05;
   static readonly H = 1.62;
   static readonly Y = 1.18;
-  /** Where a held prop goes (the right hand, in body space). */
+  /** Where a held prop goes (the right hand, in the right arm's frame: +x runs along the arm). */
   readonly hand = new THREE.Group();
+  /** Where the cuffs sit when cuffed (in body space). */
+  static readonly CUFF_AT = new THREE.Vector3(0, 1.05, 0.06);
 
   constructor() {
     const { W, H, Y } = Cache;
@@ -442,12 +446,18 @@ export class Cache {
     this.body.position.y = s.bob;
     this.body.rotation.z = s.lean;
     this.body.scale.set(1 + s.squash * 0.1, 1 - s.squash * 0.12, 1);
-    const wag = clamp(s.wag);
-    this.arms[0].rotation.z = -s.armL;
-    // wagging: the right forearm up, the finger ticking side to side on the beat
-    this.arms[1].rotation.z = lerp(s.armR, 1.45, wag);
+    const wag = clamp(s.wag), cuff = clamp(s.cuffs);
+    // wagging: the right forearm up, the finger ticking side to side on the beat; cuffed: both
+    // paws down and together in front (a cuffed Cache can still wag that finger)
+    const aL = lerp(s.armL, -2.2, cuff), aR = lerp(lerp(s.armR, 1.45, wag), -2.2, cuff);
+    this.arms[0].rotation.z = -aL;
+    this.arms[1].rotation.z = aR;
+    this.arms.forEach((a, i) => {
+      a.position.x = (i ? 1 : -1) * (Cache.W / 2 + 0.04 - cuff * 0.1);
+      a.position.z = cuff > 0.5 ? 0.03 : -0.006;
+    });
     this.finger.visible = wag > 0.05;
-    this.finger.rotation.z = -lerp(s.armR, 1.45, wag) + Math.sin(t * Math.PI * 2 * 2.15) * 0.45 * wag;
+    this.finger.rotation.z = -aR + Math.sin(t * Math.PI * 2 * 2.15) * 0.45 * wag;
     // shades slide down the face to peer over
     const down = clamp(s.shades);
     this.shades.position.set(0, Y + H / 2 - 0.16 - down * 0.13, 0.02);

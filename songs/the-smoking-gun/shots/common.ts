@@ -21,8 +21,11 @@ export interface Ctx {
   camera: THREE.PerspectiveCamera;
   club: Club;
 }
-/** Per-frame update: set the camera and props, and fill in the club state (already defaulted). */
-export type Update = (f: Frame, s: ClubState) => void;
+/**
+ * Per-frame update: set the camera and props, and fill in the club state (already defaulted).
+ * In a shot with a freeze, f stops at the freeze time and `now` keeps running (for the camera).
+ */
+export type Update = (f: Frame, s: ClubState, now: Frame) => void;
 
 export interface ShotOpts {
   transition?: Transition;
@@ -31,6 +34,8 @@ export interface ShotOpts {
   overlay?: ShotWorld['overlay'];
   post?: (f: Frame) => Partial<PostSettings>;
   fov?: number;
+  /** Freeze frame: from this song time on, the shot (club included) holds its picture. */
+  freeze?: number;
 }
 
 /** A shot in this song: setup() builds its props once and returns the per-frame update. */
@@ -46,10 +51,11 @@ export function shot(id: string, start: number, end: number, setup: (c: Ctx) => 
       const useClub = o.club !== false;
       return {
         scene, camera,
-        update(f) {
+        update(now) {
+          const f = o.freeze !== undefined && now.t > o.freeze ? frozen(now, o.freeze) : now;
           const s = defaultState();
           if (useClub) scene.add(club.root);
-          update(f, s);
+          update(f, s, now);
           if (useClub) club.apply(s, f);
         },
         overlay(g, f) {
@@ -62,6 +68,9 @@ export function shot(id: string, start: number, end: number, setup: (c: Ctx) => 
     },
   });
 }
+
+/** The frame as it was at song time t (same shot): a freeze frame. */
+const frozen = (f: Frame, t: number): Frame => ({ ...f, t, lt: f.lt - (f.t - t), p: f.dur > 0 ? (f.lt - (f.t - t)) / f.dur : 0 });
 
 /** Seconds since t0 (negative before it). */
 export const since = (f: Frame, t0: number) => f.t - t0;

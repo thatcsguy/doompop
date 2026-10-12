@@ -39,7 +39,7 @@ export function tileCenter(ix: number, iz: number) {
 export interface TileLight { color: THREE.ColorRepresentation; power: number }
 export type Painter = (ix: number, iz: number, f: Frame) => TileLight;
 
-export type TermMode = 'off' | 'boot' | 'logs' | 'grep' | 'trace' | 'error' | 'no' | 'tests';
+export type TermMode = 'off' | 'boot' | 'logs' | 'grep' | 'trace' | 'sync' | 'error' | 'no' | 'tests';
 
 export interface ClubState {
   floor: Painter;
@@ -52,9 +52,12 @@ export interface ClubState {
   crowd: number;            // 0 hides every dancer
   crowdMask?: (i: number) => boolean;   // per-dancer visibility
   crowdShift?: (i: number, f: Frame) => THREE.Vector3 | null; // per-dancer offset (shooing, parting)
+  crowdFrozen?: (i: number) => number;  // per-dancer freeze (thawing one by one); default `frozen`
+  crowdStyle?: number;      // every dancer does the same move (a dancePose style), in unison
   terms: TermMode;
   termT0: number;           // song time the current terminal mode started (boot sequence etc.)
   termOffset: number;       // extra scroll, in lines (DJ scratching the logs back and forth)
+  termSync: number;         // 'sync' screens: 0 = every screen its own trace, 1 = all the same one
   meter: number;            // the confidence VU meter, 0..1 (1 = pinned in the red)
   sign: number;             // CLUB PROD neon, 0..1
   incidentDays: number;     // the "days since last incident" sign
@@ -63,6 +66,9 @@ export interface ClubState {
   boardStrings: number;     // evidence board: how much red string is up, 0..1
   boardFocus: number;       // 0 = strings all over, 1 = every string swung to the Cache
   boardRing: number;        // a red marker ring going round the Cache's photo, 0..1
+  boardLine: number;        // the photos slide into one straight line and the string pulls taut, 0..1
+  boardTwang: number;       // the taut string's vibration (amplitude 0..1; the shot decays it)
+  blackout: number;         // house lights down (the pause): neon, signs, bar, screens, crowd, 0..1
 }
 
 /** Production is down: dead floor with red error tiles that pulse on the beat. */
@@ -104,8 +110,8 @@ export const clearBooth = (i: number) => !(Math.abs(DANCER_SPOTS[i][0]) < 4.6 &&
 export function defaultState(): ClubState {
   return {
     floor: deadFloor(), ball: { angle: 0, lit: 0.2, sparkle: 0 }, beams: 0, alarm: 1, pars: 0.25, frozen: 1, danceEnergy: 1,
-    crowd: 1, terms: 'off', termT0: 0, termOffset: 0, meter: 0.08, sign: 1, incidentDays: 0, records: { spin: 0, label: '/checkout' },
-    wallLight: 0.4, boardStrings: 1, boardFocus: 0, boardRing: 0,
+    crowd: 1, terms: 'off', termT0: 0, termOffset: 0, termSync: 0, meter: 0.08, sign: 1, incidentDays: 0, records: { spin: 0, label: '/checkout' },
+    wallLight: 0.4, boardStrings: 1, boardFocus: 0, boardRing: 0, boardLine: 0, boardTwang: 0, blackout: 0,
   };
 }
 
@@ -144,6 +150,11 @@ export class Club {
   private neonTubes: { mat: THREE.MeshBasicMaterial; color: string; k: number }[] = [];
   private bottles: { mat: THREE.MeshBasicMaterial; color: string; k: number }[] = [];
   private exitMat!: THREE.MeshBasicMaterial;
+  private wallMat!: THREE.MeshBasicMaterial;
+  private boardMat!: THREE.MeshBasicMaterial;
+  private incidentMat!: THREE.MeshBasicMaterial;
+  /** Small fixed lights that go down with the house lights in a blackout. */
+  private houseLights: { mat: THREE.MeshBasicMaterial; color: string; power: number }[] = [];
   private tmp = new THREE.Color();
   private m4 = new THREE.Matrix4();
 
@@ -158,6 +169,13 @@ export class Club {
     this.buildCrowd();
   }
 
+  /** A small fixed light (glow material) that dims with the house lights. */
+  private house(color: string, power: number) {
+    const mat = ownGlow(color, power);
+    this.houseLights.push({ mat, color, power });
+    return mat;
+  }
+
   private add<T extends THREE.Object3D>(o: T, x = 0, y = 0, z = 0): T {
     o.position.set(x, y, z);
     this.root.add(o);
@@ -167,7 +185,7 @@ export class Club {
   // --- walls, ceiling, signs ---------------------------------------------------------------
   private buildRoom() {
     // back wall: dark panels with a faint vertical rhythm, a skirting strip and a top neon tube
-    this.add(solid(staticPlane(64, 18, 12, (g, W, H) => {
+    const wall = this.add(solid(staticPlane(64, 18, 12, (g, W, H) => {
       const u = W / 64;
       g.fillStyle = PAL.wall; g.fillRect(0, 0, W, H);
       for (let x = 0; x < 64; x += 2) {
@@ -179,6 +197,7 @@ export class Club {
       grad.addColorStop(0, 'rgba(5,3,15,0.85)'); grad.addColorStop(0.45, 'rgba(5,3,15,0.1)'); grad.addColorStop(1, 'rgba(5,3,15,0.35)');
       g.fillStyle = grad; g.fillRect(0, 0, W, H);
     })), 0, 9, WALL_Z - 0.05);
+    this.wallMat = wall.material as THREE.MeshBasicMaterial;
     // a soft wash of light on the wall that the club lighting raises and lowers
     this.wallWash = lightMat('#6a3cff', 0.0, radialTexture());
     const wash = new THREE.Mesh(new THREE.PlaneGeometry(40, 16), this.wallWash);
@@ -256,7 +275,8 @@ export class Club {
     });
     solid(this.incident.mesh);
     this.incident.mesh.position.set(-8.3, 5.6, WALL_Z + 0.13);
-    (this.incident.mesh.material as THREE.MeshBasicMaterial).color.setScalar(1.25);
+    this.incidentMat = this.incident.mesh.material as THREE.MeshBasicMaterial;
+    this.incidentMat.color.setScalar(1.25);
     this.root.add(this.incident.mesh);
 
     // ceiling: a dark band at the top
@@ -301,8 +321,9 @@ export class Club {
     const strip = ownGlow(PAL.cyan, 2.2);
     this.neonTubes.push({ mat: strip, color: PAL.cyan, k: 99 });
     this.add(shapeMesh(roundedRectShape(RISER.w, 0.07, 0.03), strip, 0), 0, RISER.h - 0.06, RISER.front + 0.02);
+    const stepMat = this.house(PAL.gold, 1.6);
     for (let i = 0; i < 9; i++) { // little step lights
-      const m = shapeMesh(circleShape(0.06), glowMat(PAL.gold, 1.6), 0, 10);
+      const m = shapeMesh(circleShape(0.06), stepMat, 0, 10);
       this.add(m, -4 + i, 0.25, RISER.front + 0.02);
     }
 
@@ -352,7 +373,7 @@ export class Club {
     // console: front face with a grille, a top surface with two decks and a mixer
     const cz = CONSOLE.front, top = RISER.h + CONSOLE.h;
     this.add(inkedRect(CONSOLE.w, CONSOLE.h, 0.03, '#241a45', 0.05), 0, RISER.h + CONSOLE.h / 2, cz);
-    this.add(shapeMesh(roundedRectShape(CONSOLE.w - 0.3, 0.05, 0.02), glowMat(PAL.pink, 2.0), 0), 0, top - 0.06, cz + 0.02);
+    this.add(shapeMesh(roundedRectShape(CONSOLE.w - 0.3, 0.05, 0.02), this.house(PAL.pink, 2.0), 0), 0, top - 0.06, cz + 0.02);
     const consoleTop = new THREE.Mesh(new THREE.PlaneGeometry(CONSOLE.w, CONSOLE.depth), ownMat('#2f2457'));
     consoleTop.rotation.x = -Math.PI / 2;
     this.add(consoleTop, 0, top, cz - CONSOLE.depth / 2);
@@ -507,6 +528,7 @@ export class Club {
     this.add(inkedRect(w + 0.5, h + 0.5, 0.06, '#5a3b22', 0.08), x, y, WALL_Z + 0.1);
     this.board = canvasPlane(w, h, 200, (g, st: { f: Frame; s: ClubState }, W, H) => drawBoard(g, W, H, st.f, st.s));
     solid(this.board.mesh);
+    this.boardMat = this.board.mesh.material as THREE.MeshBasicMaterial;
     this.board.mesh.position.set(x, y, WALL_Z + 0.16);
     this.root.add(this.board.mesh);
     const lamp = lightMat('#ffd27a', 0.1, radialTexture());
@@ -686,24 +708,29 @@ export class Club {
     setGlow(this.alarm.dome, PAL.red, 0.4 + 2.2 * s.alarm * (0.55 + 0.45 * Math.cos(spin)));
     this.alarm.wash.opacity = 0.12 * s.alarm * (0.6 + 0.4 * Math.sin(spin));
 
-    // signs and wall
-    setGlow(this.sign.mat, PAL.pink, 2.6 * s.sign);
-    this.sign.glow.opacity = 0.22 * s.sign;
-    this.wallWash.opacity = 0.18 * s.wallLight;
-    this.neonTubes.forEach(n => setGlow(n.mat, n.color, (0.35 + 1.75 * s.sign) * (0.9 + 0.1 * Math.sin(t * 5 + n.k))));
-    this.bottles.forEach(b => setGlow(b.mat, b.color, 0.7 + 0.5 * s.wallLight + 0.15 * Math.sin(t * 2 + b.k)));
+    // signs and wall (a blackout takes the house lights down with them)
+    const up = 1 - clamp(s.blackout);
+    setGlow(this.sign.mat, PAL.pink, 2.6 * s.sign * up);
+    this.sign.glow.opacity = 0.22 * s.sign * up;
+    this.wallWash.opacity = 0.18 * s.wallLight * up;
+    this.wallMat.color.setScalar(lerp(0.35, 1, up));
+    this.neonTubes.forEach(n => setGlow(n.mat, n.color, (0.35 + 1.75 * s.sign) * up * (0.9 + 0.1 * Math.sin(t * 5 + n.k))));
+    this.bottles.forEach(b => setGlow(b.mat, b.color, (0.7 + 0.5 * s.wallLight + 0.15 * Math.sin(t * 2 + b.k)) * lerp(0.15, 1, up)));
+    this.houseLights.forEach(h => setGlow(h.mat, h.color, h.power * lerp(0.1, 1, up)));
+    this.incidentMat.color.setScalar(1.25 * lerp(0.2, 1, up));
+    this.boardMat.color.setScalar(lerp(0.2, 1, up));
     if (s.incidentDays !== this.incidentLast) { this.incident.update(s.incidentDays); this.incidentLast = s.incidentDays; }
 
     // booth
     this.terms.update({ f, s });
-    this.termMat.color.setScalar(s.terms === 'off' ? 1 : 1.7);
+    this.termMat.color.setScalar((s.terms === 'off' ? 1 : 1.7) * lerp(0.2, 1, up));
     const kick = f.clock.kick(t, 0.1);
     this.woofers.forEach(w => w.scale.setScalar(1 + 0.06 * kick));
     this.meterNeedle.rotation.z = lerp(0.95, -0.95, clamp(s.meter)) + Math.sin(t * 23) * 0.015;
     setGlow(this.meterRed, '#ff3240', s.meter > 0.85 ? 2.4 : 0.35);
     this.records.forEach((r, i) => { r.rotation.y = -s.records.spin * (i ? 1.02 : 1) - i; });
     const lv = [f.clock.env('low', t), f.clock.env('high', t)];
-    this.leds.forEach(l => setGlow(l.mat, l.color, (l.k + 0.5) / 9 < lv[l.ch] * 1.1 ? 2.2 : 0.22));
+    this.leds.forEach(l => setGlow(l.mat, l.color, ((l.k + 0.5) / 9 < lv[l.ch] * 1.1 ? 2.2 : 0.22) * up));
     this.board.update({ f, s });
 
     // crowd
@@ -714,8 +741,9 @@ export class Club {
       if (!show) return;
       const off = s.crowdShift?.(i, f);
       d.root.position.set(x + (off?.x ?? 0), off?.y ?? 0, z + (off?.z ?? 0));
-      const body = s.frozen >= 0.5 ? frozenPose(i) : dancePose(i, beat, s.danceEnergy);
-      d.set(body, s.frozen, t + i * 0.37, 0.6 + 0.4 * s.wallLight);
+      const fz = s.crowdFrozen ? s.crowdFrozen(i) : s.frozen;
+      const body = fz >= 0.5 ? frozenPose(i) : dancePose(i, beat, s.danceEnergy, s.crowdStyle);
+      d.set(body, fz, t + i * 0.37, (0.6 + 0.4 * s.wallLight) * up);
     });
   }
 }
@@ -733,6 +761,9 @@ const BOOT_LINES = ['$ npm run dev', '> vite dev', 'starting dev server...', 'co
 const LOG_LEVELS: [string, string][] = [['INFO', '#45ff8a'], ['INFO', '#45ff8a'], ['WARN', '#ffae3d'], ['INFO', '#45ff8a'], ['ERROR', '#ff3240'], ['DEBUG', '#2fe2ff']];
 const LOG_MSGS = ['GET /checkout 500', 'cache miss key=cart:91', 'handler timeout 3001ms', 'retrying request', 'POST /checkout 500', 'trace id 7f3a', 'db pool ok', 'render shell 12ms'];
 const GREP_FILES = ['src/checkout.ts', 'src/cart/cache.ts', 'lib/handler.js', 'api/routes.ts', 'src/pay/index.ts', 'test/checkout.spec.ts'];
+/** The one trace every screen agrees on (start, length, colour), the failing span in red. */
+const SYNC_SPANS: [number, number, string][] = [[0, 0.96, '#2fe2ff'], [0.04, 0.5, '#45ff8a'], [0.1, 0.26, '#ffae3d'], [0.42, 0.44, '#45ff8a'], [0.5, 0.22, '#ff3240'], [0.62, 0.3, '#2fe2ff']];
+const SYNC_OWN = ['#2fe2ff', '#45ff8a', '#ffae3d', '#c38bff'];
 
 function drawTerminals(g: CanvasRenderingContext2D, W: number, H: number, TW: { w: number; h: number }, f: Frame, s: ClubState) {
   const u = W / TW.w;
@@ -807,6 +838,29 @@ function drawTerminals(g: CanvasRenderingContext2D, W: number, H: number, TW: { 
         g.fillStyle = r === 3 ? '#ff3240' : ['#2fe2ff', '#45ff8a', '#ffae3d'][r % 3];
         g.fillRect(x0, yy, Math.max(0, len), lineH * 0.7);
       }
+    } else if (mode === 'sync') {
+      // a trace waterfall per screen; as termSync goes to 1 they all become the same trace, with
+      // the failing span in red, a playhead sweeping across in step and a pulse on every beat
+      const k = smooth(s.termSync);
+      const b = f.clock.beat(f.t), pulse = Math.exp(-(b - Math.floor(b)) * 5) * k;
+      g.fillStyle = '#7f86ad';
+      g.font = `400 ${lineH * 0.8}px ${CRT_FONT}`;
+      g.fillText(k > 0.5 ? 'trace 7f3a  /checkout' : `trace ${(Math.floor(hash(i, 93) * 65535)).toString(16)}`, x + pad, y + pad * 0.6);
+      const top = y + pad + lineH * 1.1, rowH = (h - (top - y) - pad) / SYNC_SPANS.length;
+      SYNC_SPANS.forEach(([s0, sl, col], r) => {
+        const o0 = hash(i, r, 91) * 0.55, ol = 0.12 + hash(i, r, 92) * 0.4;
+        const grow = clamp(dt * 2.5 - r * 0.12);
+        const x0 = lerp(o0, s0, k), len = lerp(ol, sl, k) * grow;
+        g.fillStyle = k > 0.5 ? col : SYNC_OWN[Math.floor(hash(i, r, 94) * SYNC_OWN.length)];
+        g.globalAlpha = 0.85 + 0.15 * pulse;
+        g.fillRect(x + pad + x0 * (w - pad * 2), top + r * rowH + rowH * 0.18, Math.max(0, len * (w - pad * 2)), rowH * 0.62);
+        g.globalAlpha = 1;
+      });
+      if (k > 0) {
+        const ph = (b / 4) - Math.floor(b / 4);
+        g.fillStyle = `rgba(255,255,255,${0.55 * k})`;
+        g.fillRect(x + pad + ph * (w - pad * 2), top - lineH * 0.2, Math.max(1.5, 0.012 * u), h - (top - y));
+      }
     } else if (mode === 'error' || mode === 'no') {
       g.fillStyle = '#2a0306'; g.fillRect(x, y, w, h);
       g.fillStyle = '#ff3240'; g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -827,6 +881,10 @@ function drawTerminals(g: CanvasRenderingContext2D, W: number, H: number, TW: { 
 export const SUSPECT_PINS: Record<string, [number, number]> = {
   function: [0.2, 0.3], handler: [0.5, 0.22], cache: [0.8, 0.32], logs: [0.25, 0.75], traces: [0.62, 0.72],
 };
+/** Where the photos end up when the evidence "lines up": one straight row ending on the Cache. */
+export const LINE_PINS: Record<string, [number, number]> = {
+  function: [0.11, 0.46], logs: [0.29, 0.46], handler: [0.47, 0.46], traces: [0.65, 0.46], cache: [0.86, 0.46],
+};
 
 function drawBoard(g: CanvasRenderingContext2D, W: number, H: number, f: Frame, s: ClubState) {
   const px = W / 400;   // the board was laid out at 400 px wide
@@ -836,7 +894,8 @@ function drawBoard(g: CanvasRenderingContext2D, W: number, H: number, f: Frame, 
     g.fillStyle = hash(i, 71) < 0.5 ? 'rgba(60,30,10,0.25)' : 'rgba(255,220,160,0.12)';
     g.fillRect(hash(i, 72) * W, hash(i, 73) * H, (2 + hash(i, 74) * 4) * px, (1.5 + hash(i, 75) * 2.5) * px);
   }
-  const P = (k: string) => ({ x: SUSPECT_PINS[k][0] * W, y: SUSPECT_PINS[k][1] * H });
+  const line = s.boardLine;
+  const P = (k: string) => ({ x: lerp(SUSPECT_PINS[k][0], LINE_PINS[k][0], line) * W, y: lerp(SUSPECT_PINS[k][1], LINE_PINS[k][1], line) * H });
   // sticky notes and a scribbled timeline under the photos
   const note = (x: number, y: number, rot: number, color: string, lines: string[]) => {
     g.save(); g.translate(x * W, y * H); g.rotate(rot);
@@ -860,7 +919,8 @@ function drawBoard(g: CanvasRenderingContext2D, W: number, H: number, f: Frame, 
     const A = P(a), B0 = P(b);
     const B = { x: lerp(B0.x, cache.x, smooth(s.boardFocus)), y: lerp(B0.y, cache.y, smooth(s.boardFocus)) };
     const ex = lerp(A.x, B.x, k), ey = lerp(A.y, B.y, k);
-    const sag = (1 - s.boardFocus) * 0.06 * H;
+    // sag while slack; once the line is taut it can twang (a quick vibration the shot decays)
+    const sag = (1 - s.boardFocus) * (1 - clamp(line)) * 0.06 * H + s.boardTwang * 0.035 * H * Math.sin(f.t * 52 + i * 0.7);
     g.strokeStyle = '#7a0816'; g.lineWidth = W * 0.011;
     g.beginPath(); g.moveTo(A.x, A.y); g.quadraticCurveTo((A.x + ex) / 2, (A.y + ey) / 2 + sag, ex, ey); g.stroke();
     g.strokeStyle = '#e0142c'; g.lineWidth = W * 0.007;
@@ -928,5 +988,4 @@ function drawBoard(g: CanvasRenderingContext2D, W: number, H: number, f: Frame, 
     g.beginPath(); g.ellipse(0, 0, W * 0.12, W * 0.135, 0, -Math.PI * 0.6, -Math.PI * 0.6 + Math.PI * 2.15 * ring); g.stroke();
     g.restore();
   }
-  void f;
 }
