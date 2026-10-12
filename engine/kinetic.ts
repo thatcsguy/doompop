@@ -117,7 +117,11 @@ function drawLine(g: CanvasRenderingContext2D, f: Frame, line: Line, li: number,
   }
   const rowH = rows.map(r => Math.max(...r.map(it => it.px)) * 1.12);
   const totalH = rowH.reduce((a, b) => a + b, 0);
-  const ax = lay.x * f.w, ay = lay.y * f.h - shift * lay.size * s * 1.5;
+  // y is the block's centre; a line that wraps to several rows is kept inside a safe margin so its
+  // first (or last) row never runs off the top (or bottom) of the frame
+  const safe = 0.05 * f.h;
+  const cy = totalH < f.h - 2 * safe ? clamp(lay.y * f.h, safe + totalH / 2, f.h - safe - totalH / 2) : lay.y * f.h;
+  const ax = lay.x * f.w, ay = cy - shift * lay.size * s * 1.5;
 
   g.save();
   // the newest two lines read fully; the one above them dims, then scrolls away

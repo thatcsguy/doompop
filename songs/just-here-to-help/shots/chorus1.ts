@@ -249,9 +249,8 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
     held.mesh.rotation.z = -0.06;
     arm.add(held.mesh);
     s.scene.add(arm);
-    const pop = sparkles(6, 0.3, '#ffd166', 5);
     const hearts = sparkles(5, 0.6, '#ff8fa3', 7);
-    s.scene.add(pop.group, hearts.group);
+    s.scene.add(hearts.group);
     const tagAt = new THREE.Vector3();
     return f => {
       const wb = wobble(f.t, 0.03, 2);
@@ -288,8 +287,6 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
       tag.mesh.visible = slap;
       tag.write(f, clamp(wk));
       bunch(f, pawAt(s.clawd, 0, new THREE.Vector3()), false);
-      pop.group.position.set(tagAt.x, tagAt.y - 0.05, tagAt.z + 0.3);
-      pop.update(f.t - (tWrite1 + 0.08), 0.4);
       hearts.group.position.set(tagAt.x + 0.15, tagAt.y + 1.15, tagAt.z + 0.25);
       hearts.update(f.t - (tWrite1 + 0.15), 0.8);
     };

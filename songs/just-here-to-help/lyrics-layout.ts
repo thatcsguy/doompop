@@ -100,7 +100,7 @@ export const KINETIC: KineticSpec = {
     65: { x: 0.05, y: 0.86, align: 'left', size: 84, hold: 0.05, words: { 3: { color: GREEN, scale: 1.3 } } },
     66: { x: 0.95, y: 0.86, align: 'right', size: 84, hold: 0.05, words: { 2: { color: GREEN, scale: 1.35, shake: 0.5 } } },
     67: { y: 0.86, size: 88, hold: 0.05, words: { 3: { color: GOLD, scale: 1.4, anim: 'stamp' } } },
-    68: { y: 0.86, size: 92, hold: 0, exit: 'shrink', words: { 3: { color: RED, scale: 1.5, anim: 'stamp', shake: 0.6 } } },
+    68: { y: 0.24, size: 92, hold: 0, exit: 'shrink', words: { 3: { color: RED, scale: 1.5, anim: 'stamp', shake: 0.6 } } },
     // bridge part 4: the chat box, nobody, the button
     69: { y: 0.27, size: 84, anim: 'type', hold: 0, exit: 'fade', words: { 3: { color: BLUE, scale: 1.2 } } },
     70: { y: 0.84, size: 110, anim: 'drop', hold: 0, exit: 'fade', words: { 0: { color: '#5a6fb0' }, 2: { color: '#7a6a5e', scale: 1.15 } } },
@@ -117,7 +117,7 @@ export const KINETIC: KineticSpec = {
     80: { x: 0.05, y: 0.14, align: 'left', size: 84, maxWidth: 0.5, hold: 0.1, words: { 2: { color: '#8a8784' }, 4: { scale: 1.2, shake: 0.6 } } },
     81: { y: 0.88, size: 88, hold: 0.2, words: { 3: { color: ORANGE, scale: 1.35, shake: 0.6 } } },
     82: { y: 0.16, size: 92, hold: 0, exit: 'shrink', words: { 2: { shake: 0.9 } } },
-    83: { y: 0.85, size: 120, anim: 'drop', hold: 0.6, exit: 'fade', color: '#fffaf0', outline: '#2b1d16', shadow: 'rgba(0,0,0,0.35)' },
+    83: { y: 0.14, size: 120, anim: 'drop', hold: 0.6, exit: 'fade', color: '#fffaf0', outline: '#2b1d16', shadow: 'rgba(0,0,0,0.35)' },
     84: { y: 0.84, size: 88, anim: 'wave', hold: 0.8, exit: 'fade', color: '#fffaf0', outline: '#2b1d16', words: { 4: { scale: 1.3 } } },
     // outro: quiet, typed, top left, while the credits roll on the right
     85: { x: 0.05, y: 0.14, align: 'left', size: 64, anim: 'type', hold: 0.2, exit: 'fade', color: '#4a4440' },

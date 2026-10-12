@@ -141,9 +141,22 @@ export function bridge3Shots(audio: AudioData, lyrics: LyricsData, start: number
     const to = V((hash(k, 976) - 0.5) * 1.6, 1.7 + hash(k, 977) * 0.9, 1.9 + k * 0.02);
     BUB.push({ t, from: V(to.x * 6, 6, to.z), to, w: 1.6, h: 0.95, tail: 't', glyph: GLYPHS[k % GLYPHS.length][0], color: GLYPHS[k % GLYPHS.length][1] });
   }
-  const withBubbles = (r: { scene: THREE.Scene }) => {
-    const bs = BUB.map(b => { const s = speechBubble(b); r.scene.add(s.g); return s; });
-    return (t: number) => bs.forEach(b => b.update(t));
+  // the four orders are sung words, so their bubbles stay readable: each one is nudged inside the
+  // frame (its tail may still point off-screen, toward whoever is giving the order)
+  const keepInFrame = (g: THREE.Object3D, w: number, h: number, cam: THREE.PerspectiveCamera) => {
+    cam.updateMatrixWorld();
+    const p = v3.copy(g.position).applyMatrix4(cam.matrixWorldInverse);
+    const halfH = -p.z * Math.tan((cam.fov * Math.PI) / 360), halfW = halfH * cam.aspect, sc = g.scale.x, m = 0.12;
+    p.x = clamp(p.x, -halfW + (w * sc) / 2 + m, halfW - (w * sc) / 2 - m);
+    p.y = clamp(p.y, -halfH + (h * sc) / 2 + m, halfH - (h * sc) / 2 - m);
+    g.position.copy(p.applyMatrix4(cam.matrixWorld));
+  };
+  const withBubbles = (r: { scene: THREE.Scene; camera: THREE.PerspectiveCamera }) => {
+    const bs = BUB.map(b => { const s = speechBubble(b); r.scene.add(s.g); return { s, b }; });
+    return (t: number) => bs.forEach(({ s, b }) => {
+      s.update(t);
+      if (b.words && s.g.visible) keepInFrame(s.g, b.w, b.h, r.camera);
+    });
   };
   const latest = (t: number) => BUB.filter(b => b.t <= t).sort((a, b) => b.t - a.t)[0];
   const overwhelmed: Mood = { ...MOODS.stressed, sweat: 1, jitter: 0.6 };
