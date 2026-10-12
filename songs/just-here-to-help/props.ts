@@ -521,8 +521,10 @@ export function popup(kind: PopupKind, seed = 0, w = 1.0) {
 export function tinyAlert(r = 0.16) {
   const g = new THREE.Group();
   const fillMat = ownMat('#e0453a');
-  const halo = glow(r * 2.6, '#ff5a4a', 0.0);
+  const halo = glow(r * 2.0, '#ff5a4a', 0.0);
   halo.position.z = -0.01;
+  (halo.material as THREE.MeshBasicMaterial).depthTest = false; // a glow, never cut by the floor it lies on
+  halo.renderOrder = 1;
   const disc = inkedCircle(r, fillMat, r * 0.22);
   const mark = staticPlane(r * 2, r * 2, 400, (c, W, H) => {
     c.fillStyle = '#ffffff'; c.font = `900 ${H * 0.72}px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
@@ -534,7 +536,7 @@ export function tinyAlert(r = 0.16) {
     /** on 0..1: dim to bright red, with a soft glow when bright. */
     blink(on: number) {
       fillMat.color.set('#7a2a26').lerp(new THREE.Color('#ff4a3d'), clamp(on));
-      (halo.material as THREE.MeshBasicMaterial).opacity = clamp(on) * 0.3;
+      (halo.material as THREE.MeshBasicMaterial).opacity = clamp(on) * 0.25;
     },
   });
 }

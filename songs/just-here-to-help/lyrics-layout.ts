@@ -2,7 +2,7 @@
 // data/lyrics.json). Each layout puts the line in its shot's empty space. Word keys are 0-based.
 import type { KineticSpec } from '../../engine/kinetic';
 
-const ORANGE = '#d2603f', GREEN = '#2f8f55', RED = '#d6453d', GOLD = '#e39a2d';
+const ORANGE = '#d2603f', GREEN = '#2f8f55', RED = '#d6453d', GOLD = '#e39a2d', BLUE = '#3f86c9', PURPLE = '#7b4fa0';
 
 export const KINETIC: KineticSpec = {
   base: { size: 84, anim: 'pop', y: 0.16 },
@@ -35,5 +35,24 @@ export const KINETIC: KineticSpec = {
     18: { y: 0.88, size: 80, anim: 'slide', words: { 4: { color: ORANGE, scale: 1.3 } } },
     19: { x: 0.96, y: 0.3, align: 'right', size: 80, maxWidth: 0.36, words: { 4: { color: GOLD, scale: 1.35, shake: 0.5 } } },
     20: { y: 0.13, size: 100, anim: 'wave', maxWidth: 0.9, words: { 4: { color: ORANGE, scale: 1.3 } } },
+    // verse 2: the server room (shots/verse2.ts)
+    21: { x: 0.05, y: 0.13, align: 'left', size: 84, maxWidth: 0.62, words: { 3: { color: ORANGE, scale: 1.3 }, 7: { color: GOLD, scale: 1.45, anim: 'stamp', shake: 0.6 } } },
+    22: { x: 0.64, y: 0.11, size: 80, maxWidth: 0.66, anim: 'slide', words: { 3: { color: GREEN, scale: 1.3 }, 6: { color: GOLD, scale: 1.45, anim: 'stamp' } } },
+    23: { x: 0.05, y: 0.14, align: 'left', size: 84, maxWidth: 0.4, words: { 1: { color: RED, shake: 0.7 }, 4: { color: RED }, 5: { color: RED, scale: 1.35, anim: 'stamp' } } },
+    24: { y: 0.9, size: 84, anim: 'slide', words: { 3: { color: ORANGE, scale: 1.3 }, 7: { color: GOLD, scale: 1.45, anim: 'stamp' } } },
+    25: { y: 0.13, size: 84, maxWidth: 0.9, words: { 1: { color: GREEN }, 3: { color: BLUE }, 4: { color: GOLD, scale: 1.4, anim: 'stamp' }, 6: { color: PURPLE } } },
+    26: { x: 0.95, y: 0.13, align: 'right', size: 88, maxWidth: 0.42, hold: 0, words: { 0: { color: ORANGE, scale: 1.35, anim: 'stamp' }, 4: { color: '#7a6a5e', shake: 0.6 } } },
+    // "Don't wake us up, just fix yourself" is said by the sleepers, in speech bubbles
+    27: { skip: [0, 1, 2, 3, 4, 5, 6] },
+    28: { x: 0.95, y: 0.42, align: 'right', size: 84, maxWidth: 0.36, anim: 'wave', hold: 0.15, words: { 2: { color: '#7a6a5e' }, 5: { color: ORANGE, scale: 1.35 } } },
+    // the montage: one line per shot, quick, jumping around the frame
+    29: { x: 0.95, y: 0.13, align: 'right', size: 92, hold: 0.05, words: { 3: { color: '#e3a882', scale: 1.35, anim: 'stamp' } } },
+    30: { y: 0.84, size: 92, hold: 0.05, words: { 1: { color: BLUE, scale: 1.25 }, 3: { color: ORANGE, scale: 1.3, anim: 'stamp' } } },
+    31: { x: 0.05, y: 0.14, align: 'left', size: 92, hold: 0.05, words: { 3: { color: BLUE, scale: 1.35 } } },
+    32: { x: 0.06, y: 0.86, align: 'left', size: 92, hold: 0.05, words: { 3: { color: GREEN, scale: 1.4, anim: 'stamp' } } },
+    33: { x: 0.96, y: 0.13, align: 'right', size: 84, maxWidth: 0.4, hold: 0.05, words: { 3: { color: GOLD, scale: 1.3 } } },
+    34: { x: 0.96, y: 0.87, align: 'right', size: 84, maxWidth: 0.4, hold: 0.05, words: { 3: { color: RED, scale: 1.35, anim: 'stamp' } } },
+    35: { x: 0.96, y: 0.13, align: 'right', size: 84, maxWidth: 0.4, hold: 0.05, words: { 3: { color: GOLD, scale: 1.2, shake: 0.4 } } },
+    36: { x: 0.05, y: 0.15, align: 'left', size: 92, maxWidth: 0.5, hold: 0, words: { 2: { color: GREEN, scale: 1.3, anim: 'stamp' }, 3: { color: '#8a8079', scale: 0.9 } } },
   },
 };
