@@ -478,9 +478,27 @@ export class Field {
   private pupils: THREE.Mesh[] = [];
   private lids: THREE.Mesh[] = [];
   private rim = new Rim();
+  /** Little stick arms, only for the final chorus (off by default, so earlier shots are unchanged). */
+  showArms = false;
+  private arms: THREE.Group[] = [];
+  /** Where a held prop goes (the right hand, in the right arm's frame: +x runs along the arm). */
+  readonly hand = new THREE.Group();
+  private grin: THREE.Group;
 
   constructor() {
     this.root.add(this.body);
+    for (const side of [-1, 1]) {
+      const pivot = new THREE.Group();
+      pivot.position.set(side * 0.26, 0.3, -0.012);
+      const arm = inkedRect(0.2, 0.05, 0.02, '#e0c56a', 0.02);
+      arm.position.x = side * 0.1;
+      const mitt = inkedCircle(0.04, '#e0c56a', 0.018);
+      mitt.position.set(side * 0.2, 0, 0.002);
+      pivot.add(arm, mitt);
+      if (side > 0) { this.hand.position.set(0.2, 0, 0.01); pivot.add(this.hand); }
+      this.body.add(pivot);
+      this.arms.push(pivot);
+    }
     for (const side of [-1, 1]) {
       const leg = inkedRect(0.05, 0.12, 0.02, '#e0c56a', 0.02);
       leg.position.set(side * 0.1, 0.06, -0.01);
@@ -511,6 +529,13 @@ export class Field {
       this.pupils.push(pupil);
       this.lids.push(lid);
     }
+    // a guilty little grin, lopsided, across the top of the tag under the eyes (hidden at mouth 0)
+    this.grin = new THREE.Group();
+    this.grin.add(shapeMesh(arcShape(0.075, 0.045, Math.PI * 1.12, Math.PI * 1.9), INK, 0.014, 12));
+    this.grin.add(shapeMesh(arcShape(0.075, 0.016, Math.PI * 1.2, Math.PI * 1.55), '#ffffff', 0.016, 8));
+    this.grin.position.set(0.03, 0.445, 0);
+    this.grin.rotation.z = 0.12;
+    this.body.add(this.grin);
   }
 
   set(s: SuspectState, t: number) {
@@ -523,5 +548,8 @@ export class Field {
     const shut = Math.max(blink, clamp(1 - s.open));
     this.lids.forEach(l => { l.visible = shut > 0.05; l.scale.y = shut; l.position.y = 0.6 - shut * 0.04; });
     this.rim.set(s.rim, t);
+    this.arms.forEach((a, i) => { a.visible = this.showArms; a.rotation.z = i ? s.armR : -s.armL; });
+    this.grin.visible = s.mouth > 0.05;
+    this.grin.scale.set(lerp(0.6, 1.15, clamp(s.mouth)), lerp(0.5, 1, clamp(s.mouth)), 1);
   }
 }

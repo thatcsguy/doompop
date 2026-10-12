@@ -13,9 +13,10 @@ import type { Frame } from '../../engine/types';
 import { INK, arcShape, canvasPlane, circleShape, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh, staticPlane } from '../../engine/flat';
 import { clamp, easeOutCubic, lerp, smooth } from '../../engine/ease';
 import { hash, noise1 } from '../../engine/rng';
-import { CRT_FONT, PAL, SIGN_FONT, TERM_FONT, UI_FONT, beamTexture, cutout, glowMat, lightMat, ownGlow, radialTexture, setGlow, solid } from './look';
+import { CRT_FONT, DISCO_FONT, PAL, SIGN_FONT, TERM_FONT, UI_FONT, beamTexture, cutout, glowMat, lightMat, ownGlow, radialTexture, setGlow, solid } from './look';
 import { Dancer, dancePose, frozenPose, outfit, type Body } from './people';
 import { ROUTE } from './handler-path';
+import { mixWhite } from './lyrics-disco';
 
 export const FLOOR = { nx: 14, nz: 10, x0: -7, z0: -7.5, tile: 1 };
 export const WALL_Z = -10;
@@ -40,7 +41,7 @@ export function tileCenter(ix: number, iz: number) {
 export interface TileLight { color: THREE.ColorRepresentation; power: number }
 export type Painter = (ix: number, iz: number, f: Frame) => TileLight;
 
-export type TermMode = 'off' | 'boot' | 'logs' | 'grep' | 'trace' | 'sync' | 'route' | 'error' | 'no' | 'tests' | 'json';
+export type TermMode = 'off' | 'boot' | 'logs' | 'grep' | 'trace' | 'sync' | 'route' | 'error' | 'no' | 'tests' | 'json' | 'graphs' | 'credits';
 
 export interface ClubState {
   floor: Painter;
@@ -79,6 +80,7 @@ export interface ClubState {
   boardPath?: number;       // chorus 2: the handler path's photo slapped on (0..1, overshoots as it pops)
   boardRetarget?: number;   // chorus 2: the strings' far ends swing from the Cache to that photo, 0..1
   blackout: number;         // house lights down (the pause): neon, signs, bar, screens, crowd, 0..1
+  credits?: number[];       // the end credits over the terminal wall: when each line switches on
 }
 
 /** Production is down: dead floor with red error tiles that pulse on the beat. */
@@ -148,6 +150,8 @@ export class Club {
   private wallWash!: THREE.MeshBasicMaterial;
   private terms!: ReturnType<typeof canvasPlane<{ f: Frame; s: ClubState }>>;
   private termMat!: THREE.MeshBasicMaterial;
+  private credits!: ReturnType<typeof canvasPlane<{ f: Frame; s: ClubState }>>;
+  private creditsMat!: THREE.MeshBasicMaterial;
   private meterNeedle!: THREE.Group;
   private meterRed!: THREE.MeshBasicMaterial;
   private records: THREE.Group[] = [];
@@ -363,6 +367,11 @@ export class Club {
     });
     cutout(bezels);
     this.add(bezels, TW.x, TW.y, WALL_Z + 0.24);
+    // the end credits, in front of the bezels
+    this.credits = canvasPlane(TW.w, TW.h, 110, (g, st: { f: Frame; s: ClubState }, W, H) => drawCredits(g, W, H, W / TW.w, st.f.t, st.s.credits ?? []));
+    this.creditsMat = this.credits.mesh.material as THREE.MeshBasicMaterial;
+    this.credits.mesh.position.set(TW.x, TW.y, WALL_Z + 0.28);
+    this.root.add(this.credits.mesh);
 
     // speaker stacks either side of the booth, woofers pump on the kick
     for (const side of [-1, 1]) {
@@ -738,6 +747,12 @@ export class Club {
     // booth
     this.terms.update({ f, s });
     this.termMat.color.setScalar((s.terms === 'off' ? 1 : 1.7) * lerp(0.2, 1, up));
+    const credits = s.credits ?? [];
+    this.credits.mesh.visible = credits.some(at => t >= at) && up > 0.02;
+    if (this.credits.mesh.visible) {
+      this.credits.update({ f, s });
+      this.creditsMat.color.setScalar(1.08 * up);
+    }
     const kick = f.clock.kick(t, 0.1);
     this.woofers.forEach(w => w.scale.setScalar(1 + 0.06 * kick));
     this.meterNeedle.rotation.z = lerp(0.95, -0.95, clamp(s.meter)) - (s.meterOver ?? 0) + Math.sin(t * 23) * 0.015;
@@ -828,6 +843,81 @@ function drawTests(g: CanvasRenderingContext2D, x: number, y: number, w: number,
   }
 }
 
+/** Error-rate graphs (the 'graphs' mode): a jagged red line scrolling by on every screen. As
+ *  `flat` goes 0..1 it drops flat along the bottom, the newest end first, and turns green. */
+function drawGraphs(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, lineH: number, pad: number, i: number, dt: number, flat: number) {
+  const k = clamp(flat);
+  g.font = `400 ${lineH * 0.8}px ${CRT_FONT}`;
+  g.fillStyle = '#7f86ad';
+  g.fillText('errors/s  /checkout', x + pad, y + pad * 0.6);
+  const rate = Math.round(lerp(31 + 11 * hash(i, Math.floor(dt * 5), 71), 0, smooth(clamp(k * 1.5 - 0.4))));
+  const label = rate === 0 ? '0  ok' : String(rate);
+  g.fillStyle = rate === 0 ? '#45ff8a' : '#ff3240';
+  g.fillText(label, x + w - pad - g.measureText(label).width, y + pad * 0.6);
+  const top = y + pad + lineH * 1.25, bot = y + h - pad, left = x + pad, right = x + w - pad;
+  g.strokeStyle = 'rgba(127,134,173,0.2)'; g.lineWidth = 1;
+  for (let r = 0; r <= 3; r++) { const yy = lerp(top, bot, r / 3); g.beginPath(); g.moveTo(left, yy); g.lineTo(right, yy); g.stroke(); }
+  g.save(); g.beginPath(); g.rect(left, top - lineH * 0.3, right - left, bot - top + lineH * 0.3); g.clip();
+  const N = 30, scroll = dt * 7 + i * 11, n0 = Math.floor(scroll), fr = scroll - n0;
+  const pt = (j: number): [number, number, number] => {
+    const u = (j - fr) / N, n = n0 + j;
+    const spike = hash(n, i, 73) < 0.14 ? 0.3 : 0;
+    const v0 = 0.35 + 0.3 * hash(n, i, 72) + spike;
+    const fl = smooth(clamp((k - (1 - u) * 0.6) / 0.4));
+    return [lerp(left, right, u), lerp(bot, top, lerp(v0, 0.04 + 0.02 * hash(n, i, 74), fl)), fl];
+  };
+  g.lineCap = 'round'; g.lineJoin = 'round';
+  for (const [lw, a] of [[lineH * 0.42, 0.22], [lineH * 0.14, 1]] as const) {
+    g.lineWidth = lw; g.globalAlpha = a;
+    let prev = pt(0);
+    for (let j = 1; j <= N + 1; j++) {
+      const p = pt(j);
+      g.strokeStyle = (prev[2] + p[2]) / 2 > 0.5 ? '#45ff8a' : '#ff3240';
+      g.beginPath(); g.moveTo(prev[0], prev[1]); g.lineTo(p[0], p[1]); g.stroke();
+      prev = p;
+    }
+  }
+  g.globalAlpha = 1;
+  g.restore();
+}
+
+/** The end credits: neon lines over the whole terminal wall, across the bezels like a projection,
+ *  each switching on at its time (ClubState.credits) with a stutter and then humming. */
+const CREDITS: { text: string; size: number; color: string; y: number }[] = [
+  { text: 'THE SMOKING GUN', size: 0.72, color: PAL.gold, y: 1.45 },
+  { text: 'Music by Suno', size: 0.52, color: PAL.pink, y: 0.4 },
+  { text: 'Animated by Claude Opus 5.5', size: 0.52, color: PAL.cyan, y: -0.45 },
+];
+function drawCredits(g: CanvasRenderingContext2D, W: number, H: number, u: number, t: number, on: number[]) {
+  g.textAlign = 'center'; g.textBaseline = 'middle'; g.lineJoin = 'round';
+  CREDITS.forEach((c, i) => {
+    const at = on[i];
+    if (at === undefined || t < at) return;
+    const dt = t - at;
+    const lit = dt > 0.32 ? 1 : hash(i, Math.floor(dt * 26), 91) < 0.3 + dt * 2 ? 1 : 0.12;
+    const hum = lit * (0.93 + 0.07 * Math.sin(t * 13 + i * 2));
+    let px = c.size * u;
+    g.font = `400 ${px}px ${DISCO_FONT}`;
+    const tw = g.measureText(c.text).width;
+    if (tw > W * 0.92) { px *= (W * 0.92) / tw; g.font = `400 ${px}px ${DISCO_FONT}`; }
+    const x = W / 2, y = H / 2 - c.y * u;
+    g.globalAlpha = hum;
+    g.strokeStyle = PAL.ink; g.lineWidth = px * 0.16;
+    g.strokeText(c.text, x, y);
+    g.shadowColor = c.color; g.shadowBlur = px * 0.5;
+    g.fillStyle = c.color;
+    g.fillText(c.text, x, y);
+    g.shadowBlur = 0;
+    g.fillStyle = mixWhite(c.color, 0.5);
+    g.fillText(c.text, x, y);
+    g.strokeStyle = mixWhite(c.color, 0.85); g.lineWidth = Math.max(1, px * 0.025);
+    g.globalAlpha = hum * 0.6;
+    g.strokeText(c.text, x, y);
+  });
+  g.globalAlpha = 1;
+  g.textAlign = 'left'; g.textBaseline = 'top';
+}
+
 /** One request body in a box: a header, the lines, the lit line and the ticks (the 'json' mode). */
 function drawRequest(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, u: number, prod: boolean, s: ClubState, f: Frame) {
   const head = Math.max(0.16 * u, h * 0.13);
@@ -906,6 +996,12 @@ function drawTerminals(g: CanvasRenderingContext2D, W: number, H: number, TW: { 
       }
     } else if (mode === 'tests') {
       drawTests(g, x, y, w, h, u, lineH, pad, i, dt, s.termSync);
+    } else if (mode === 'graphs') {
+      drawGraphs(g, x, y, w, h, lineH, pad, i, dt, s.termSync);
+    } else if (mode === 'credits') {
+      // under the credits: the graphs, flat and green, turned down
+      drawGraphs(g, x, y, w, h, lineH, pad, i, f.t - 157.4, 1);
+      g.fillStyle = 'rgba(2,8,6,0.5)'; g.fillRect(x, y, w, h);
     } else if (mode === 'logs' || mode === 'grep') {
       const speed = mode === 'grep' ? 14 : 4;
       const scroll = dt * speed + i * 3.7 + s.termOffset;

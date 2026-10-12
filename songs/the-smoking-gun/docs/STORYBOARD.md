@@ -100,6 +100,8 @@ Draft for Patrick's approval, one row per lyric line, following [TREATMENT.md](T
 | — | 2:02.9 | [Pause] | Record scratch, freeze, spotlight, crash zoom. |
 | 48 | 2:03.8 ~ | The smoking gun (held to 2:12) | The spotlight lands on the misplaced path, which is holding the smoking gun. GOTCHA. Then, as the note holds, the camera drifts along the path: it leads straight back behind the Cache, where the tiny Field is hiding. Clawd doesn't notice. The dancers do. |
 
+**As built (2026-10-12).** Clawd slams the handler-path coil from verse 2 down on the floor and it unspools right across it; everything lines up on it (a second gold tag on the timeline that he moonwalks back to, two arrows on one tile of it, every screen tracing its route, its photo slapped on the board as the Cache's gets a red X). In the pause the spotlight runs along the cable into the dark to its head, reared up like a cobra with the smoking gun on one prong: GOTCHA, giant cuffs. On the held note the camera follows the cable back the other way to the tiny Field hiding behind the Cache, tied to its tail end. The dancers see it; Clawd, eyes shut mid-victory-dance, doesn't.
+
 ## Break (2:12.3 to 2:19.2, instrumental)
 
 | # | Time | Line | Shot |
@@ -119,6 +121,8 @@ Draft for Patrick's approval, one row per lyric line, following [TREATMENT.md](T
 | 55 | 2:30.6 ~ | I run the regression suite once more | BOOTH. He slams a big red RUN button. Test names scroll on every terminal. |
 | 56 | 2:33.1 ~ | And everything stays green | FLOOR. The tiles flip to green in a wave from his feet out to the walls. |
 
+**As built (2026-10-12).** As the rows say, with: Clawd perched on a bar stool for 49 (his line in a speech bubble); the bomb dome is a glass bell with a cartoon KABOOM star that stays inside it; the seam opens on a girder full of glowing wiring; RUN is in the booth; on "green" a green wave rolls out from his feet. Prod stays down (red tiles, frozen dancers) until the final chorus.
+
 ## Final chorus (the real culprit, then the party)
 
 | # | Time | Line | Shot |
@@ -135,6 +139,20 @@ Draft for Patrick's approval, one row per lyric line, following [TREATMENT.md](T
 | 65 | 2:57.4 ~ | The smoking gun (held to 3:04) | Clawd takes the gun, blows the smoke off it and spins it like a mic. Confetti. The whole club dances, the Field included. Credits start rolling up the wall in neon. |
 | 65a | 3:04.4 | (instrumental) | FLOOR. Wide shot of the full party under the disco ball. Credits: "Music by Suno", "Animated by Claude Opus 5.5". |
 | 66 | 3:10.7 ~ | The smoking gun | The lights go down to one spotlight on Clawd dancing alone under the ball. He blows smoke off his finger-gun and winks. Black. |
+
+**As built (2026-10-12).** Changes from the rows above:
+
+- 57: every screen behind the booth is an error graph in red; on "flattening" they drop flat and go green (the light on Clawd goes green too) and the ball spins up.
+- 58: the floor is still green from the regression run and pops back into disco colours in batches on the kicks; the frozen dancers thaw with a gold pop each. One tile pops red and keeps a little red warning sign bobbing over it.
+- 59: top down on the decks: the record drops onto the platter on "same", Clawd's paw brings the arm over (shaking, a bead of sweat) and the needle lands on "it".
+- 60: the club as a cut-away building of four dance floors (EDGE, WEB, API, DB); the request drops down the shaft and each floor lights up as it passes.
+- 61: the patch is a sticking plaster with a face, where the bridge's seam was. A stampede runs over it; one dancer lands on it with both feet on "survived"; on "production" it cheers, ends flapping.
+- 62: Clawd points at the last red tile, leaps and comes down on it on "done": it pops into colour, CASE CLOSED.
+- 63: he and the Chief strut over to the Cache (sulking since chorus 2) and lift it like a curtain over the held "it". Smoke curls out from under it and two eyes open in the dark under there.
+- Pause and 64: the band drops out about a quarter second after the held note: freeze, black. A spotlight clicks on during the a cappella "The smo-king": the tiny Field, holding the smoking gun, eyes darting. The band and "gun" land together: lights on, crash zoom, a guilty grin, GOTCHA.
+- 64 to 65: the Field tosses Clawd the gun; he blows the smoke off and twirls it into a mic; confetti cannons fire and the whole club dances (the Field riding on the Cache's head). He sings 65 into the gun-mic at the booth. Line 65's real timing is 3:02.9 to 3:05.3 (the aligner had stretched it back to 2:57.4; fixed in analysis.json).
+- 65a and credits: no rolling credits. Over the held ad-lib the camera tilts up the wall as THE SMOKING GUN lights up across the terminal wall in neon; on the wide, "Music by Suno" and then (on the last confetti volley) "Animated by Claude Opus 5.5" switch on under it.
+- 66: the house goes down to the ball and a spotlight; through the line Clawd raises a finger-gun, and on the band's very last hit (3:11.85, after a breath of silence) he fires it: the floor flashes once. He blows the smoke off the tip, his shades glint, and an iris closes on his face over the ring-out. Black for the last half second.
 
 ## Open questions for Patrick
 

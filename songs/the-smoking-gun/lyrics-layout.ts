@@ -72,5 +72,17 @@ export const DISCO_LYRICS: DiscoSpec = {
     54: { x: 0.95, y: 0.13, align: 'right', color: PAL.pink, maxWidth: 0.7, words: { 1: { color: PAL.gold, scale: 1.15 }, 2: { color: PAL.cyan }, 4: { anim: 'stamp', color: '#9dfff0', scale: 1.4 } } },
     55: { ...TERM, x: 0.05, y: 0.915, align: 'left', maxWidth: 0.9, words: { 1: { color: PAL.red, scale: 1.2 }, 3: { color: '#d8ffe6' }, 4: { color: '#d8ffe6' } } },
     56: { x: 0.5, y: 0.14, color: PAL.cyan, size: 104, hold: 0.0, words: { 1: { scale: 1.1 }, 3: { anim: 'stamp', color: PAL.green, scale: 1.8, core: 0.45 } } },
+    // final chorus: the good news in green and gold; the three "smoking gun" lines keep the
+    // chorus look (pale "smoking", a big stamped "gun") and go where each shot has room
+    57: { x: 0.5, y: 0.12, color: PAL.cyan, words: { 3: { color: PAL.gold, scale: 1.1 }, 4: { anim: 'slide', color: PAL.green, scale: 1.3, core: 0.45 } } },
+    58: { x: 0.5, y: 0.13, color: PAL.pink, words: { 1: { color: PAL.red, core: 0.35 }, 4: { anim: 'stamp', color: PAL.green, scale: 1.45, core: 0.45 } } },
+    59: { x: 0.5, y: 0.9, size: 86, maxWidth: 0.95, color: PAL.pink, words: { 1: { color: PAL.gold }, 2: { color: PAL.cyan, scale: 1.1 }, 4: { anim: 'stamp', color: PAL.red, scale: 1.3, core: 0.3 } } },
+    60: { x: 0.5, y: 0.1, color: PAL.cyan, words: { 1: { anim: 'slide' }, 3: { anim: 'stamp', color: PAL.gold, scale: 1.35 } } },
+    61: { x: 0.5, y: 0.12, color: PAL.pink, words: { 1: { color: PAL.gold, scale: 1.15 }, 2: { shake: 0.4 }, 3: { anim: 'stamp', color: PAL.green, scale: 1.3, core: 0.45 } } },
+    62: { x: 0.5, y: 0.12, color: PAL.violetNeon, words: { 1: { color: PAL.red, core: 0.35 }, 4: { anim: 'pop', color: PAL.gold, scale: 1.35 } } },
+    63: { x: 0.5, y: 0.12, color: PAL.gold, hold: 0.1, words: { 2: { color: PAL.cyan }, 3: { anim: 'stamp', color: PAL.pink, scale: 1.3 }, 4: { scale: 1.45, shake: 0.6 } } },
+    64: { x: 0.5, y: 0.86, color: PAL.gold, size: 120, tilt: -0.03, words: { 1: { color: '#e6e0f2', core: 0.75 }, 2: { anim: 'stamp', scale: 1.9, color: PAL.red, core: 0.3, shake: 0.4 } } },
+    65: { x: 0.5, y: 0.11, color: PAL.gold, size: 104, tilt: -0.03, words: { 1: { color: '#e6e0f2', core: 0.75 }, 2: { anim: 'stamp', scale: 1.6, core: 0.5 } } },
+    66: { x: 0.5, y: 0.13, color: PAL.pink, size: 110, tilt: -0.03, words: { 1: { color: '#e6e0f2', core: 0.75 }, 2: { anim: 'stamp', scale: 1.7, color: PAL.gold, core: 0.5 } } },
   },
 };
