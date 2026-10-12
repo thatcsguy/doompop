@@ -579,7 +579,8 @@ export function finaleShots(audio: AudioData, lyrics: LyricsData): Shot[] {
         c64cam.updateMatrixWorld();
         drawSpotlight(g, f.w, f.h, spotScreen(c64cam, f.w, f.h, FIELD_AT, 0.6, 1.0, LAMP), 0.96, 1);
       } else if (f.t < THE64) {
-        g.fillStyle = 'rgba(2,1,8,0.92)';
+        // fully black: the overlay blends in linear light, so even 0.9 lets the scene show through
+        g.fillStyle = '#020108';
         g.fillRect(0, 0, f.w, f.h);
       }
       drawStamp(g, f, GUN + 0.04, 'GOTCHA', { x: 0.5, y: 0.2, rot: -0.1, size: 150 });
