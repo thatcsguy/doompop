@@ -95,7 +95,7 @@ export function hop(t: number, t0: number, t1: number, a: number, b: number, hei
 }
 
 /** A faceless capsule person, side-on. Origin at the seat. Call pose() every frame. */
-export function person(color = PAL.person, shade = PAL.personShade) {
+export function person(color = PAL.person, shade = PAL.personShade, hairColor = '#4a3426') {
   const root = new THREE.Group();
   const body = new THREE.Group();
   const torso = inkedRect(2.2, 3.6, 1.1, ownMat(color), 0.08);
@@ -108,7 +108,7 @@ export function person(color = PAL.person, shade = PAL.personShade) {
   hair.absarc(0, 0, 1.13, Math.PI * 0.15, Math.PI * 1.05, true);
   hair.lineTo(0.2, -0.1);
   hair.closePath();
-  const hairMesh = shapeMesh(hair, '#4a3426', 0.01);
+  const hairMesh = shapeMesh(hair, hairColor, 0.01);
   hairMesh.position.set(0, 4.55, 0);
   hairMesh.rotation.z = -0.35;
   const collar = inkedRect(1.6, 0.45, 0.2, '#f2efe8', 0.06);

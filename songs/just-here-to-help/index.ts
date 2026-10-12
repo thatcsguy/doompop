@@ -4,10 +4,12 @@ import lyrics from './data/lyrics.json';
 import audioUrl from './audio/song.wav?url';
 import { slate } from '../../engine/shots/slate';
 import { verse1Shots } from './shots/verse1';
+import { chorus1Shots } from './shots/chorus1';
 import { DAY_LYRICS } from './world';
 import { KINETIC } from './lyrics-layout';
 
 const verse1 = verse1Shots(audio, lyrics);
+const chorus1 = chorus1Shots(audio, lyrics, verse1[verse1.length - 1].end);
 
 export default defineSong({
   slug: 'just-here-to-help',
@@ -19,6 +21,7 @@ export default defineSong({
   kinetic: KINETIC,
   shots: [
     ...verse1,
-    slate({ id: 'slate', start: verse1[verse1.length - 1].end, end: audio.duration, title: "I'm Just Here to Help" }),
+    ...chorus1,
+    slate({ id: 'slate', start: chorus1[chorus1.length - 1].end, end: audio.duration, title: "I'm Just Here to Help" }),
   ],
 });
