@@ -62,5 +62,15 @@ export const DISCO_LYRICS: DiscoSpec = {
     46: { x: 0.05, y: 0.13, align: 'left', maxWidth: 0.9, color: PAL.pink, words: { 1: { scale: 1.1 }, 3: { anim: 'stamp', color: PAL.gold, scale: 1.8 } } },
     47: { x: 0.5, y: 0.12, color: PAL.pink, size: 90, hold: 0.06, words: { 3: { scale: 1.1 }, 4: { anim: 'stamp', color: PAL.gold, scale: 1.35 } } },
     48: { x: 0.5, y: 0.85, color: PAL.gold, size: 116, tilt: -0.03, words: { 1: { color: '#e6e0f2', core: 0.75 }, 2: { anim: 'stamp', scale: 1.8, color: PAL.red, core: 0.3, shake: 0.4 } } },
+    // bridge: line 49 is Clawd's speech bubble; the bar lines sit low under the two of them, the
+    // floor and booth lines go where each shot leaves room
+    49: { skip: [0, 1, 2, 3] },
+    50: { x: 0.5, y: 0.13, color: PAL.cyan, words: { 1: { anim: 'stamp', color: PAL.red, scale: 1.3, core: 0.35 }, 4: { color: PAL.gold, scale: 1.15 } } },
+    51: { ...TERM, x: 0.05, y: 0.1, align: 'left', maxWidth: 0.8, words: { 1: { color: '#ff8a5a' }, 2: { color: '#ff8a5a' }, 4: { color: '#d8ffe6', scale: 1.15 } } },
+    52: { x: 0.5, y: 0.87, color: PAL.violetNeon, words: { 3: { color: PAL.cyan, scale: 1.15 }, 4: { shake: 0.4 }, 5: { shake: 0.4 } } },
+    53: { ...TERM, x: 0.05, y: 0.9, align: 'left', maxWidth: 0.86, words: { 3: { color: PAL.gold, scale: 1.1 }, 4: { color: '#d8ffe6' } } },
+    54: { x: 0.95, y: 0.13, align: 'right', color: PAL.pink, maxWidth: 0.7, words: { 1: { color: PAL.gold, scale: 1.15 }, 2: { color: PAL.cyan }, 4: { anim: 'stamp', color: '#9dfff0', scale: 1.4 } } },
+    55: { ...TERM, x: 0.05, y: 0.915, align: 'left', maxWidth: 0.9, words: { 1: { color: PAL.red, scale: 1.2 }, 3: { color: '#d8ffe6' }, 4: { color: '#d8ffe6' } } },
+    56: { x: 0.5, y: 0.14, color: PAL.cyan, size: 104, hold: 0.0, words: { 1: { scale: 1.1 }, 3: { anim: 'stamp', color: PAL.green, scale: 1.8, core: 0.45 } } },
   },
 };

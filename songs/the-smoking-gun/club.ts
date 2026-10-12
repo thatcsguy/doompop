@@ -782,6 +782,52 @@ const SYNC_OWN = ['#2fe2ff', '#45ff8a', '#ffae3d', '#c38bff'];
 /** The checkout request body, as both staging and prod send it (verse 2 compares the two). */
 export const REQUEST_LINES = ['{', '  "cart": 91,', '  "items": [', '    { "sku": "A12", "qty": 2 },', '    { "sku": "C07", "qty": 1 }', '  ],', '  "total": 59.00,', '  "v": 1', '}'];
 
+const TEST_NAMES = ['checkout returns 200', 'cart total sums items', 'handler routes /checkout', 'cache warms on boot', 'retries back off', 'payment is idempotent',
+  'empty cart is a 400', 'staging matches prod', 'session survives deploy', 'logs carry trace ids', 'timeouts under 3s', 'field v is accepted'];
+const TEST_TOTAL = 412;
+
+/** The regression suite (the 'tests' mode): a progress bar, test names ticking green as they
+ *  pass, and with done (0..1) the summary, every screen at once. */
+function drawTests(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, u: number, lineH: number, pad: number, i: number, dt: number, done: number) {
+  const prog = clamp(dt / 1.5 - i * 0.02);
+  g.fillStyle = '#7f86ad';
+  g.font = `400 ${lineH * 0.8}px ${CRT_FONT}`;
+  g.fillText(`suite  ${Math.round(prog * TEST_TOTAL)}/${TEST_TOTAL}`, x + pad, y + pad * 0.6);
+  const by = y + pad * 0.6 + lineH * 0.85;
+  g.fillStyle = 'rgba(127,134,173,0.25)'; g.fillRect(x + pad, by, w - pad * 2, lineH * 0.22);
+  g.fillStyle = '#45ff8a'; g.fillRect(x + pad, by, (w - pad * 2) * prog, lineH * 0.22);
+  const top = by + lineH * 0.5;
+  g.save(); g.beginPath(); g.rect(x, top, w, y + h - top); g.clip();
+  g.font = `400 ${lineH * 0.95}px ${CRT_FONT}`;
+  const scroll = dt * 9 + i * 3.7, n0 = Math.floor(scroll), frac = scroll - n0;
+  const rows = Math.ceil(h / lineH) + 1;
+  for (let r = 0; r < rows; r++) {
+    const n = n0 + r, yy = top + (r - frac) * lineH;
+    // a drawn tick (the CRT font has no check mark)
+    g.strokeStyle = '#45ff8a'; g.lineWidth = Math.max(1.5, lineH * 0.12); g.lineCap = 'round';
+    g.beginPath(); g.moveTo(x + pad, yy + lineH * 0.45); g.lineTo(x + pad + lineH * 0.18, yy + lineH * 0.65); g.lineTo(x + pad + lineH * 0.45, yy + lineH * 0.2); g.stroke();
+    g.fillStyle = '#b9ffd2';
+    g.fillText(TEST_NAMES[Math.floor(hash(n, i, 66) * TEST_NAMES.length)], x + pad + lineH * 0.7, yy);
+    g.fillStyle = 'rgba(127,134,173,0.8)';
+    const ms = `${2 + Math.floor(hash(n, i, 67) * 40)}ms`;
+    g.fillText(ms, x + w - pad - g.measureText(ms).width, yy);
+  }
+  g.restore();
+  if (done > 0) {
+    const k = easeOutCubic(clamp(done));
+    g.fillStyle = `rgba(2,24,12,${0.9 * k})`; g.fillRect(x, y, w, h);
+    g.save();
+    g.translate(x + w / 2, y + h / 2);
+    g.scale(lerp(1.4, 1, k), lerp(1.4, 1, k));
+    g.globalAlpha = k;
+    g.fillStyle = '#45ff8a'; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.font = `400 ${Math.min(h * 0.34, w * 0.2)}px ${CRT_FONT}`;
+    g.fillText(`${TEST_TOTAL} PASSED`, 0, 0);
+    g.restore();
+    g.textAlign = 'left'; g.textBaseline = 'top';
+  }
+}
+
 /** One request body in a box: a header, the lines, the lit line and the ticks (the 'json' mode). */
 function drawRequest(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, u: number, prod: boolean, s: ClubState, f: Frame) {
   const head = Math.max(0.16 * u, h * 0.13);
@@ -858,8 +904,10 @@ function drawTerminals(g: CanvasRenderingContext2D, W: number, H: number, TW: { 
         }
         if (Math.floor(f.t * 2.5) % 2 === 0) g.fillRect(x + pad, y + pad + (n - first) * lineH, lineH * 0.5, lineH * 0.85);
       }
-    } else if (mode === 'logs' || mode === 'grep' || mode === 'tests') {
-      const speed = mode === 'grep' ? 14 : mode === 'tests' ? 8 : 4;
+    } else if (mode === 'tests') {
+      drawTests(g, x, y, w, h, u, lineH, pad, i, dt, s.termSync);
+    } else if (mode === 'logs' || mode === 'grep') {
+      const speed = mode === 'grep' ? 14 : 4;
       const scroll = dt * speed + i * 3.7 + s.termOffset;
       const n0 = Math.floor(scroll), frac = scroll - n0;
       const rows = Math.ceil(h / lineH) + 1;
@@ -874,9 +922,6 @@ function drawTerminals(g: CanvasRenderingContext2D, W: number, H: number, TW: { 
           g.fillStyle = '#8a8fb0'; g.fillText(`:${line}:`, x + pad + fw, yy);
           const lw = g.measureText(`:${line}:`).width;
           g.fillStyle = '#45ff8a'; g.fillText(hash(n, i, 63) < 0.5 ? ' checkout(' : ' handler.run(', x + pad + fw + lw, yy);
-        } else if (mode === 'tests') {
-          g.fillStyle = '#45ff8a';
-          g.fillText(`PASS  test ${(n % 97) + 1}`, x + pad, yy);
         } else {
           const [lvl, col] = LOG_LEVELS[Math.floor(hash(n, i, 64) * LOG_LEVELS.length)];
           g.fillStyle = col; g.fillText(lvl.padEnd(6, ' '), x + pad, yy);
