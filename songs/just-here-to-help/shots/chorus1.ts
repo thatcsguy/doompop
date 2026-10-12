@@ -5,7 +5,7 @@
 import * as THREE from 'three';
 import { defineShot, type Frame, type Shot, type ShotWorld } from '../../../engine/types';
 import type { AudioData, LyricsData } from '../../../engine/song';
-import { MOODS, REST, mixMood, type Clawd, type Pose } from '../../../engine/characters/clawd';
+import { MOODS, REST, mixMood, type Mood, type Pose } from '../../../engine/characters/clawd';
 import { INK, canvasPlane, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh } from '../../../engine/flat';
 import { hash, noise1 } from '../../../engine/rng';
 import { clamp, decay, easeInCubic, easeInOutCubic, easeOutBack, easeOutBounce, easeOutCubic, lerp, smooth, unlerp } from '../../../engine/ease';
@@ -383,101 +383,7 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
   // Chorus 1. C1 "I can make it faster": a conveyor of tickets; he stamps DONE on each one, on the
   // beat, then on every half beat once he speeds up on "faster".
   const stampTimes = [...beatsIn(C.c1 - 1.2, 42.3), ...halfBeatsIn(42.3, C.c2 + 0.01)];
-  const SP = 1.55; // ticket spacing
-  const beltPos = (t: number) => {
-    const T = stampTimes;
-    if (t < T[0]) return SP * (-1 + easeInOutCubic(unlerp(t, T[0] - 0.5, T[0] - 0.04)));
-    let k = 0;
-    while (k + 1 < T.length && T[k + 1] <= t) k++;
-    const next = T[k + 1] ?? T[k] + (T[k] - T[k - 1]);
-    return SP * (k + easeInOutCubic(unlerp(t, T[k] + 0.06, next - 0.03)));
-  };
-  function conveyorSetup(cam: (s: OfficeSet, f: Frame, punch: number) => void) {
-    return (s: OfficeSet) => {
-      const BZ = 2.8, BY = 1.0;
-      const belt = new THREE.Group();
-      belt.add(inkedRect(22, 0.5, 0.06, '#5d6470', 0.07));
-      const lip = shapeMesh(roundedRectShape(22, 0.1, 0.02, 0, 0.2), '#7c8593', 0.004);
-      belt.add(lip);
-      for (const lx of [-7, -2.5, 2.5, 7]) { const leg = inkedRect(0.3, 0.8, 0.04, '#4a505a', 0.05); leg.position.set(lx, -0.6, -0.05); belt.add(leg); }
-      belt.position.set(0, BY - 0.25, BZ - 0.02);
-      s.scene.add(belt);
-      const rollers = Array.from({ length: 14 }, (_, i) => {
-        const r = new THREE.Group();
-        r.add(inkedCircle(0.16, '#b9bfc8', 0.04));
-        r.add(shapeMesh(roundedRectShape(0.26, 0.05, 0.02), INK, 0.006));
-        r.position.set(-10 + i * 1.55, BY - 0.27, BZ + 0.02);
-        s.scene.add(r);
-        return r;
-      });
-      const chev = Array.from({ length: 24 }, () => { const c = shapeMesh(roundedRectShape(0.2, 0.06, 0.02), '#8a93a1', 0); s.scene.add(c); return c; });
-      // the stool Clawd stands on, behind the belt (the stamp in his right paw lands at x = 0)
-      const CX = -0.86, FEET = BY + 0.41;
-      const stool = inkedRect(1.2, 0.7, 0.05, '#c48a55', 0.06);
-      stool.position.set(CX, FEET - 0.35, BZ - 0.6);
-      s.scene.add(stool);
-      const tickets = Array.from({ length: stampTimes.length + 6 }, (_, i) => {
-        const g = new THREE.Group();
-        g.add(inkedRect(1.0, 0.72, 0.03, '#ffffff', 0.05));
-        for (let r = 0; r < 3; r++) g.add(Object.assign(shapeMesh(roundedRectShape(0.6 - r * 0.12, 0.05, 0.02, -0.12 + r * 0.06, 0.18 - r * 0.15), '#c9c0b4', 0.004)));
-        const scrib = shapeMesh(roundedRectShape(0.3, 0.05, 0.02), '#e0504a', 0.005);
-        scrib.position.set(0.25, -0.2, 0); scrib.rotation.z = 0.4 + hash(i, 601);
-        g.add(scrib);
-        const m = doneMark(0.78, DONE_GREEN, i + 3);
-        m.position.set(0.02, 0, 0.012); m.rotation.z = -0.15 + (hash(i, 602) - 0.5) * 0.25;
-        g.add(m);
-        s.scene.add(g);
-        return { g, m };
-      });
-      const stamp = rubberStamp(0.75);
-      s.scene.add(stamp);
-      const lines = speedLines(7, 2.2, 11);
-      s.scene.add(lines.group);
-      const pile = Array.from({ length: 10 }, (_, i) => {
-        const p = inkedRect(1.0, 0.1, 0.02, '#ffffff', 0.03);
-        const m = shapeMesh(roundedRectShape(0.3, 0.06, 0.02), DONE_GREEN, 0.004); p.add(m);
-        p.position.set(7.4 + (hash(i, 611) - 0.5) * 0.2, BY + 0.06 + i * 0.12, BZ);
-        p.rotation.z = (hash(i, 612) - 0.5) * 0.2;
-        s.scene.add(p);
-        return p;
-      });
-      return (f: Frame) => {
-        const sp = beltPos(f.t);
-        tickets.forEach((tk, i) => {
-          const x = sp - i * SP;
-          tk.g.visible = x > -12 && x < 7.2;
-          tk.g.position.set(x, BY + 0.36, BZ + 0.1);
-          tk.g.rotation.z = x > 6.6 ? (x - 6.6) * 0.6 : 0;
-          tk.m.visible = i < stampTimes.length && f.t >= stampTimes[i];
-        });
-        rollers.forEach(r => { r.rotation.z = -sp / 0.16; });
-        chev.forEach((c, i) => { c.position.set(((i * 0.9 + sp) % 21.6) - 10.8, BY - 0.05, BZ + 0.03); });
-        const done = stampTimes.filter(x => f.t >= x + 0.35).length;
-        pile.forEach((p, i) => { p.visible = i < Math.min(done, 10); });
-        // stamp: comes down on each ticket at its stamp time
-        let k = 0;
-        while (k + 1 < stampTimes.length && stampTimes[k + 1] <= f.t + 0.12) k++;
-        const T = stampTimes[k], gap = (stampTimes[k + 1] ?? T + 0.3) - T;
-        const dt = f.t - T, down = Math.min(0.1, gap * 0.35);
-        let hit = 0;
-        if (dt < 0 && dt > -down) hit = Math.pow(1 + dt / down, 2);
-        else if (dt >= 0 && dt < 0.04) hit = 1;
-        else if (dt >= 0.04) hit = 1 - smooth((dt - 0.04) / Math.max(0.08, gap * 0.55));
-        hit = clamp(hit);
-        const punch = decay(f.t - T, 0.08) * (f.t >= T ? 1 : 0);
-        const fast = f.t > 42.23;
-        s.clawd.root.position.set(CX, FEET + (1 - hit) * (fast ? 0.2 : 0.35), BZ - 0.55);
-        s.clawd.setMood(fast ? { ...MOODS.excited, blush: 0.7 } : MOODS.excited, f.t);
-        s.clawd.setPose(pose({ armR: lerp(1.2, 0, hit), armL: lerp(1.6, 0.8, hit), squash: punch * 0.35 - (1 - hit) * 0.15, lean: fast ? Math.sin(f.t * 21) * 0.04 : 0 }));
-        const paw = pawAt(s.clawd, 1, new THREE.Vector3());
-        stamp.position.set(paw.x, Math.max(BY + 0.36, paw.y - 0.645), BZ + 0.3);
-        stamp.scale.set(0.75 * (1 + punch * 0.15), 0.75 * (1 - punch * 0.15), 0.75);
-        lines.group.position.set(-3, BY + 0.4, BZ + 0.5);
-        lines.update(fast ? 0.9 : 0, 1, f.t);
-        cam(s, f, punch);
-      };
-    };
-  }
+  const conveyorSetup = conveyorScene(stampTimes, 42.23);
   const c1 = officeShot('c1-conveyor', C.c1, C.c1b, conveyorSetup((s, f, punch) => {
     const wb = wobble(f.t, 0.03, 6);
     s.aim(-0.6 + wb.x, 2.85 + wb.y, 9.0 - punch * 0.15 - (f.t - C.c1) * 0.4, -0.4, 1.75, 2.4);
@@ -829,4 +735,108 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
 function hop(t: number, t0: number, t1: number, h: number) {
   const k = unlerp(t, t0, t1);
   return k > 0 && k < 1 ? Math.sin(k * Math.PI) * h : 0;
+}
+
+/**
+ * The DONE-stamp conveyor (chorus 1, and again faster in chorus 2): tickets ride a belt and stop
+ * under Clawd's stamp at each of stampTimes; after fastAt he goes manic. Returns a setup factory
+ * taking the camera move.
+ */
+export function conveyorScene(stampTimes: number[], fastAt: number, mood?: (t: number, fast: boolean) => Mood) {
+  const SP = 1.55; // ticket spacing
+  const beltPos = (t: number) => {
+    const T = stampTimes;
+    if (t < T[0]) return SP * (-1 + easeInOutCubic(unlerp(t, T[0] - 0.5, T[0] - 0.04)));
+    let k = 0;
+    while (k + 1 < T.length && T[k + 1] <= t) k++;
+    const next = T[k + 1] ?? T[k] + (T[k] - T[k - 1]);
+    return SP * (k + easeInOutCubic(unlerp(t, T[k] + 0.06, next - 0.03)));
+  };
+  function conveyorSetup(cam: (s: OfficeSet, f: Frame, punch: number) => void) {
+    return (s: OfficeSet) => {
+      const BZ = 2.8, BY = 1.0;
+      const belt = new THREE.Group();
+      belt.add(inkedRect(22, 0.5, 0.06, '#5d6470', 0.07));
+      const lip = shapeMesh(roundedRectShape(22, 0.1, 0.02, 0, 0.2), '#7c8593', 0.004);
+      belt.add(lip);
+      for (const lx of [-7, -2.5, 2.5, 7]) { const leg = inkedRect(0.3, 0.8, 0.04, '#4a505a', 0.05); leg.position.set(lx, -0.6, -0.05); belt.add(leg); }
+      belt.position.set(0, BY - 0.25, BZ - 0.02);
+      s.scene.add(belt);
+      const rollers = Array.from({ length: 14 }, (_, i) => {
+        const r = new THREE.Group();
+        r.add(inkedCircle(0.16, '#b9bfc8', 0.04));
+        r.add(shapeMesh(roundedRectShape(0.26, 0.05, 0.02), INK, 0.006));
+        r.position.set(-10 + i * 1.55, BY - 0.27, BZ + 0.02);
+        s.scene.add(r);
+        return r;
+      });
+      const chev = Array.from({ length: 24 }, () => { const c = shapeMesh(roundedRectShape(0.2, 0.06, 0.02), '#8a93a1', 0); s.scene.add(c); return c; });
+      // the stool Clawd stands on, behind the belt (the stamp in his right paw lands at x = 0)
+      const CX = -0.86, FEET = BY + 0.41;
+      const stool = inkedRect(1.2, 0.7, 0.05, '#c48a55', 0.06);
+      stool.position.set(CX, FEET - 0.35, BZ - 0.6);
+      s.scene.add(stool);
+      const tickets = Array.from({ length: stampTimes.length + 6 }, (_, i) => {
+        const g = new THREE.Group();
+        g.add(inkedRect(1.0, 0.72, 0.03, '#ffffff', 0.05));
+        for (let r = 0; r < 3; r++) g.add(Object.assign(shapeMesh(roundedRectShape(0.6 - r * 0.12, 0.05, 0.02, -0.12 + r * 0.06, 0.18 - r * 0.15), '#c9c0b4', 0.004)));
+        const scrib = shapeMesh(roundedRectShape(0.3, 0.05, 0.02), '#e0504a', 0.005);
+        scrib.position.set(0.25, -0.2, 0); scrib.rotation.z = 0.4 + hash(i, 601);
+        g.add(scrib);
+        const m = doneMark(0.78, DONE_GREEN, i + 3);
+        m.position.set(0.02, 0, 0.012); m.rotation.z = -0.15 + (hash(i, 602) - 0.5) * 0.25;
+        g.add(m);
+        s.scene.add(g);
+        return { g, m };
+      });
+      const stamp = rubberStamp(0.75);
+      s.scene.add(stamp);
+      const lines = speedLines(7, 2.2, 11);
+      s.scene.add(lines.group);
+      const pile = Array.from({ length: 10 }, (_, i) => {
+        const p = inkedRect(1.0, 0.1, 0.02, '#ffffff', 0.03);
+        const m = shapeMesh(roundedRectShape(0.3, 0.06, 0.02), DONE_GREEN, 0.004); p.add(m);
+        p.position.set(7.4 + (hash(i, 611) - 0.5) * 0.2, BY + 0.06 + i * 0.12, BZ);
+        p.rotation.z = (hash(i, 612) - 0.5) * 0.2;
+        s.scene.add(p);
+        return p;
+      });
+      return (f: Frame) => {
+        const sp = beltPos(f.t);
+        tickets.forEach((tk, i) => {
+          const x = sp - i * SP;
+          tk.g.visible = x > -12 && x < 7.2;
+          tk.g.position.set(x, BY + 0.36, BZ + 0.1);
+          tk.g.rotation.z = x > 6.6 ? (x - 6.6) * 0.6 : 0;
+          tk.m.visible = i < stampTimes.length && f.t >= stampTimes[i];
+        });
+        rollers.forEach(r => { r.rotation.z = -sp / 0.16; });
+        chev.forEach((c, i) => { c.position.set(((i * 0.9 + sp) % 21.6) - 10.8, BY - 0.05, BZ + 0.03); });
+        const done = stampTimes.filter(x => f.t >= x + 0.35).length;
+        pile.forEach((p, i) => { p.visible = i < Math.min(done, 10); });
+        // stamp: comes down on each ticket at its stamp time
+        let k = 0;
+        while (k + 1 < stampTimes.length && stampTimes[k + 1] <= f.t + 0.12) k++;
+        const T = stampTimes[k], gap = (stampTimes[k + 1] ?? T + 0.3) - T;
+        const dt = f.t - T, down = Math.min(0.1, gap * 0.35);
+        let hit = 0;
+        if (dt < 0 && dt > -down) hit = Math.pow(1 + dt / down, 2);
+        else if (dt >= 0 && dt < 0.04) hit = 1;
+        else if (dt >= 0.04) hit = 1 - smooth((dt - 0.04) / Math.max(0.08, gap * 0.55));
+        hit = clamp(hit);
+        const punch = decay(f.t - T, 0.08) * (f.t >= T ? 1 : 0);
+        const fast = f.t > fastAt;
+        s.clawd.root.position.set(CX, FEET + (1 - hit) * (fast ? 0.2 : 0.35), BZ - 0.55);
+        s.clawd.setMood(mood ? mood(f.t, fast) : fast ? { ...MOODS.excited, blush: 0.7 } : MOODS.excited, f.t);
+        s.clawd.setPose(pose({ armR: lerp(1.2, 0, hit), armL: lerp(1.6, 0.8, hit), squash: punch * 0.35 - (1 - hit) * 0.15, lean: fast ? Math.sin(f.t * 21) * 0.04 : 0 }));
+        const paw = pawAt(s.clawd, 1, new THREE.Vector3());
+        stamp.position.set(paw.x, Math.max(BY + 0.36, paw.y - 0.645), BZ + 0.3);
+        stamp.scale.set(0.75 * (1 + punch * 0.15), 0.75 * (1 - punch * 0.15), 0.75);
+        lines.group.position.set(-3, BY + 0.4, BZ + 0.5);
+        lines.update(fast ? 0.9 : 0, 1, f.t);
+        cam(s, f, punch);
+      };
+    };
+  }
+  return conveyorSetup;
 }

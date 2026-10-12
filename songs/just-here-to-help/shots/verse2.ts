@@ -18,13 +18,13 @@ import {
 } from '../props';
 
 type Update = (f: Frame) => void;
-interface RoomOpts { keys?: boolean; nocPPU?: number; monitorPPU?: number; tint?: (f: Frame) => string; vignette?: number }
+export interface RoomOpts { keys?: boolean; nocPPU?: number; monitorPPU?: number; tint?: (f: Frame) => string; vignette?: number }
 
-const pose = (p: Partial<Pose>): Pose => ({ ...REST, ...p });
+export const pose = (p: Partial<Pose>): Pose => ({ ...REST, ...p });
 const v3 = new THREE.Vector3();
-const NIGHT_POST = { ...FLAT_POST, vignette: 0.2 };
+export const NIGHT_POST = { ...FLAT_POST, vignette: 0.2 };
 
-function roomShot(id: string, start: number, end: number, setup: (r: ServerRoom) => Update, o: RoomOpts = {}): Shot {
+export function roomShot(id: string, start: number, end: number, setup: (r: ServerRoom) => Update, o: RoomOpts = {}): Shot {
   return defineShot({
     id, start, end,
     build() {
@@ -41,7 +41,7 @@ function roomShot(id: string, start: number, end: number, setup: (r: ServerRoom)
 }
 
 /** A full-frame 2D insert (a screen close-up): one 16 x 9 canvas, a gentle camera move. */
-function insertShot(id: string, start: number, end: number, draw: (c: CanvasRenderingContext2D, f: Frame, W: number, H: number) => void,
+export function insertShot(id: string, start: number, end: number, draw: (c: CanvasRenderingContext2D, f: Frame, W: number, H: number) => void,
   cam: (f: Frame) => { zoom: number; x: number; y: number; tilt: number }, extra: Partial<ShotWorld> = {}): Shot {
   return defineShot({
     id, start, end,

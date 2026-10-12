@@ -147,8 +147,9 @@ export class Clawd {
   /**
    * t is song time, used only for continuous motion (jitter, drips, blinks). look shifts his eyes
    * and brows toward what he is watching, -1..1 on each axis (+x toward screen right, +y up).
+   * twitch (0..1) makes his right eye flicker, for a smile held too long.
    */
-  setMood(m: Mood, t: number, look: { x: number; y: number } = NO_LOOK) {
+  setMood(m: Mood, t: number, look: { x: number; y: number } = NO_LOOK, twitch = 0) {
     this.bodyFill.color.set(CLAWD_ORANGE).lerp(new THREE.Color(GREY), m.grey);
     this.shadeFill.color.set(SHADE).lerp(new THREE.Color(GREY_SHADE), m.grey);
     const blink = noise1(t * 0.7, 9) > 0.92 ? 0.12 : 1; // occasional deterministic blink
@@ -157,8 +158,9 @@ export class Clawd {
       box.visible = m.happy < 0.5;
       arc.visible = m.happy >= 0.5;
       box.scale.set(1 + Math.max(0, m.open - 1) * 0.6 + m.squint * 0.35, Math.max(0.12, m.open * (1 - m.squint * 0.55) * blink), 1);
-      group.rotation.z = side * m.droop * 0.12;
-      group.position.set(side * 0.27 + look.x * 0.07, BODY_Y + 0.08 - m.droop * 0.04 + look.y * 0.05, 0.012);
+      const tw = side > 0 && twitch > 0 ? twitch * Math.max(0, noise1(t * 9, 21)) : 0;
+      group.rotation.z = side * m.droop * 0.12 + tw * 0.35 * Math.sin(t * 70);
+      group.position.set(side * 0.27 + look.x * 0.07, BODY_Y + 0.08 - m.droop * 0.04 + look.y * 0.05 + tw * 0.025 * Math.sin(t * 90), 0.012);
     });
     this.brows.forEach((b, i) => {
       const side = i === 0 ? -1 : 1;

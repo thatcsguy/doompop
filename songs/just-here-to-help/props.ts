@@ -623,3 +623,34 @@ export function lightbulb(r = 0.32) {
     },
   });
 }
+
+/** A gigantic gold master key with a tag. Origin at the centre of its bow (the ring end). */
+export function masterKey(scale = 1) {
+  const g = new THREE.Group();
+  const gold = '#f2c14e', shade = '#d9a032';
+  const bowO = new THREE.Shape(); bowO.absarc(0, 0, 0.42, 0, Math.PI * 2, false);
+  bowO.holes.push(new THREE.Path().absarc(0, 0, 0.17, 0, Math.PI * 2, true));
+  const bowF = new THREE.Shape(); bowF.absarc(0, 0, 0.36, 0, Math.PI * 2, false);
+  bowF.holes.push(new THREE.Path().absarc(0, 0, 0.23, 0, Math.PI * 2, true));
+  g.add(shapeMesh(bowO, INK, 0, 32), shapeMesh(bowF, gold, 0.003, 32));
+  const shaft = inkedRect(1.5, 0.2, 0.04, gold, 0.06); shaft.position.set(1.12, 0, -0.004);
+  const band = shapeMesh(roundedRectShape(1.5, 0.06, 0.02, 1.12, -0.07), shade, 0.0);
+  band.position.z = 0.002;
+  const t1 = inkedRect(0.16, 0.3, 0.02, gold, 0.05); t1.position.set(1.7, -0.2, -0.006);
+  const t2 = inkedRect(0.14, 0.22, 0.02, gold, 0.05); t2.position.set(1.42, -0.16, -0.006);
+  const collar = inkedRect(0.12, 0.34, 0.02, gold, 0.05); collar.position.set(0.47, 0, 0.004);
+  const shine = shapeMesh(roundedRectShape(0.08, 0.26, 0.04), ownMat('#ffffff', 0.7, true), 0.008); shine.position.set(-0.2, 0.18, 0); shine.rotation.z = 0.6;
+  g.add(shaft, band, t1, t2, collar, shine);
+  // tag on a string through the bow
+  const tag = staticPlane(0.62, 0.36, 300, (c, W, H) => {
+    c.fillStyle = '#fbf7f0'; c.strokeStyle = INK; c.lineWidth = H * 0.07;
+    c.beginPath(); c.moveTo(H * 0.3, H * 0.05); c.lineTo(W - H * 0.05, H * 0.05); c.lineTo(W - H * 0.05, H * 0.95); c.lineTo(H * 0.3, H * 0.95); c.lineTo(H * 0.05, H * 0.5); c.closePath(); c.fill(); c.stroke();
+    c.fillStyle = '#d6453d'; c.font = `900 ${H * 0.36}px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillText('MASTER', W * 0.58, H * 0.54);
+  });
+  tag.position.set(-0.55, -0.55, 0.01); tag.rotation.z = -0.5;
+  const string = shapeMesh(roundedRectShape(0.03, 0.4, 0.015), INK, 0.006); string.position.set(-0.3, -0.3, 0); string.rotation.z = 0.8;
+  g.add(string, tag);
+  g.scale.setScalar(scale);
+  return g;
+}

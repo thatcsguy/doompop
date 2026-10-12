@@ -54,5 +54,14 @@ export const KINETIC: KineticSpec = {
     34: { x: 0.96, y: 0.87, align: 'right', size: 84, maxWidth: 0.4, hold: 0.05, words: { 3: { color: RED, scale: 1.35, anim: 'stamp' } } },
     35: { x: 0.96, y: 0.13, align: 'right', size: 84, maxWidth: 0.4, hold: 0.05, words: { 3: { color: GOLD, scale: 1.2, shake: 0.4 } } },
     36: { x: 0.05, y: 0.15, align: 'left', size: 92, maxWidth: 0.5, hold: 0, words: { 2: { color: GREEN, scale: 1.3, anim: 'stamp' }, 3: { color: '#8a8079', scale: 0.9 } } },
+    // chorus 2: the whole building at night (shots/chorus2.ts)
+    37: { x: 0.95, y: 0.13, align: 'right', size: 84, anim: 'slide', hold: 0, exit: 'shrink', words: { 4: { color: ORANGE, scale: 1.4, anim: 'stamp', shake: 0.5 } } },
+    38: { x: 0.05, y: 0.13, align: 'left', size: 84, words: { 4: { color: BLUE, scale: 1.4 } } },
+    39: { y: 0.88, size: 84, maxWidth: 0.9, words: { 4: { color: ORANGE, scale: 1.25 }, 5: { color: ORANGE, scale: 1.35, anim: 'stamp' } } },
+    40: { y: 0.13, size: 96, anim: 'drop', words: { 1: { color: ORANGE, scale: 1.45, anim: 'stamp' }, 3: { color: GREEN, scale: 1.45, anim: 'stamp' } } },
+    41: { x: 0.05, y: 0.87, align: 'left', size: 84, maxWidth: 0.6, words: { 5: { color: GOLD, scale: 1.4, anim: 'stamp' } } },
+    42: { x: 0.05, y: 0.34, align: 'left', size: 84, maxWidth: 0.3, anim: 'wave', hold: 0.2, words: { 3: { color: '#5a6fb0', scale: 1.25 } } },
+    43: { x: 0.95, y: 0.34, align: 'right', size: 84, maxWidth: 0.3, hold: 0.2, words: { 3: { color: '#2aa3c4', scale: 1.3 } } },
+    44: { y: 0.12, size: 96, anim: 'wave', hold: 0.1, words: { 4: { color: ORANGE, scale: 1.35, shake: 0.35 } } },
   },
 };
