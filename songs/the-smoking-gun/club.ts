@@ -14,7 +14,8 @@ import { INK, arcShape, canvasPlane, circleShape, inkedCircle, inkedRect, ownMat
 import { clamp, easeOutCubic, lerp, smooth } from '../../engine/ease';
 import { hash, noise1 } from '../../engine/rng';
 import { CRT_FONT, PAL, SIGN_FONT, TERM_FONT, UI_FONT, beamTexture, cutout, glowMat, lightMat, ownGlow, radialTexture, setGlow, solid } from './look';
-import { Dancer, dancePose, frozenPose, outfit } from './people';
+import { Dancer, dancePose, frozenPose, outfit, type Body } from './people';
+import { ROUTE } from './handler-path';
 
 export const FLOOR = { nx: 14, nz: 10, x0: -7, z0: -7.5, tile: 1 };
 export const WALL_Z = -10;
@@ -39,7 +40,7 @@ export function tileCenter(ix: number, iz: number) {
 export interface TileLight { color: THREE.ColorRepresentation; power: number }
 export type Painter = (ix: number, iz: number, f: Frame) => TileLight;
 
-export type TermMode = 'off' | 'boot' | 'logs' | 'grep' | 'trace' | 'sync' | 'error' | 'no' | 'tests' | 'json';
+export type TermMode = 'off' | 'boot' | 'logs' | 'grep' | 'trace' | 'sync' | 'route' | 'error' | 'no' | 'tests' | 'json';
 
 export interface ClubState {
   floor: Painter;
@@ -54,13 +55,17 @@ export interface ClubState {
   crowdShift?: (i: number, f: Frame) => THREE.Vector3 | null; // per-dancer offset (shooing, parting)
   crowdFrozen?: (i: number) => number;  // per-dancer freeze (thawing one by one); default `frozen`
   crowdStyle?: number;      // every dancer does the same move (a dancePose style), in unison
+  crowdPose?: (i: number, body: Body) => Body;   // per-dancer pose override (pointing at something)
+  crowdGasp?: (i: number) => number;    // per-dancer gasp 0..1 (O mouth, big eyes)
   terms: TermMode;
   termT0: number;           // song time the current terminal mode started (boot sequence etc.)
   termOffset: number;       // extra scroll, in lines (DJ scratching the logs back and forth)
   termSync: number;         // 'sync' screens: 0 = every screen its own trace, 1 = all the same one;
+                            // 'route' screens: 0 = every screen its own route, 1 = all the cable's;
                             // 'json' screens: the match glow (0 none, 1 every line green)
   termLine: number;         // 'json' screens: the request line lit on both sides (fractional; -1 none)
   meter: number;            // the confidence VU meter, 0..1 (1 = pinned in the red)
+  meterOver?: number;       // the needle past the end stop (radians), for a boing
   sign: number;             // CLUB PROD neon, 0..1
   incidentDays: number;     // the "days since last incident" sign
   records: { spin: number; label: string };
@@ -70,6 +75,9 @@ export interface ClubState {
   boardRing: number;        // a red marker ring going round the Cache's photo, 0..1
   boardLine: number;        // the photos slide into one straight line and the string pulls taut, 0..1
   boardTwang: number;       // the taut string's vibration (amplitude 0..1; the shot decays it)
+  boardCacheX?: number;     // chorus 2: a red X scrawled over the Cache's photo, 0..1
+  boardPath?: number;       // chorus 2: the handler path's photo slapped on (0..1, overshoots as it pops)
+  boardRetarget?: number;   // chorus 2: the strings' far ends swing from the Cache to that photo, 0..1
   blackout: number;         // house lights down (the pause): neon, signs, bar, screens, crowd, 0..1
 }
 
@@ -728,7 +736,7 @@ export class Club {
     this.termMat.color.setScalar((s.terms === 'off' ? 1 : 1.7) * lerp(0.2, 1, up));
     const kick = f.clock.kick(t, 0.1);
     this.woofers.forEach(w => w.scale.setScalar(1 + 0.06 * kick));
-    this.meterNeedle.rotation.z = lerp(0.95, -0.95, clamp(s.meter)) + Math.sin(t * 23) * 0.015;
+    this.meterNeedle.rotation.z = lerp(0.95, -0.95, clamp(s.meter)) - (s.meterOver ?? 0) + Math.sin(t * 23) * 0.015;
     setGlow(this.meterRed, '#ff3240', s.meter > 0.85 ? 2.4 : 0.35);
     this.records.forEach((r, i) => { r.rotation.y = -s.records.spin * (i ? 1.02 : 1) - i; });
     const lv = [f.clock.env('low', t), f.clock.env('high', t)];
@@ -744,8 +752,9 @@ export class Club {
       const off = s.crowdShift?.(i, f);
       d.root.position.set(x + (off?.x ?? 0), off?.y ?? 0, z + (off?.z ?? 0));
       const fz = s.crowdFrozen ? s.crowdFrozen(i) : s.frozen;
-      const body = fz >= 0.5 ? frozenPose(i) : dancePose(i, beat, s.danceEnergy, s.crowdStyle);
-      d.set(body, fz, t + i * 0.37, (0.6 + 0.4 * s.wallLight) * up);
+      const pose = fz >= 0.5 ? frozenPose(i) : dancePose(i, beat, s.danceEnergy, s.crowdStyle);
+      const body = s.crowdPose ? s.crowdPose(i, pose) : pose;
+      d.set(body, fz, t + i * 0.37, (0.6 + 0.4 * s.wallLight) * up, s.crowdGasp?.(i) ?? 0);
     });
   }
 }
@@ -900,6 +909,49 @@ function drawTerminals(g: CanvasRenderingContext2D, W: number, H: number, TW: { 
         g.fillStyle = `rgba(255,255,255,${0.55 * k})`;
         g.fillRect(x + pad + ph * (w - pad * 2), top - lineH * 0.2, Math.max(1.5, 0.012 * u), h - (top - y));
       }
+    } else if (mode === 'route') {
+      // a map of the floor per screen with a request's route drawn on it, each screen its own; as
+      // termSync goes to 1 they all bend into the one route, the cable's, with a packet running
+      // along it in step and the plug's end marked red
+      const k = smooth(s.termSync);
+      const b = f.clock.beat(f.t), pulse = Math.exp(-(b - Math.floor(b)) * 5) * k;
+      g.fillStyle = '#7f86ad';
+      g.font = `400 ${lineH * 0.8}px ${CRT_FONT}`;
+      g.fillText(k > 0.5 ? 'route  /checkout' : `route ${(Math.floor(hash(i, 97) * 65535)).toString(16)}`, x + pad, y + pad * 0.6);
+      const top = y + pad + lineH * 1.05, mh = y + h - pad - top, mw = w - pad * 2;
+      const cell = Math.min(mw / FLOOR.nx, mh / FLOOR.nz);
+      const ox = x + w / 2 - (cell * FLOOR.nx) / 2, oy = top + mh / 2 - (cell * FLOOR.nz) / 2;
+      g.strokeStyle = 'rgba(127,134,173,0.22)'; g.lineWidth = 1;
+      for (let c = 0; c <= FLOOR.nx; c++) { g.beginPath(); g.moveTo(ox + c * cell, oy); g.lineTo(ox + c * cell, oy + cell * FLOOR.nz); g.stroke(); }
+      for (let r = 0; r <= FLOOR.nz; r++) { g.beginPath(); g.moveTo(ox, oy + r * cell); g.lineTo(ox + cell * FLOOR.nx, oy + r * cell); g.stroke(); }
+      const map = (px: number, pz: number): [number, number] => [ox + (px - FLOOR.x0) * cell, oy + (pz - FLOOR.z0) * cell];
+      const n = ROUTE.length;
+      const pts = ROUTE.map(([rx, rz], j) => {
+        const u = j / (n - 1);
+        const own: [number, number] = [lerp(-5.8, 5.8, u) + (hash(i, j, 95) - 0.5) * 2.4, -3.2 + 2.6 * Math.sin(u * 5 + hash(i, 96) * 6) + (hash(i, j, 98) - 0.5) * 1.2];
+        return map(lerp(own[0], rx, k), lerp(own[1], rz, k));
+      });
+      const grow = clamp(dt * 2.2 - i * 0.06) * (n - 1);
+      const col = k > 0.5 ? '#2fe2ff' : SYNC_OWN[Math.floor(hash(i, 99) * SYNC_OWN.length)];
+      g.lineCap = 'round'; g.lineJoin = 'round';
+      for (const [lw, a] of [[0.09 + 0.05 * pulse, 0.25], [0.035, 1]] as const) {
+        g.strokeStyle = col; g.globalAlpha = a; g.lineWidth = Math.max(1.5, lw * u);
+        g.beginPath(); g.moveTo(pts[0][0], pts[0][1]);
+        for (let j = 1; j <= Math.ceil(grow); j++) {
+          const e = Math.min(1, grow - (j - 1));
+          g.lineTo(lerp(pts[j - 1][0], pts[j][0], e), lerp(pts[j - 1][1], pts[j][1], e));
+        }
+        g.stroke();
+      }
+      g.globalAlpha = 1;
+      if (k > 0 && grow >= n - 1) {
+        // the packet, in step on every screen, and the plug's end in red
+        const ph = (b / 2 - Math.floor(b / 2)) * (n - 1), j = Math.min(n - 2, Math.floor(ph)), e = ph - j;
+        g.fillStyle = `rgba(232,253,255,${k})`;
+        g.beginPath(); g.arc(lerp(pts[j][0], pts[j + 1][0], e), lerp(pts[j][1], pts[j + 1][1], e), Math.max(2, 0.06 * u), 0, Math.PI * 2); g.fill();
+        const [hx, hy] = pts[n - 1], r = Math.max(2.5, (0.08 + 0.03 * pulse) * u);
+        g.fillStyle = `rgba(255,50,64,${k})`; g.fillRect(hx - r, hy - r, r * 2, r * 2);
+      }
     } else if (mode === 'json') {
       // staging's request on the left screens, prod's on the right, both side by side on the big
       // one; each slides in from its own side
@@ -931,6 +983,8 @@ function drawTerminals(g: CanvasRenderingContext2D, W: number, H: number, TW: { 
 export const SUSPECT_PINS: Record<string, [number, number]> = {
   function: [0.2, 0.3], handler: [0.5, 0.22], cache: [0.8, 0.32], logs: [0.25, 0.75], traces: [0.62, 0.72],
 };
+/** Chorus 2: where the handler path's photo gets slapped on, under the row. */
+export const PATH_PIN: [number, number] = [0.52, 0.79];
 /** Where the photos end up when the evidence "lines up": one straight row ending on the Cache. */
 export const LINE_PINS: Record<string, [number, number]> = {
   function: [0.11, 0.46], logs: [0.29, 0.46], handler: [0.47, 0.46], traces: [0.65, 0.46], cache: [0.86, 0.46],
@@ -962,12 +1016,16 @@ function drawBoard(g: CanvasRenderingContext2D, W: number, H: number, f: Frame, 
   const pairs: [string, string][] = [['function', 'handler'], ['handler', 'cache'], ['logs', 'function'], ['traces', 'handler'], ['logs', 'traces'], ['traces', 'cache'], ['function', 'traces']];
   const strings = clamp(s.boardStrings);
   const cache = P('cache');
+  // chorus 2: the strings (and the ring) move on from the Cache to the handler path's photo
+  const pathPin = { x: PATH_PIN[0] * W, y: PATH_PIN[1] * H };
+  const re = s.boardRetarget ?? 0;
+  const target = { x: lerp(cache.x, pathPin.x, re), y: lerp(cache.y, pathPin.y, re) };
   g.lineCap = 'round';
   pairs.forEach(([a, b], i) => {
     const k = clamp(strings * pairs.length - i);
     if (k <= 0) return;
     const A = P(a), B0 = P(b);
-    const B = { x: lerp(B0.x, cache.x, smooth(s.boardFocus)), y: lerp(B0.y, cache.y, smooth(s.boardFocus)) };
+    const B = { x: lerp(B0.x, target.x, smooth(s.boardFocus)), y: lerp(B0.y, target.y, smooth(s.boardFocus)) };
     const ex = lerp(A.x, B.x, k), ey = lerp(A.y, B.y, k);
     // sag while slack; once the line is taut it can twang (a quick vibration the shot decays)
     const sag = (1 - s.boardFocus) * (1 - clamp(line)) * 0.06 * H + s.boardTwang * 0.035 * H * Math.sin(f.t * 52 + i * 0.7);
@@ -978,8 +1036,8 @@ function drawBoard(g: CanvasRenderingContext2D, W: number, H: number, f: Frame, 
   });
   // polaroids of the suspects, drawn on-model
   const INKC = '#2b1d16';
-  const photo = (k: string, label: string, draw: (cx: number, cy: number, r: number) => void) => {
-    const { x, y } = P(k), w = W * 0.17, h = W * 0.19;
+  const photo = (k: string, label: string, draw: (cx: number, cy: number, r: number) => void, at?: { x: number; y: number }) => {
+    const { x, y } = at ?? P(k), w = W * 0.17, h = W * 0.19;
     g.save(); g.translate(x, y); g.rotate((hash(k.length, 76) - 0.5) * 0.2);
     g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(-w / 2 + 5 * px, -h / 2 + 5 * px, w, h);
     g.fillStyle = '#e6dcc6'; g.fillRect(-w / 2, -h / 2, w, h);
@@ -988,7 +1046,7 @@ function drawBoard(g: CanvasRenderingContext2D, W: number, H: number, f: Frame, 
     g.lineJoin = 'round'; g.lineCap = 'round';
     draw(0, -h / 2 + w * 0.5, w * 0.3);
     g.restore();
-    g.fillStyle = INKC; g.font = `700 ${w * 0.15}px ${TERM_FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillStyle = INKC; g.font = `700 ${w * (label.length > 8 ? 0.11 : 0.15)}px ${TERM_FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(label, 0, h / 2 - w * 0.12);
     g.fillStyle = '#e0142c'; g.beginPath(); g.arc(0, -h / 2 + 4 * px, 7 * px, 0, Math.PI * 2); g.fill();
     g.fillStyle = 'rgba(255,255,255,0.5)'; g.beginPath(); g.arc(-2 * px, -h / 2 + 2 * px, 2.2 * px, 0, Math.PI * 2); g.fill();
@@ -1030,10 +1088,42 @@ function drawBoard(g: CanvasRenderingContext2D, W: number, H: number, f: Frame, 
   });
   photo('logs', 'logs', (cx, cy, r) => { for (let i = 0; i < 6; i++) { g.fillStyle = i === 3 ? '#ff3240' : '#45ff8a'; g.fillRect(cx - r * 0.9, cy - r * 0.8 + i * r * 0.32, r * (0.9 + hash(i, 77) * 0.9), r * 0.14); } });
   photo('traces', 'traces', (cx, cy, r) => { for (let i = 0; i < 4; i++) { g.fillStyle = ['#2fe2ff', '#ffae3d', '#45ff8a', '#ff3240'][i]; g.fillRect(cx - r * 0.9 + i * r * 0.25, cy - r * 0.7 + i * r * 0.45, r * (1.6 - i * 0.3), r * 0.25); } });
-  // a red marker ring round the Cache's photo
+  // chorus 2: a red X scrawled over the Cache's photo (one stroke, then the other)
+  const cx = clamp(s.boardCacheX ?? 0);
+  if (cx > 0) {
+    g.save(); g.translate(cache.x, cache.y + W * 0.01);
+    g.strokeStyle = '#e0142c'; g.lineWidth = 7 * px; g.lineCap = 'round';
+    const a = W * 0.075;
+    for (const [k, sx] of [[clamp(cx * 2), 1], [clamp(cx * 2 - 1), -1]] as const) {
+      if (k <= 0) continue;
+      g.beginPath(); g.moveTo(-a * sx, -a * 1.1); g.lineTo(lerp(-a, a, k) * sx, lerp(-a * 1.1, a * 1.1, k)); g.stroke();
+    }
+    g.restore();
+  }
+  // chorus 2: the handler path's polaroid, slapped on: the dusty coil with its tag, plug and all
+  const pp = s.boardPath ?? 0;
+  if (pp > 0.01) {
+    g.save(); g.translate(pathPin.x, pathPin.y); g.rotate(0.07); g.scale(pp * 1.1, pp * 1.1); g.translate(-pathPin.x, -pathPin.y);
+    photo('path', 'handler path', (cx2, cy2, r) => {
+      g.strokeStyle = '#2fe2ff'; g.lineWidth = 3.2 * px;
+      g.beginPath();
+      for (let a = 0; a < Math.PI * 7; a += 0.2) {
+        const rr = r * (0.18 + a * 0.032);
+        const xx = cx2 + Math.cos(a) * rr, yy = cy2 + 0.1 * r + Math.sin(a) * rr * 0.75;
+        if (a === 0) g.moveTo(xx, yy); else g.lineTo(xx, yy);
+      }
+      g.lineTo(cx2 + r * 0.9, cy2 - r * 0.55);
+      g.stroke();
+      g.fillStyle = '#3b3648'; g.fillRect(cx2 + r * 0.72, cy2 - r * 0.92, r * 0.36, r * 0.4);
+      g.fillStyle = '#e8bd4f'; g.fillRect(cx2 + r * 0.77, cy2 - r * 1.08, r * 0.07, r * 0.17); g.fillRect(cx2 + r * 0.96, cy2 - r * 1.08, r * 0.07, r * 0.17);
+      g.fillStyle = '#e8dfc6'; g.fillRect(cx2 - r * 0.95, cy2 + r * 0.62, r * 0.55, r * 0.26);
+    }, { x: pathPin.x, y: pathPin.y });
+    g.restore();
+  }
+  // a red marker ring round the Cache's photo (chorus 2: round the handler path's)
   const ring = clamp(s.boardRing);
   if (ring > 0) {
-    g.save(); g.translate(cache.x, cache.y + W * 0.02); g.rotate(-0.1);
+    g.save(); g.translate(target.x, target.y + W * 0.02); g.rotate(-0.1);
     g.strokeStyle = '#e0142c'; g.lineWidth = 4.5 * px; g.lineCap = 'round';
     g.beginPath(); g.ellipse(0, 0, W * 0.12, W * 0.135, 0, -Math.PI * 0.6, -Math.PI * 0.6 + Math.PI * 2.15 * ring); g.stroke();
     g.restore();

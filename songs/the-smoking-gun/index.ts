@@ -1,5 +1,6 @@
 // "The Smoking Gun": a disco whodunit at Club PROD (see docs/TREATMENT.md and docs/STORYBOARD.md).
-// Built so far: the intro, verse 1, chorus 1, the break and verse 2 (0:00 to 1:50); the rest is still the slate.
+// Built so far: the intro, verse 1, chorus 1 and its break, verse 2, chorus 2 and its break (0:00 to 2:19);
+// the rest is still the slate.
 import { defineSong } from '../../engine/types';
 import audio from './data/audio.json';
 import lyrics from './data/lyrics.json';
@@ -10,8 +11,9 @@ import { introShots } from './shots/intro';
 import { verse1Shots } from './shots/verse1';
 import { chorus1Shots } from './shots/chorus1';
 import { verse2Shots } from './shots/verse2';
+import { chorus2Shots } from './shots/chorus2';
 
-const built = [...introShots(audio), ...verse1Shots(audio, lyrics), ...chorus1Shots(audio, lyrics), ...verse2Shots(audio, lyrics)];
+const built = [...introShots(audio), ...verse1Shots(audio, lyrics), ...chorus1Shots(audio, lyrics), ...verse2Shots(audio, lyrics), ...chorus2Shots(audio, lyrics)];
 
 export default defineSong({
   slug: 'the-smoking-gun',

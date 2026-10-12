@@ -227,7 +227,8 @@ export class Dancer {
    * frozen: 0 = alive, 1 = frozen (greyed out, spinner on). loading: spinner angle source (song time).
    * lit: 0..1 how much club light reaches them (dims the whole figure toward the dark).
    */
-  set(b: Body, frozen: number, t: number, lit = 1) {
+  /** gasp: 0..1 the mouth drops to an O and the eyes go big (the dancers who spot the Field). */
+  set(b: Body, frozen: number, t: number, lit = 1, gasp = 0) {
     this.body.position.set(b.hip, b.bob, 0);
     this.body.rotation.z = b.lean;
     this.body.scale.set(1 + b.squash * 0.08, 1 - b.squash * 0.08, 1);
@@ -244,8 +245,11 @@ export class Dancer {
       tmp.lerp(DIM, (1 - lit) * 0.7);
       m.color.copy(tmp);
     }
-    this.mouth.visible = fz < 0.5;
-    this.oMouth.visible = fz >= 0.5;
+    const o = fz >= 0.5 || gasp > 0.3;
+    this.mouth.visible = !o;
+    this.oMouth.visible = o;
+    this.oMouth.scale.setScalar(1 + 0.8 * clamp(gasp));
+    this.eyes.children.forEach(e => e.scale.setScalar(1 + 0.35 * clamp(gasp)));
     this.spinner.visible = fz > 0.5;
     if (this.spinner.visible) {
       // the classic spinner: one bright dot chasing round, the rest fading behind it

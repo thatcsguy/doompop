@@ -20,6 +20,7 @@ export interface ChiefState {
   look: number;    // pupils -1..1
   steam: number;   // the coffee's steam, 0..1
   rim: number;
+  tap?: number;    // 0..1 the right foot taps (impatient), its outer end lifting
 }
 export const CHIEF_REST: ChiefState = { armR: 0.12, point: 0, sip: 0, brow: 0, lean: 0, bob: 0, walk: 0, turn: 0, look: 0, steam: 1, rim: 1 };
 export const cs = (p: Partial<ChiefState>): ChiefState => ({ ...CHIEF_REST, ...p });
@@ -32,6 +33,7 @@ export class Chief {
   readonly root = new THREE.Group();
   readonly body = new THREE.Group();
   private legs: THREE.Group[] = [];
+  private feet: THREE.Group[] = [];
   private pointArm = new THREE.Group();
   private finger: THREE.Object3D;
   private upper = new THREE.Group();
@@ -54,10 +56,15 @@ export class Chief {
       const leg = inkedRect(0.26, 0.9, 0.05, SUIT_DARK, 0.04);
       leg.position.y = -0.45;
       const crease = shapeMesh(roundedRectShape(0.018, 0.78, 0.008, 0, -0.45), STRIPE, 0.004);
+      // the shoe pivots at its inner bottom corner (for the foot tap)
+      const foot = new THREE.Group();
+      foot.position.set(side * -0.14, -0.99, 0);
       const shoe = inkedRect(0.38, 0.14, 0.06, '#5a3220', 0.035);
-      shoe.position.set(side * 0.05, -0.92, 0.006);
-      const shine = shapeMesh(roundedRectShape(0.12, 0.03, 0.01, side * 0.08, -0.89), '#8a5a3c', 0.012);
-      pivot.add(leg, crease, shoe, shine);
+      shoe.position.set(side * 0.19, 0.07, 0.006);
+      const shine = shapeMesh(roundedRectShape(0.12, 0.03, 0.01, side * 0.22, 0.1), '#8a5a3c', 0.012);
+      foot.add(shoe, shine);
+      pivot.add(leg, crease, foot);
+      this.feet.push(foot);
       this.body.add(pivot);
       this.legs.push(pivot);
     }
@@ -207,6 +214,7 @@ export class Chief {
     const step = s.walk !== 0 ? Math.abs(Math.sin(w)) : 0;
     this.legs[0].rotation.z = s.walk !== 0 ? Math.sin(w) * 0.32 : 0;
     this.legs[1].rotation.z = s.walk !== 0 ? -Math.sin(w) * 0.32 : 0;
+    this.feet[1].rotation.z = 0.3 * clamp(s.tap ?? 0);
     this.body.position.y = s.bob + step * 0.05;
     this.body.rotation.z = s.lean;
     this.pointArm.rotation.z = s.armR + (s.walk !== 0 ? Math.sin(w) * 0.2 : 0);

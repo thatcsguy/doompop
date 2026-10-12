@@ -94,6 +94,26 @@ export class FloorLogs {
 
 // ---------------------------------------------------------------------------------------------
 /** A neon timeline for the back wall, origin at the middle of the line, time running to the right. */
+/** A tag on the timeline: a pole and a gold flag with `text` on it, pointing right (dir 1) or left. */
+function flagTag(text: string, dir: 1 | -1, mat: THREE.MeshBasicMaterial) {
+  const g = new THREE.Group();
+  const h = halo(1.4, PAL.gold, 0);
+  h.position.set(0.75 * dir, 0.95, -0.05);
+  g.add(h);
+  g.add(tubeRun([[0, 0.05], [0, 1.25]], mat, 0.06));
+  const flag = ([[0, 0.72], [1.55, 0.72], [1.85, 0.97], [1.55, 1.22], [0, 1.22]] as [number, number][]).map(([x, y]): [number, number] => [x * dir, y]);
+  g.add(shapeMesh(polyShape(flag), '#1d1230', 0.002));
+  g.add(tubeRun(flag, mat, 0.07, true, 0.004));
+  const txt = staticPlane(1.5, 0.42, 200, (c, W, H) => {
+    c.font = `700 ${H * 0.5}px ${TERM_FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.fillStyle = '#ffffff'; c.fillText(text, W / 2, H * 0.54);
+  });
+  cutout(txt, 0.4);
+  txt.position.set(0.8 * dir, 0.97, 0.008);
+  g.add(txt);
+  return { g, halo: h, text: txt.material as THREE.MeshBasicMaterial };
+}
+
 export class Timeline {
   readonly root = new THREE.Group();
   /** Everything that slides (the root stays put; this moves along x). */
@@ -114,8 +134,11 @@ export class Timeline {
   private crossMat = ownGlow(PAL.red, 2.6);
   private crossHalo: THREE.Mesh;
   readonly burst = new Burst(PAL.red, 12);
+  /** More gold tags (chorus 2's "path refactor"), each with its own glow; set's `extra` drives them. */
+  private extras: { g: THREE.Group; mat: THREE.MeshBasicMaterial; text: THREE.MeshBasicMaterial; halo: THREE.Mesh }[] = [];
 
-  constructor() {
+  /** extra: more gold tags along the line (local x, the flag's text, which way the flag points). */
+  constructor(extra: { x: number; text: string; dir?: 1 | -1 }[] = []) {
     const L = Timeline.LEN, S = Timeline.STEP;
     this.root.add(this.track);
     // the line, with an arrowhead at the right
@@ -143,6 +166,7 @@ export class Timeline {
     for (const x of ticks) {
       const mx = x + S / 2;
       if (mx > L / 2 - 1 || (mx > Timeline.TAG_X - 0.1 && mx < Timeline.X_X + 0.1)) continue;
+      if (extra.some(e => Math.abs(mx - e.x) < 0.1)) continue;
       const color = mx > Timeline.X_X ? PAL.red : hash(mx * 7, 3) < 0.25 ? PAL.amber : PAL.green;
       const mat = ownGlow(color, 2);
       const g = new THREE.Group();
@@ -157,23 +181,20 @@ export class Timeline {
       this.markerX.push(mx);
     }
     // the commit tag: a pole and a gold flag with the deploy on it
-    this.tagHalo = halo(1.4, PAL.gold, 0);
-    this.tagHalo.position.set(0.75, 0.95, -0.05);
-    this.tag.add(this.tagHalo);
-    this.tag.add(tubeRun([[0, 0.05], [0, 1.25]], this.tagMat, 0.06));
-    const flag: [number, number][] = [[0, 0.72], [1.55, 0.72], [1.85, 0.97], [1.55, 1.22], [0, 1.22]];
-    this.tag.add(shapeMesh(polyShape(flag), '#1d1230', 0.002));
-    this.tag.add(tubeRun(flag, this.tagMat, 0.07, true, 0.004));
-    const txt = staticPlane(1.5, 0.42, 200, (g, W, H) => {
-      g.font = `700 ${H * 0.5}px ${TERM_FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillStyle = '#ffffff'; g.fillText('deploy #4127', W / 2, H * 0.54);
-    });
-    cutout(txt, 0.4);
-    this.tagText = txt.material as THREE.MeshBasicMaterial;
-    txt.position.set(0.8, 0.97, 0.008);
-    this.tag.add(txt);
+    const deploy = flagTag('deploy #4127', 1, this.tagMat);
+    this.tag.add(deploy.g);
+    this.tagHalo = deploy.halo;
+    this.tagText = deploy.text;
     this.tag.position.set(Timeline.TAG_X, 0, 0.03);
     this.track.add(this.tag);
+    for (const e of extra) {
+      const mat = ownGlow(PAL.gold, 0.6);
+      const ft = flagTag(e.text, e.dir ?? 1, mat);
+      ft.g.position.set(e.x, 0, 0.03);
+      ft.g.visible = false;
+      this.track.add(ft.g);
+      this.extras.push({ g: ft.g, mat, text: ft.text, halo: ft.halo });
+    }
     // the red X: two crossed bars with an ink backing
     this.crossHalo = halo(1.1, PAL.red, 0);
     this.crossHalo.position.z = -0.03;
@@ -194,9 +215,19 @@ export class Timeline {
   /**
    * slide: the track's x offset. pop(j): how far marker j has popped up (0..1+, eased by the shot).
    * tag: the commit tag's glow 0..1. cross: seconds since the X landed (negative = not yet).
+   * extra: the extra tags' sizes (see the constructor).
    */
-  set(t: number, o: { slide: number; pop: (j: number) => number; tag: number; cross: number; lit?: number }) {
+  set(t: number, o: { slide: number; pop: (j: number) => number; tag: number; cross: number; lit?: number; extra?: number[] }) {
     const lit = o.lit ?? 1;
+    // the extra tags: extra[i] is tag i's size (0 hidden, overshoots as it pops), its glow follows
+    this.extras.forEach((e, i) => {
+      const k = o.extra?.[i] ?? 0, g = clamp(k);
+      e.g.visible = k > 0.01;
+      e.g.scale.setScalar(Math.max(0.01, k));
+      setGlow(e.mat, PAL.gold, lerp(0.7, 1.9, g) * (1 + 0.08 * Math.sin(t * 9) * g));
+      e.text.color.setScalar(lerp(0.75, 1.15, g));
+      (e.halo.material as THREE.MeshBasicMaterial).opacity = 0.45 * g;
+    });
     this.track.position.x = o.slide;
     setGlow(this.lineMat, PAL.cyan, 2.2 * lit * (0.93 + 0.07 * Math.sin(t * 5)));
     this.markers.forEach((m, j) => {

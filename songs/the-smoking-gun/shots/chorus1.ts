@@ -21,7 +21,7 @@ const P = (p: Partial<Pose>): Pose => ({ ...REST, ...p });
 
 /** The first time in [from, to) that the mix's loudness jumps past `level`: hits the beat tracker
  *  doesn't list (the stabs in the pause) still come from the analysed envelope. */
-function onset(audio: AudioData, from: number, to: number, level = 0.3) {
+export function onset(audio: AudioData, from: number, to: number, level = 0.3) {
   const e = audio.envelopes, fps = e.fps;
   for (let i = Math.max(1, Math.ceil(from * fps)); i < Math.min(e.rms.length, to * fps); i++) {
     if (e.rms[i - 1] < level && e.rms[i] >= level) return (i - 1 + (level - e.rms[i - 1]) / (e.rms[i] - e.rms[i - 1])) / fps;
@@ -31,7 +31,7 @@ function onset(audio: AudioData, from: number, to: number, level = 0.3) {
 
 /** The disco ball: still until it starts to turn, up to full speed, then (when prod turns out to be
  *  still down) winding to a stop. The angle is the integral of a speed that ramps linearly. */
-function ballTurn(t: number, T: { start: number; full: number; stop: number; halt: number }, w = 0.75) {
+export function ballTurn(t: number, T: { start: number; full: number; stop: number; halt: number }, w = 0.75) {
   const a0 = 0.3;
   if (t <= T.start) return a0;
   const ramp = T.full - T.start;
@@ -45,7 +45,7 @@ function ballTurn(t: number, T: { start: number; full: number; stop: number; hal
 const WAVE_COLS = [PAL.cyan, PAL.pink, PAL.gold, PAL.violetNeon];
 /** The chorus floor: on every beat a band of colour rolls from the front of the floor back to the
  *  booth, leaving a fading trail. The error tiles still pulse red underneath: prod is still down. */
-function waveFloor(power = 1.35): Painter {
+export function waveFloor(power = 1.35): Painter {
   return (ix, iz, f) => {
     const b = f.clock.beat(f.t), n = Math.floor(b), ph = b - n;
     const front = FLOOR.nz - 0.5 - ph * (FLOOR.nz + 3);
@@ -80,7 +80,7 @@ function redWave(prev: Painter, t0: number, dur: number): Painter {
 }
 
 /** A tile glowing gold (the one the arrow picks), over another painter. */
-function goldTile(base: Painter, tile: [number, number], k: (f: Frame) => number): Painter {
+export function goldTile(base: Painter, tile: [number, number], k: (f: Frame) => number): Painter {
   return (ix, iz, f) => {
     const g = ix === tile[0] && iz === tile[1] ? k(f) : 0;
     return g > 0 ? { color: PAL.gold, power: lerp(1, 1.6, g) } : base(ix, iz, f);
@@ -453,6 +453,10 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       return (d.x > 2.5 && d.z > -2.5) || Math.hypot(d.x - CL_CUFF.x, d.z - CL_CUFF.z) < 1.6;
     };
     return (f, s) => {
+      // camera first: the smoke below faces it
+      gunCam(camera, f.t);
+      shake(camera, f, TICK, 0.05, 0.12);
+      shake(camera, f, IMPACT, 0.12, 0.3);
       const lights = f.t >= IMPACT;
       if (lights) {
         partyState(s, f);
@@ -514,9 +518,6 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
         c.set(DISCO_MOODS.smug, P({ armR: 0.55, armL: -0.55, lean: -0.05 }), { shades: 1, puff: 0.7 }, f.t);
         cuffsAt(true, 0.55, -0.05, 0);
         snap.set(f.t - CUFF_T, 1.1);
-        gunCam(camera, f.t);
-        shake(camera, f, TICK, 0.05, 0.12);
-        shake(camera, f, IMPACT, 0.12, 0.3);
         return;
       }
       c.root.position.set(lerp(CL_CUFF.x - 3.6, CL_CUFF.x, slide), 0.12 * Math.sin(smooth(popUp) * Math.PI), CL_CUFF.z);
@@ -530,13 +531,11 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       }), { shades: 1, puff: 0.9, medal: cuffed ? decay(f.t - CUFF_T, 0.5) : 0, jiggle: kneel * Math.sin(f.t * 40) * 0.4 }, f.t);
       cuffsAt(!cuffed, cArmR, cLean, 0.3 * Math.sin(f.t * 9) * (1 - 0.5 * slide));
       snap.set(f.t - CUFF_T, 1.1);
-      gunCam(camera, f.t);
-      shake(camera, f, TICK, 0.05, 0.12);
-      shake(camera, f, IMPACT, 0.12, 0.3);
     };
   }, {
     overlay(g, f) {
       if (f.t < IMPACT && c24cam) {
+        c24cam.updateMatrixWorld();
         const p = spotAt(f.t);
         const sp2 = spotScreen(c24cam, f.w, f.h, p, f.t < TICK ? 1.0 : 1.15, f.t < TICK ? 0.4 : 3.0, LAMP);   // tall enough for the smoke
         drawSpotlight(g, f.w, f.h, sp2, 0.95, 1);
