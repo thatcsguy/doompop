@@ -56,7 +56,7 @@ export const DISCO_LYRICS: DiscoSpec = {
     // need the top of the frame
     41: { x: 0.5, y: 0.13, color: PAL.cyan, words: { 1: { color: PAL.green }, 3: { anim: 'slide' }, 4: { anim: 'slide' }, 5: { anim: 'stamp', color: PAL.gold, scale: 1.3 } } },
     42: { x: 0.5, y: 0.87, size: 92, maxWidth: 0.92, color: PAL.pink, words: { 1: { color: PAL.cyan, scale: 1.1 }, 4: { anim: 'stamp', color: PAL.gold, scale: 1.35 } } },
-    43: { x: 0.5, y: 0.87, size: 90, maxWidth: 0.92, color: PAL.violetNeon, words: { 1: { color: PAL.gold, scale: 1.15 }, 4: { anim: 'stamp', color: PAL.red, scale: 1.45, core: 0.3 } } },
+    43: { x: 0.5, y: 0.12, size: 90, maxWidth: 0.92, color: PAL.violetNeon, words: { 1: { color: PAL.gold, scale: 1.15 }, 4: { anim: 'stamp', color: PAL.red, scale: 1.45, core: 0.3 } } },
     44: { x: 0.5, y: 0.13, color: PAL.pink, words: { 1: { color: PAL.cyan }, 3: { anim: 'stamp', color: PAL.gold, scale: 1.6 } } },
     45: { x: 0.5, y: 0.125, color: PAL.violetNeon, words: { 1: { color: PAL.cyan }, 4: { anim: 'stamp', color: PAL.gold, scale: 1.4 } } },
     46: { x: 0.05, y: 0.13, align: 'left', maxWidth: 0.9, color: PAL.pink, words: { 1: { scale: 1.1 }, 3: { anim: 'stamp', color: PAL.gold, scale: 1.8 } } },

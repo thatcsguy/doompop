@@ -140,9 +140,9 @@ export class Dancer {
     }
     this.body.add(this.eyes);
     this.mouth = shapeMesh(arcShape(0.08, 0.03, Math.PI * 1.15, Math.PI * 1.85), INK, 0.012, 8);
-    this.mouth.position.set(0, 2.06, 0);
+    this.mouth.position.set(0, 2.06, 0.012);
     this.oMouth = shapeMesh(circleShape(0.035), INK, 0.012, 12);
-    this.oMouth.position.set(0, 1.99, 0);
+    this.oMouth.position.set(0, 1.99, 0.012);
     this.body.add(this.mouth, this.oMouth);
 
     // arms with hands, pivoting at the shoulders (in front of the torso)
@@ -180,7 +180,7 @@ export class Dancer {
         const sheenMat = mat2(hair);
         this.mats.push({ m: sheenMat, base: sheenMat.color.clone() });
         const sheen = shapeMesh(arcShape(0.36, 0.07, Math.PI * 0.55, Math.PI * 0.85), sheenMat, -0.008, 12);
-        sheen.position.set(0, 2.3, 0);
+        sheen.position.set(0, 2.3, -0.008);
         this.body.add(sheen);
         break;
       }
@@ -188,7 +188,7 @@ export class Dancer {
         const s = roundedRectShape(0.72, 0.95, 0.3, 0, 1.9), si = roundedRectShape(0.79, 1.02, 0.33, 0, 1.9);
         ink(si); back(s);
         const fringe = shapeMesh(arcShape(0.22, 0.12, 0.15, Math.PI - 0.15), hair, 0.008, 12);
-        fringe.position.set(0, 2.12, 0);
+        fringe.position.set(0, 2.12, 0.008);
         this.body.add(fringe);
         break;
       }
@@ -206,7 +206,7 @@ export class Dancer {
         ink(roundedRectShape(0.84, 0.6, 0.28, 0, 2.18)); back(roundedRectShape(0.78, 0.54, 0.25, 0, 2.18));
         for (const side of [-1, 1]) {
           const wing = shapeMesh(arcShape(0.2, 0.08, side < 0 ? 0.3 : Math.PI - 1.4, side < 0 ? 1.4 : Math.PI - 0.3), hair, 0.008, 10);
-          wing.position.set(side * 0.08, 2.15, 0);
+          wing.position.set(side * 0.08, 2.15, 0.008);
           this.body.add(wing);
         }
         break;

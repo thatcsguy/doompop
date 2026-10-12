@@ -25,6 +25,8 @@ export const CABLE_R = 0.055;
 /** Length of the neck that rears up beyond the end of ROUTE. */
 const NECK = 1.9;
 const NECK_SEGS = 48, RADIAL = 6;
+/** The plug head is drawn bigger than a real plug, so its face reads at a distance. */
+const HEAD_SCALE = 1.5;
 const PACKETS = 5;
 
 export interface PathView {
@@ -106,7 +108,8 @@ export class HandlerPath {
   }
 
   private buildHead() {
-    const plastic = '#3b3648', dark = '#26222f', brass = '#e8bd4f';
+    // a white plug, so the head reads against the dark club
+    const plastic = '#ece6f3', dark = '#b4abc6', brass = '#e8bd4f';
     const relief = inkedRect(0.12, 0.16, 0.03, dark, 0.03);
     relief.position.set(0, 0.06, 0);
     const body = inkedRect(0.32, 0.36, 0.06, plastic, 0.035);
@@ -121,25 +124,28 @@ export class HandlerPath {
       const eye = inkedCircle(0.068, '#ffffff', 0.022);
       eye.position.set(side * 0.074, 0.29, 0.01);
       const pupil = shapeMesh(circleShape(0.034), INK, 0.016, 12);
-      pupil.position.set(side * 0.074, 0.285, 0);
+      pupil.position.set(side * 0.074, 0.285, 0.016);
       const shine = shapeMesh(circleShape(0.011), '#ffffff', 0.002, 8);
-      shine.position.set(0.012, 0.014, 0);
+      shine.position.set(0.012, 0.014, 0.002);
       pupil.add(shine);
       const lid = shapeMesh(roundedRectShape(0.16, 0.08, 0.03), plastic, 0.02);
-      lid.position.set(side * 0.074, 0.33, 0);
+      lid.position.set(side * 0.074, 0.33, 0.02);
       const brow = shapeMesh(roundedRectShape(0.11, 0.025, 0.01), INK, 0.022);
-      brow.position.set(side * 0.074, 0.385, 0);
+      brow.position.set(side * 0.074, 0.385, 0.022);
       this.head.add(eye, pupil, lid, brow);
       this.pupils.push(pupil);
       this.lids.push(lid);
       this.brows.push(brow);
     }
-    // the revolver hangs by its trigger guard from the right prong's tip
-    this.twirl.position.set(0.075, 0.62, 0.03);
-    this.gun.root.scale.setScalar(0.82);
-    this.gun.root.position.set(-0.12 * 0.82, 0.02 * 0.82, 0);
+    // the revolver is hooked by its trigger guard on the right prong's tip, barrel up and out to
+    // the side, clear of the face (it twirls round the prong)
+    const gs = 0.55;
+    this.twirl.position.set(0.075, 0.64, 0.03);
+    this.gun.root.scale.setScalar(gs);
+    this.gun.root.position.set(-0.12 * gs, 0.02 * gs, 0);
     this.twirl.add(this.gun.root);
     this.head.add(this.twirl);
+    this.head.scale.setScalar(HEAD_SCALE);
   }
 
   /** The neck's control points for a pose (world space). */
@@ -148,7 +154,7 @@ export class HandlerPath {
     const B = this.base, d = this.dir, s = this.side;
     // cobra: along the floor, a curl up, then the S of the neck leaning back toward us
     const cobra = [[0, 0, 0], [0.32, 0, 0], [0.62, 0.12, 0], [0.78, 0.52, 0.02], [0.72, 0.95, 0.06], [0.58, 1.3, 0.13], [0.5, 1.52, 0.21]];
-    const bolt = [[0, 0, 0], [0.32, 0, 0], [0.5, 0.25, 0.02], [0.55, 0.75, 0.04], [0.55, 1.25, 0.05], [0.55, 1.72, 0.06], [0.55, 2.12, 0.07]];
+    const bolt = [[0, 0, 0], [0.32, 0, 0], [0.5, 0.22, 0.02], [0.55, 0.66, 0.04], [0.55, 1.1, 0.05], [0.55, 1.52, 0.06], [0.55, 1.88, 0.07]];
     const rear = smooth(v.rear), up = smooth(v.up);
     for (let i = 0; i < 7; i++) {
       const p = this.neckPts[i];
@@ -191,6 +197,9 @@ export class HandlerPath {
         const pos = mesh.geometry.getAttribute('position') as THREE.BufferAttribute;
         (pos.array as Float32Array).set(tube.getAttribute('position').array as Float32Array);
         pos.needsUpdate = true;
+        // (and its bounds: a stale sphere from whichever frame drew first would sort the halo
+        // differently and could cull the neck)
+        mesh.geometry.computeBoundingSphere();
         tube.dispose();
       }
       // the head: lying along the floor face up when flat; reared, its face toward fwd
@@ -213,10 +222,10 @@ export class HandlerPath {
         b.rotation.z = (i ? 1 : -1) * -0.45 * v.shifty;
         b.position.y = 0.385 + wide * 0.12 - v.shifty * 0.015;
       });
-      // the gun hangs straight down from the prong whatever the head does (plus the twirl)
+      // the gun points up and out whatever the head does (plus the twirl)
       this.twirl.visible = v.gun;
       const roll = Math.atan2(-T.x, T.y);   // roughly how far the head leans over, in the picture
-      this.twirl.rotation.z = -Math.PI / 2 - 0.15 - roll + v.twirl;
+      this.twirl.rotation.z = 0.95 - roll + v.twirl;
     }
     // packets of light running from the tail to the head, once the cable is all out
     this.packets.forEach((p, i) => {

@@ -237,7 +237,7 @@ export class Projector {
       this.root.add(leg, wheel);
     }
     const tangle = shapeMesh(arcShape(0.12, 0.025, 0.4, 2.8), '#1b1726', 0.01, 10);
-    tangle.position.set(0.1, 0.42, 0);
+    tangle.position.set(0.1, 0.42, 0.01);
     this.root.add(tangle);
     // the projector: a beige box, a vent grille, a lens barrel pointing left with a hot glass
     const body = inkedRect(0.62, 0.3, 0.07, '#d9cfb8', 0.035);
@@ -248,7 +248,7 @@ export class Projector {
     this.root.add(body, barrel, glass);
     for (let i = 0; i < 4; i++) this.root.add(shapeMesh(roundedRectShape(0.03, 0.16, 0.012, 0.08 + i * 0.07, 1.05), '#a89d84', 0.02));
     const led = shapeMesh(circleShape(0.022), glowMat(PAL.green, 2.4), 0.03, 8);
-    led.position.set(0.22, 1.15, 0);
+    led.position.set(0.22, 1.15, 0.03);
     this.root.add(led);
     // the beam (built in aim) and the dust in it
     this.beamMat = lightMat('#d6e2ff', 0.05);
@@ -628,7 +628,7 @@ export class RiserDoor {
     // a hint of the crawl space: a pipe and a faint glow far in
     const pipe = shapeMesh(roundedRectShape(W * 0.8, 0.05, 0.02, 0.04, H * 0.62), '#120d22', 0.013);
     const glint = shapeMesh(circleShape(0.05), ownMat('#3a1430'), 0.013, 10);
-    glint.position.set(0.22, H * 0.3, 0);
+    glint.position.set(0.22, H * 0.3, 0.013);
     this.root.add(frame, hole, pipe, glint);
     // the door: a panel with vents and a knob, on a hinge at the left edge
     this.panel.position.set(-W / 2, 0.03, 0.03);
@@ -732,7 +732,7 @@ export class TraceCoil {
     const webMat = ownMat('#e9e6f5', 0.7, true);
     for (let i = 0; i < 4; i++) {
       const st = shapeMesh(roundedRectShape(0.5 - i * 0.07, 0.01, 0.005), webMat, 0.06);
-      st.position.set(-0.02 + i * 0.02, 0.2 + i * 0.035, 0);
+      st.position.set(-0.02 + i * 0.02, 0.2 + i * 0.035, 0.06);
       st.rotation.z = -0.3 + i * 0.18;
       this.web.add(st);
     }
@@ -748,7 +748,7 @@ export class TraceCoil {
     tag.position.set(0.38, -0.2, 0.07);
     tag.rotation.z = -0.35;
     const string = shapeMesh(roundedRectShape(0.16, 0.012, 0.005), '#d9c7a8', 0.065);
-    string.position.set(0.24, -0.12, 0);
+    string.position.set(0.24, -0.12, 0.065);
     string.rotation.z = -0.7;
     this.root.add(tag, string);
   }

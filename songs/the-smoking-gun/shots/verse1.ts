@@ -108,7 +108,7 @@ function spider() {
   const legs = new THREE.Group();
   for (const sx of [-1, 1]) for (let k = 0; k < 4; k++) {
     const leg = shapeMesh(roundedRectShape(0.36, 0.035, 0.017, sx * 0.18, 0), INK, 0.001);
-    leg.position.set(sx * 0.08, 0.06 - k * 0.07, 0);
+    leg.position.set(sx * 0.08, 0.06 - k * 0.07, 0.001);
     leg.rotation.z = sx * (0.5 - k * 0.32);
     legs.add(leg);
   }
@@ -117,9 +117,9 @@ function spider() {
   g.add(shapeMesh(circleShape(0.17), INK, 0.002, 16));
   for (const sx of [-1, 1]) {
     const eye = shapeMesh(circleShape(0.055), '#ffffff', 0.003, 10);
-    eye.position.set(sx * 0.065, 0.04, 0);
+    eye.position.set(sx * 0.065, 0.04, 0.003);
     const pupil = shapeMesh(circleShape(0.025), INK, 0.004, 8);
-    pupil.position.set(sx * 0.065, 0.025, 0);
+    pupil.position.set(sx * 0.065, 0.025, 0.004);
     g.add(eye, pupil);
   }
   return g;
@@ -379,6 +379,7 @@ export function verse1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     const N = 26;
     const motes = new THREE.InstancedMesh(new THREE.CircleGeometry(0.025, 8), lightMat('#fff6e0', 0.55), N);
     motes.frustumCulled = false;
+    motes.boundingSphere = new THREE.Sphere(new THREE.Vector3(SPIDER.x, SPIDER.y, 0.03), 1e3);   // fixed: see Club.spots
     scene.add(motes);
     const m4 = new THREE.Matrix4();
     return (f) => {

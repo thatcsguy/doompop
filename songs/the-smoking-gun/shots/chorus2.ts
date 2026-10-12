@@ -11,9 +11,8 @@ import * as THREE from 'three';
 import type { Frame, Shot } from '../../../engine/types';
 import type { AudioData, LyricsData } from '../../../engine/song';
 import { clamp, decay, easeInOutCubic, easeOutBack, easeOutCubic, lerp, smooth } from '../../../engine/ease';
-import { ownMat } from '../../../engine/flat';
 import { PAL, aimCam, beamTexture, glowMat, lightMat } from '../look';
-import { BOARD, BOOTH_SPOT, PATH_PIN, WALL_Z, aliveFloor, clearBooth, deadFloor, tileCenter, type Club, type ClubState } from '../club';
+import { BOARD, BOOTH_SPOT, FLOOR, PATH_PIN, WALL_Z, aliveFloor, clearBooth, deadFloor, tileCenter, type Club, type ClubState, type Painter } from '../club';
 import { ARM_LEN, DiscoClawd, DISCO_MOODS, REST, dance, mixDance, type Pose } from '../clawd-disco';
 import { Cache, Field, sp } from '../suspects';
 import { Burst, Cuffs, lightPool, sweatDrop } from '../props';
@@ -22,16 +21,16 @@ import { TraceCoil } from '../lab';
 import { Chief, cs } from '../chief';
 import { CABLE_R, HandlerPath, ROUTE, SLAM_I, pv, routeCurve } from '../handler-path';
 import type { Body } from '../people';
-import { ballTurn, goldTile, onset, waveFloor } from './chorus1';
+import { ballTurn, onset, waveFloor } from './chorus1';
 import { shake, shot } from './common';
 
 const P = (p: Partial<Pose>): Pose => ({ ...REST, ...p });
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
 const ROUTE_CURVE = routeCurve();
 
-/** A thin string between two points (the Field's tie to the cable). */
+/** A thin glowing thread between two points (the Field's tie to the cable's tail). */
 function stringMesh() {
-  return new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 1, 6), ownMat('#e3d3b4'));
+  return new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 1, 6), glowMat(PAL.cyan, 1.8));
 }
 function stretch(m: THREE.Mesh, a: THREE.Vector3, b: THREE.Vector3) {
   const d = b.clone().sub(a);
@@ -72,7 +71,10 @@ function giantCuffs(c: DiscoClawd) {
 }
 
 export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
-  const B = (i: number) => audio.beats[i];
+  const B = (i: number) => {
+    if (!Number.isInteger(i)) throw new Error(`chorus 2: B(${i}) needs a whole beat; use BT for a fraction`);
+    return audio.beats[i];
+  };
   /** A fractional beat's time (between two listed beats). */
   const BT = (b: number) => { const n = Math.floor(b); return lerp(B(n), B(n + 1), b - n); };
   const W = (n: number, i: number) => lyrics.lines[n - 1].words[i].start;
@@ -116,6 +118,24 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     boardState(s, f.t);
   }
 
+  // The floor lit only along the cable (k 0 = the whole floor alive, 1 = a lit runway of tiles
+  // following the cable across a dimmed floor), so the eye follows it from the head to the tail.
+  const cableDist: number[] = [];
+  for (let iz = 0; iz < FLOOR.nz; iz++) for (let ix = 0; ix < FLOOR.nx; ix++) {
+    const c = tileCenter(ix, iz);
+    let d = 1e9;
+    for (let i = 0; i <= 200; i++) { const p = ROUTE_CURVE.getPointAt(i / 200); d = Math.min(d, Math.hypot(p.x - c.x, p.z - c.z)); }
+    cableDist.push(d);
+  }
+  const runwayFloor = (k: (f: Frame) => number): Painter => {
+    const alive = aliveFloor(1.6);
+    return (ix, iz, f) => {
+      const L = alive(ix, iz, f);
+      const dim = k(f) * smooth(clamp((cableDist[iz * FLOOR.nx + ix] - 0.7) / 0.9));
+      return { color: L.color, power: L.power * lerp(1, 0.25, dim) };
+    };
+  };
+
   // ---- the cast that stays on the floor all chorus ---------------------------------------------
   // The Cache, cleared after chorus 1, sulks at the front right of the floor; the tiny Field hides
   // behind it, tied by a string to the tail of the cable. Nobody looks.
@@ -123,7 +143,7 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
   // hidden straight behind it as seen from the reveal camera (front right); the peek is out to the
   // side, clear of it
   const FIELD_HIDE = new THREE.Vector3(4.67, 0, -0.2);
-  const FIELD_PEEK = new THREE.Vector3(3.9, 0, 0.2);
+  const FIELD_PEEK = new THREE.Vector3(3.75, 0, 0.25);
   function sulkCast(scene: THREE.Scene) {
     const ca = new Cache();
     ca.root.position.copy(CACHE_AT);
@@ -131,15 +151,18 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     const str = stringMesh();
     scene.add(ca.root, fi.root, str);
     const hole = new THREE.Vector3();
-    return (f: Frame, path: HandlerPath, o: { peek?: number; look?: number; open?: number; caLook?: number; squash?: number } = {}) => {
+    return (f: Frame, path: HandlerPath, o: { peek?: number; look?: number; open?: number; caLook?: number; squash?: number; gone?: boolean } = {}) => {
       const t = f.t;
       const wag = smooth(clamp((Math.sin(t * 0.8 + 1) - 0.35) * 3));
       ca.set(sp({ shades: 0.85, mouth: -0.6, brow: -0.6, wag, look: o.caLook ?? -0.5, armL: -1.15 }), t);
       const peek = o.peek ?? 0;
       fi.root.position.copy(FIELD_HIDE).lerp(FIELD_PEEK, peek);
       fi.set(sp({ look: o.look ?? 0, open: o.open ?? 1, squash: o.squash ?? 0 }), t);
-      hole.set(fi.root.position.x - 0.27, 0.27, fi.root.position.z + 0.012);
+      // tied on behind the tag's lower corner, clear of the "v": 2
+      hole.set(fi.root.position.x - 0.2, 0.17, fi.root.position.z - 0.03);
       stretch(str, path.tail, hole);
+      // (once it has ducked for good it would still show between the Cache's legs)
+      fi.root.visible = str.visible = !o.gone;
     };
   }
 
@@ -220,10 +243,15 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     return (f, s) => {
       chorusState(s, f);
       const k = easeInOutCubic(f.p);
-      aimCam(camera, lerp(-1.4, -0.7, k), lerp(0.95, 1.05, k), lerp(5.6, 5.1, k), lerp(-0.6, 0.2, k), 4.85, WALL_Z);
+      // wide from the floor, then on "clear" a snap zoom up onto the two tags
+      const zoom = easeInOutCubic(clamp((f.t - CLEAR) / 0.3));
+      const tags = TL.x + tlSlide(f.t) + 1.1;
+      aimCam(camera, lerp(-1.4, -0.7, k), lerp(0.95, 1.05, k), lerp(5.6, 5.1, k), lerp(lerp(-0.6, 0.2, k), tags, zoom), lerp(4.85, 8.75, zoom), WALL_Z);
+      camera.fov = lerp(46, 15, zoom);
+      camera.updateProjectionMatrix();
       s.sign = clamp((f.t - B(236)) / 0.3) < 1 ? 0.55 : 0.08;
       // markers pop left to right on the eighths, everything already known
-      tl.set(f.t, { slide: tlSlide(f.t), pop: j => clamp((f.t - BT(236.25 + j * 0.125)) / 0.15), tag: 0.45, cross: crossAt(f.t), extra: [tag2Pop(f.t)] });
+      tl.set(f.t, { slide: tlSlide(f.t), pop: j => clamp((f.t - BT(236.25 + j * 0.125)) / 0.15), tag: 0.45, cross: crossAt(f.t), extra: [{ size: tag2Pop(f.t), glow: 0.45 + 0.7 * decay(f.t - CLEAR, 0.25) }] });
       path.set(f.t, pv({ open: 0 }));
       const dn = dance('point', f.clock.beat(f.t), 1);
       const pointUp = smooth(clamp((f.t - CLEAR + 0.1) / 0.15));
@@ -240,8 +268,11 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     const tl = new Timeline([TAG2]);
     tl.root.position.copy(TL);
     const c = new DiscoClawd();
-    c.root.scale.setScalar(MW);
-    scene.add(tl.root, c.root);
+    // scaled through a holder: the rig's set() resets root.scale for its paper-puppet turn
+    const holder = new THREE.Group();
+    holder.scale.setScalar(MW);
+    holder.add(c.root);
+    scene.add(tl.root, holder);
     return (f, s) => {
       chorusState(s, f);
       s.sign = 0.08;
@@ -250,13 +281,13 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       const k = easeInOutCubic(f.p);
       aimCam(camera, mid + lerp(0.5, 0.15, k), lerp(8.25, 8.35, k), lerp(-4.4, -5.3, k), mid, 8.75, WALL_Z);
       shake(camera, f, FAILURE, 0.06, 0.2);
-      tl.set(f.t, { slide, pop: () => 1, tag: 0.45, cross: crossAt(f.t), extra: [1 + 0.25 * decay(f.t - THE43, 0.25)] });
+      tl.set(f.t, { slide, pop: () => 1, tag: 0.45, cross: crossAt(f.t), extra: [{ size: 1 + 0.25 * decay(f.t - THE43, 0.25), glow: 0.45 + 0.6 * decay(f.t - THE43, 0.3) }] });
       // the glide: from past the X back to between the two poles, feet sliding the other way
       const u = clamp((f.t - (B(240) - 0.05)) / (THE43 - B(240) + 0.05));
       const glide = smooth(u);
       const lx = lerp(4.6, 1.12, glide);
       const moving = u > 0 && u < 1;
-      c.root.position.set(TL.x + slide + lx, TL.y + 0.07, TL.z + 0.17);
+      holder.position.set(TL.x + slide + lx, TL.y + 0.07, TL.z + 0.17);
       const b = f.clock.beat(f.t);
       const arrive = clamp((f.t - THE43) / 0.12);
       const back = clamp((f.t - FAILURE) / 0.12);
@@ -275,8 +306,8 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
   const TILE_IJ: [number, number] = [5, 5];
   const TILE2 = tileCenter(...TILE_IJ);
   const ARROWS = [
-    { at: new THREE.Vector3(TILE2.x - 2.7, 5.2, TILE2.z - 0.2), color: PAL.cyan, dir: -1 },
-    { at: new THREE.Vector3(TILE2.x + 2.7, 5.5, TILE2.z - 0.4), color: PAL.pink, dir: 1 },
+    { at: new THREE.Vector3(TILE2.x - 2.8, 4.3, TILE2.z - 0.2), color: PAL.cyan, dir: -1 },
+    { at: new THREE.Vector3(TILE2.x + 2.8, 4.55, TILE2.z - 0.4), color: PAL.pink, dir: 1 },
   ];
   const ON44 = W(44, 0), SPIN44 = W(44, 1), HERE = W(44, 3);
   const SETTLE = HERE - 0.06;
@@ -287,7 +318,7 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     if (t < SETTLE) return end + dir * 3 * Math.PI * (1 - easeOutCubic((t - SPIN44) / (SETTLE - SPIN44)));
     return end + 0.2 * Math.sin((t - SETTLE) * 24) * decay(t - SETTLE, 0.16);
   };
-  shots.push(shot('c44-arrows', B(243), B(247), ({ scene, camera }) => {
+  shots.push(shot('c44-arrows', B(243), B(247), ({ scene, camera, club }) => {
     const arrows = ARROWS.map(a => {
       const n = new NeonArrow(a.color);
       n.root.position.copy(a.at);
@@ -306,14 +337,22 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     return (f, s) => {
       chorusState(s, f);
       const k = easeInOutCubic(f.p);
-      aimCam(camera, TILE2.x + lerp(0.5, 0.9, k), lerp(2.5, 2.8, k), lerp(5.3, 4.6, k), TILE2.x + 0.35, 2.9, TILE2.z - 1.0);
+      aimCam(camera, TILE2.x + lerp(0.6, 0.8, k), lerp(3.0, 2.9, k), TILE2.z + lerp(11.0, 10.0, k), TILE2.x + 0.1, 2.1, TILE2.z - 0.5);
       shake(camera, f, HOP1, 0.05, 0.15);
       s.sign = 0.35;
+      // nobody between us and the tile
+      s.crowdMask = i => !(Math.abs(club.dancers[i].x - TILE2.x) < 2.7 && club.dancers[i].z > TILE2.z - 1.6);
       const pointed = f.t >= HERE;
-      s.floor = goldTile(waveFloor(1.6), TILE_IJ, ff => (ff.t >= HERE ? 0.75 + 0.25 * Math.sin(ff.t * 8) : 0));
+      // on "here" the chosen tile blazes white-gold and the rest of the floor drops away round it
+      const wave = waveFloor(1.6), spot = clamp((f.t - HERE) / 0.1);
+      s.floor = (ix, iz, ff) => {
+        if (ix === TILE_IJ[0] && iz === TILE_IJ[1] && spot > 0) return { color: '#fff1b0', power: lerp(1.2, 1.6, spot) * (0.92 + 0.08 * Math.sin(ff.t * 8)) };
+        const L = wave(ix, iz, ff);
+        return spot > 0 ? { color: L.color, power: L.power * lerp(1, 0.45, spot) } : L;
+      };
       const b = f.clock.beat(f.t);
       arrows.forEach((n, i) => n.set(f.t, clamp((f.t - ON44 - i * 0.12) / 0.3), b * 4 + i * 1.5, arrowAngle(ARROWS[i].at, ARROWS[i].dir, f.t)));
-      shaftMat.opacity = pointed ? 0.3 * clamp((f.t - HERE) / 0.08) : 0;
+      shaftMat.opacity = pointed ? 0.22 * clamp((f.t - HERE) / 0.08) : 0;
       const landed = f.t - HOP1;
       path.set(f.t, pv({ open: 0, glow: 1 + 1.4 * decay(landed, 0.3) }));
       // Clawd side-steps in watching the arrows, then hops onto the tile on "here"
@@ -326,7 +365,7 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       if (f.t >= HOP0) pose = P({ armL: lerp(0.4, 1.0, u), armR: lerp(0.4, 1.0, u), squash: -0.25 * Math.sin(u * Math.PI) });
       if (landed >= 0) pose = P({ armR: 1.15, armL: 1.15, lean: 0, squash: 0.35 * decay(landed, 0.1) });
       c.set(landed >= 0 ? DISCO_MOODS.triumphant : DISCO_MOODS.excited, pose, { shades: 1, jiggle: landed >= 0 ? Math.sin(landed * 30) * decay(landed, 0.2) : dn.jiggle, puff: landed >= 0 ? 0.8 : 0.4 }, f.t);
-      land.set(landed, 1.6);
+      land.set(landed, 1.2);
     };
   }));
 
@@ -476,7 +515,9 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
   const CUFF_T = B(266);
   const SLIDE0 = IMPACT + 0.2, SLIDE1 = IMPACT + 0.75;
   // Clawd ends up to the cobra's right, flipped so the paw with the cuffs is on its side
-  const CL_CUFF = new THREE.Vector3(COBRA_AT.x + 1.35, 0, COBRA_AT.z + 0.55);
+  const CL_CUFF = new THREE.Vector3(COBRA_AT.x + 1.7, 0, COBRA_AT.z + 0.6);
+  // where the dropped gun comes to rest
+  const GUN_REST = new THREE.Vector3(COBRA_AT.x - 0.75, 0.06, COBRA_AT.z + 0.45);
   let c48cam: THREE.PerspectiveCamera | null = null;
   // where the slam point sits along the whole run (the spotlight picks the cable up there)
   let uSlam = 0;
@@ -496,13 +537,13 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
   // the camera: a crash zoom from wide on the dark club to the cobra, arriving on the tick, a slow
   // push on the reveal, then (with the lights) back out to a two-shot for the arrest
   const WIDE = [new THREE.Vector3(1.2, 4.6, 9.6), new THREE.Vector3(-1.2, 1.2, -3.0)];
-  const NEAR = [new THREE.Vector3(COBRA_AT.x + 1.1, 1.75, COBRA_AT.z + 5.0), new THREE.Vector3(COBRA_AT.x, 1.35, COBRA_AT.z)];
-  const TWO = [new THREE.Vector3(COBRA_AT.x + 2.3, 1.9, COBRA_AT.z + 6.4), new THREE.Vector3(COBRA_AT.x + 0.75, 1.2, COBRA_AT.z)];
+  const NEAR = [new THREE.Vector3(COBRA_AT.x + 1.2, 2.25, COBRA_AT.z + 6.0), new THREE.Vector3(COBRA_AT.x, 2.15, COBRA_AT.z)];
+  const TWO = [new THREE.Vector3(COBRA_AT.x + 2.7, 2.45, COBRA_AT.z + 9.0), new THREE.Vector3(COBRA_AT.x + 0.85, 1.75, COBRA_AT.z)];
   const gunCam = (cam: THREE.PerspectiveCamera, t: number) => {
     const z = easeInOutCubic(clamp((t - SWING - 0.05) / (TICK - SWING - 0.05)));
     const p = WIDE[0].clone().lerp(NEAR[0], z), tg = WIDE[1].clone().lerp(NEAR[1], z);
     p.addScaledVector(tg.clone().sub(p).normalize(), easeInOutCubic(clamp((t - TICK) / (IMPACT - TICK))) * 0.6);
-    const out = easeInOutCubic(clamp((t - IMPACT - 0.1) / 0.7));
+    const out = easeInOutCubic(clamp((t - IMPACT) / 0.5));
     p.lerp(TWO[0], out);
     tg.lerp(TWO[1], out);
     aimCam(cam, p.x, p.y, p.z, tg.x, tg.y, tg.z);
@@ -510,10 +551,13 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     shake(cam, { t } as Frame, IMPACT, 0.12, 0.3);
   };
   /** The cobra's pose over the pause and the arrest. */
+  // it's still twirling the gun when the light lands; a beat later it notices and stops dead,
+  // the gun back to barrel-up (a whole number of turns), wobbling
+  const STOP_TW = TICK + 0.3;
+  const TURNS = Math.max(1, Math.round((13 * (STOP_TW - SWING)) / (Math.PI * 2))) * Math.PI * 2;
   const cobraView = (t: number) => {
-    const caught = t - TICK, up = t - IMPACT, cuffed = t - CUFF_T;
-    // twirling the gun when the light finds it; it stops dead and the gun swings to a hang
-    const spin = caught < 0 ? (t - SWING) * 13 : (TICK - SWING) * 13 + 0.6 * Math.sin(caught * 9) * decay(caught, 0.3);
+    const caught = t - STOP_TW, up = t - IMPACT, cuffed = t - CUFF_T;
+    const spin = caught < 0 ? TURNS * (clamp((t - SWING) / (STOP_TW - SWING)) - 1) : 0.5 * Math.sin(caught * 12) * decay(caught, 0.25);
     const droop = smooth(clamp((cuffed - 0.15) / 0.5));
     const shiftyEyes = caught > 0.35 && up < 0 ? Math.sign(Math.sin((t - TICK) * 5.5)) * 0.8 : 0;
     return pv({
@@ -550,7 +594,7 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
         });
         boardState(s, f.t);
       }
-      s.crowdMask = i => !nearCobra(club, i, 1.5) && !(club.dancers[i].x < -1 && club.dancers[i].z > -3.2 && club.dancers[i].x > -4.6);
+      s.crowdMask = i => !nearCobra(club, i, 2.6) && !(club.dancers[i].x < -1 && club.dancers[i].z > -3.2 && club.dancers[i].x > -4.6);
       const v = cobraView(f.t);
       path.set(f.t, v);
       scene.updateMatrixWorld();
@@ -562,7 +606,7 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       if (fall >= 0) {
         const y0 = muzzle.y - 0.2, land = Math.sqrt(Math.max(0.01, y0) / 4.9);
         const y = fall < land ? y0 - 4.9 * fall * fall : 0.06 + Math.abs(Math.sin((fall - land) * 10)) * 0.16 * decay(fall - land, 0.12);
-        dropped.root.position.set(COBRA_AT.x - 0.35 - fall * 0.5, Math.max(0.06, y), COBRA_AT.z + 0.45);
+        dropped.root.position.set(lerp(COBRA_AT.x - 0.2, GUN_REST.x, easeOutCubic(clamp(fall / (land + 0.3)))), Math.max(0.06, y), GUN_REST.z);
         dropped.root.rotation.z = fall < land ? -1.4 + fall * 8 : 0.1;
       }
       // the giant cuffs, round the neck from the moment he slaps them on
@@ -610,13 +654,26 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     },
   }));
 
-  // The held note: the camera leaves Clawd posing with his catch and follows the cable back the
-  // other way, low over the floor between the dancers, all the way to the Cache at the front
-  // right. Behind it, tied to the cable's tail by a string: the tiny Field. It peeks out at us;
-  // the dancers round it see it, gasp and point; it looks at them, sweats, and ducks back out of
-  // sight. Far behind, Clawd dances on with his eyes shut, none the wiser.
-  const DRIFT0 = B(268), DRIFT1 = B(275), PEEK = BT(274.5), NOTICE = B(276), LOOKS = B(277), DUCK = BT(278.5);
-  const REVEAL_CAM = [new THREE.Vector3(6.75, 1.12, 4.7), new THREE.Vector3(2.4, 0.95, -2.3)];
+  // The held note: the camera rises off Clawd posing with his catch and cranes along the glowing
+  // cable back the other way, over the floor, then comes down low and long-lens on the Cache at
+  // the front right. Behind it, tied to the cable's tail by a string: the tiny Field. It peeks
+  // out; the dancers round it see it, gasp and point; a crash zoom onto it; it looks left, right,
+  // sweats, and ducks back out of sight, leaving us on the empty spot. Far behind, Clawd dances on
+  // with his eyes shut, none the wiser.
+  const DRIFT0 = B(268), LAND = B(275) - 0.12, PEEK = B(275), NOTICE = B(276), LOOKS = B(277), DUCK = BT(278.5);
+  // the crane, as matching key positions and look points (the same number of each, so a point on
+  // one pairs with the point at the same u on the other)
+  const CRANE = new THREE.CatmullRomCurve3([
+    TWO[0], new THREE.Vector3(-0.9, 4.3, 3.8), new THREE.Vector3(1.4, 3.9, 5.4), new THREE.Vector3(4.5, 2.0, 6.6), new THREE.Vector3(6.3, 0.85, 6.6),
+  ], false, 'centripetal');
+  const CRANE_LOOK = new THREE.CatmullRomCurve3([
+    TWO[1], new THREE.Vector3(-1.6, 0.3, -2.0), new THREE.Vector3(0.9, 0.2, -0.15), new THREE.Vector3(3.6, 0.35, -0.4), new THREE.Vector3(3.6, 0.6, -0.5),
+  ], false, 'centripetal');
+  // the crash zoom lands on the Field a little left of centre, the Cache's edge on the right
+  const ZOOM_AT = new THREE.Vector3(3.95, 0.33, 0.2);
+  // three dancers stand where the long lens sees them point (two flank the Cache, one on the left
+  // between it and Clawd far behind); the front-left dancer in the crane's way steps out
+  const WATCH = new Map<number, THREE.Vector3>([[10, new THREE.Vector3(5.6, 0, -1.7)], [13, new THREE.Vector3(2.4, 0, -1.0)], [14, new THREE.Vector3(6.5, 0, -0.4)]]);
   const thawFrom = (club: Club, i: number) => B(268) + 0.15 + Math.hypot(club.dancers[i].x - COBRA_AT.x, club.dancers[i].z - COBRA_AT.z) * 0.07;
   shots.push(shot('c48-drift', B(268), B(280), ({ scene, camera, club }) => {
     const path = new HandlerPath();
@@ -626,42 +683,47 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     onNeck.root.scale.setScalar(2.1);
     const dropped = new Revolver();
     dropped.root.scale.setScalar(0.82);
-    dropped.root.position.set(COBRA_AT.x - 1.1, 0.06, COBRA_AT.z + 0.45);
+    dropped.root.position.copy(GUN_REST);
     dropped.root.rotation.z = 0.1;
     const sulk = sulkCast(scene);
     const drop = sweatDrop();
     scene.add(path.root, c.root, onNeck.root, dropped.root, drop);
-    const neck = new THREE.Vector3(), a = new THREE.Vector3(), tg = new THREE.Vector3();
-    // the dancers who see it: those round the Cache, turning to it and pointing
-    const watchers = [...club.dancers.keys()].filter(i => Math.hypot(club.dancers[i].x - CACHE_AT.x, club.dancers[i].z - CACHE_AT.z) < 3.4);
+    const neck = new THREE.Vector3(), cam = new THREE.Vector3(), look = new THREE.Vector3();
+    const watchers = [...WATCH.keys()];
+    const shifts = new Map([...WATCH].map(([i, at]) => [i, at.clone().sub(new THREE.Vector3(club.dancers[i].x, 0, club.dancers[i].z))]));
     return (f, s) => {
-      // camera: along the cable from the head end back to the tail, then settling on the Cache
-      const u = easeInOutCubic(clamp((f.t - DRIFT0) / (DRIFT1 - DRIFT0)));
-      const r = 1 - u;   // route position, head (1) to tail (0)
-      path.full.getPointAt(clamp(r * 0.96 + 0.02), a);
-      path.full.getPointAt(clamp(r * 0.96 + 0.02 - 0.08), tg);
-      const settle = smooth(clamp((f.t - (DRIFT1 - 0.8)) / 1.2));
-      const cam = new THREE.Vector3(a.x + 1.0, 1.55, a.z + 4.3).lerp(REVEAL_CAM[0], settle);
-      const look = tg.clone().setY(0.55).lerp(REVEAL_CAM[1], settle);
-      const push = smooth(clamp((f.t - NOTICE) / 2.5)) * 0.5;
-      cam.addScaledVector(look.clone().sub(cam).normalize(), push);
+      // camera: up off the two-shot into a crane over the cable, along it from near the head to
+      // the tail, down low on a long lens for the reveal, then a crash zoom onto the Field
+      const u = easeInOutCubic(clamp((f.t - DRIFT0 - 0.1) / (LAND - DRIFT0 - 0.1)));
+      CRANE.getPoint(u, cam);
+      CRANE_LOOK.getPoint(u, look);
+      const zoom = easeOutCubic(clamp((f.t - (NOTICE + 0.06)) / 0.22));
+      look.lerp(ZOOM_AT, zoom);
       aimCam(camera, cam.x, cam.y, cam.z, look.x, look.y, look.z);
+      shake(camera, f, NOTICE + 0.06, 0.03, 0.15);
+      camera.fov = lerp(lerp(38, 31, smooth(clamp((u - 0.55) / 0.45))), 15, zoom);
+      camera.updateProjectionMatrix();
       partyState(s, f);
+      // the floor dims but for the cable's runway while we follow it, and comes back once the
+      // Field has ducked out of sight
+      s.floor = runwayFloor(ff => smooth(clamp((ff.t - DRIFT0) / 0.8)) * (1 - smooth(clamp((ff.t - (DUCK + 0.2)) / 0.5))));
       s.crowdFrozen = i => (f.t < thawFrom(club, i) ? 1 : 0);
-      s.crowdMask = i => !nearCobra(club, i, 1.5);
+      s.crowdMask = i => !nearCobra(club, i, 2.6) && i !== 12;
+      s.crowdShift = i => shifts.get(i) ?? null;
       // the watchers: stop, gasp, point at the Field; drop it as it ducks away
       const see = smooth(clamp((f.t - NOTICE) / 0.2)) * (1 - smooth(clamp((f.t - (DUCK + 0.5)) / 0.4)));
       s.crowdGasp = i => (watchers.includes(i) ? see : 0);
       s.crowdPose = (i, body) => {
         if (!watchers.includes(i) || see <= 0) return body;
-        const d = club.dancers[i];
-        const toward = Math.sign(FIELD_PEEK.x - d.x) || 1;
+        const toward = Math.sign(FIELD_PEEK.x - WATCH.get(i)!.x) || 1;
         const pointing: Body = { ...body, aR: toward > 0 ? 1.6 : 0.3, aL: toward > 0 ? 0.3 : 1.6, lean: toward * -0.08, hip: 0, bob: 0, squash: 0, lL: 0.05, lR: 0.05, turn: 0 };
         const k = see;
         return { aL: lerp(body.aL, pointing.aL, k), aR: lerp(body.aR, pointing.aR, k), lL: lerp(body.lL, pointing.lL, k), lR: lerp(body.lR, pointing.lR, k), lean: lerp(body.lean, pointing.lean, k), hip: lerp(body.hip, 0, k), bob: lerp(body.bob, 0, k), squash: lerp(body.squash, 0, k), turn: lerp(body.turn, 0, k) };
       };
-      // the cobra, cuffed and sulking, the gun on the floor beside it
-      path.set(f.t, pv({ rear: 0.6, up: 0, open: 0.45, glow: 1.05, gun: false }));
+      // the cobra, cuffed and sulking, the gun on the floor beside it; the cable glows hot while
+      // we follow it, and calms down once we're on the Cache
+      const landed = smooth(clamp((f.t - LAND) / 0.5));
+      path.set(f.t, pv({ rear: 0.6, up: 0, open: 0.45, glow: lerp(1.5, 0.95, landed), packets: lerp(1, 0.45, landed), gun: false }));
       scene.updateMatrixWorld();
       path.neckAt(0.72, neck);
       onNeck.root.position.copy(neck).add(new THREE.Vector3(-0.38, -0.05, 0.08));
@@ -672,11 +734,12 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       c.root.position.set(CL_CUFF.x + dn.x, 0, CL_CUFF.z);
       c.root.rotation.y = Math.atan2(camera.position.x - CL_CUFF.x, camera.position.z - CL_CUFF.z) * 0.7;
       c.set(DISCO_MOODS.triumphant, dn.pose, { shades: 0, jiggle: dn.jiggle, puff: 1.1, medal: 0.4 }, f.t);
-      // the Field: peeks out, looks at us, at the dancers pointing at it, sweats, ducks
+      // the Field: peeks out at us, eyes wide at the pointing, a look left, a look right, a bead
+      // of sweat, and gone
       const peek = smooth(clamp((f.t - PEEK) / 0.3)) * (1 - smooth(clamp((f.t - DUCK) / 0.18)));
-      const lookAt = f.t < LOOKS ? 0.7 : -0.9;
-      sulk(f, path, { peek, look: lookAt, open: f.t > NOTICE && f.t < DUCK ? 1.25 : 1, squash: 0.25 * decay(f.t - NOTICE, 0.1), caLook: -0.5 });
-      const sw = f.t - (LOOKS + 0.2);
+      const lookAt = f.t < LOOKS ? 0.7 : f.t < LOOKS + 0.3 ? -0.9 : 0.9;
+      sulk(f, path, { peek, look: lookAt, open: f.t > NOTICE && f.t < DUCK ? 1.25 : 1, squash: 0.25 * decay(f.t - NOTICE, 0.1), caLook: -0.5, gone: f.t > DUCK + 0.2 });
+      const sw = f.t - (LOOKS + 0.35);
       drop.visible = sw > 0 && sw < 0.7 && peek > 0.3;
       drop.scale.setScalar(0.45);
       drop.position.set(FIELD_PEEK.x + 0.3, 0.7 - sw * sw * 1.5, FIELD_PEEK.z + 0.1);
@@ -694,7 +757,8 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
   const STOP_B = 288.75, STOP_SPIN = BT(STOP_B);
   const breakState = (s: ClubState, f: Frame, club: Club) => {
     partyState(s, f);
-    s.crowdMask = i => !nearCobra(club, i, 1.5) && Math.hypot(club.dancers[i].x - CL_DANCE.x, club.dancers[i].z - CL_DANCE.z) > 1.4;
+    // (and the front-left dancer, who'd stand right in the way of the Chief's entrance)
+    s.crowdMask = i => !nearCobra(club, i, 1.5) && Math.hypot(club.dancers[i].x - CL_DANCE.x, club.dancers[i].z - CL_DANCE.z) > 1.4 && i !== 12;
   };
   function cobraCuffed(scene: THREE.Scene) {
     const path = new HandlerPath();
@@ -704,7 +768,7 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     scene.add(path.root, onNeck.root);
     const neck = new THREE.Vector3();
     return (f: Frame) => {
-      path.set(f.t, pv({ rear: 0.6, up: 0, open: 0.4, glow: 1, gun: false }));
+      path.set(f.t, pv({ rear: 0.6, up: 0, open: 0.4, glow: 1, packets: 0.4, gun: false }));
       scene.updateMatrixWorld();
       path.neckAt(0.72, neck);
       onNeck.root.position.copy(neck).add(new THREE.Vector3(-0.38, -0.05, 0.08));
@@ -727,7 +791,8 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     scene.add(c.root, ch.root);
     return (f, s) => {
       const k = easeInOutCubic(f.p);
-      aimCam(camera, lerp(-1.4, -0.6, k), lerp(3.6, 3.2, k), lerp(11.5, 10.2, k), lerp(-1.6, -0.6, k), 1.7, -2.6);
+      // medium-wide, drifting right with the Chief as he crosses toward Clawd
+      aimCam(camera, lerp(-2.0, -1.2, k), lerp(2.1, 1.95, k), lerp(7.4, 6.6, k), lerp(-1.8, -1.0, k), 1.15, -1.2);
       breakState(s, f, club);
       const b = f.clock.beat(f.t);
       const dn = victory(b, f.t);
@@ -750,7 +815,8 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     return (f, s) => {
       const k = easeInOutCubic(f.p);
       const mx = (CL_DANCE.x + CHIEF_TO.x) / 2;
-      aimCam(camera, mx + lerp(0.35, 0.15, k), lerp(1.75, 1.65, k), CL_DANCE.z + lerp(5.6, 4.7, k), mx, 1.45, CL_DANCE.z);
+      // full length, so the tapping foot and the mug both read
+      aimCam(camera, mx + lerp(0.3, 0.15, k), lerp(1.45, 1.4, k), CL_DANCE.z + lerp(6.9, 5.9, k), mx, 1.15, CL_DANCE.z);
       breakState(s, f, club);
       const b = f.clock.beat(f.t);
       const dn = victory(b, f.t);
@@ -758,14 +824,15 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       const sink = smooth(clamp((f.t - STOP_SPIN - 0.7) / 1.2));
       c.root.position.set(CL_DANCE.x + dn.x * (1 - seen), 0, CL_DANCE.z);
       c.set(f.t < STOP_SPIN ? DISCO_MOODS.triumphant : seen < 1 ? DISCO_MOODS.baffled : DISCO_MOODS.sheepish, dn.pose, {
-        shades: f.t < STOP_SPIN ? 1 : lerp(1, 2, seen), jiggle: f.t < STOP_SPIN ? dn.jiggle : Math.sin((f.t - STOP_SPIN) * 30) * decay(f.t - STOP_SPIN, 0.2),
-        puff: lerp(1.2, 0.2, sink), flat: 0.35 * sink, medal: f.t < STOP_SPIN ? 0.5 : 0,
+        // the shades jump up into the afro (wide eyes), then a sheepish grin as the afro sinks
+        shades: f.t < STOP_SPIN ? 1 : lerp(1, 0, smooth(seen)), jiggle: f.t < STOP_SPIN ? dn.jiggle : Math.sin((f.t - STOP_SPIN) * 30) * decay(f.t - STOP_SPIN, 0.2),
+        puff: lerp(1.2, 0, sink), flat: 0.5 * sink, medal: f.t < STOP_SPIN ? 0.5 : 0,
       }, f.t);
       const p = chiefAt(f.t);
       const walking = f.t < WALK1;
       ch.root.position.copy(p);
       const tap = f.t > WALK1 + 0.2 ? Math.max(0, Math.sin(f.clock.beat(f.t) * Math.PI)) : 0;
-      ch.set(cs({ walk: walking ? (f.t - WALK0) * 1.1 : 0, brow: f.t > WALK1 ? lerp(0.3, 1, smooth(clamp((f.t - WALK1) / 0.4))) : 0.3, look: 0.7, tap, sip: smooth(clamp((f.t - B(291)) / 0.3)) * (1 - smooth(clamp((f.t - B(292.5)) / 0.3))) }), f.t);
+      ch.set(cs({ walk: walking ? (f.t - WALK0) * 1.1 : 0, brow: f.t > WALK1 ? lerp(0.3, 1, smooth(clamp((f.t - WALK1) / 0.4))) : 0.3, look: 0.7, tap, sip: smooth(clamp((f.t - B(291)) / 0.3)) * (1 - smooth(clamp((f.t - BT(292.5)) / 0.3))) }), f.t);
       cuffed(f);
     };
   }));

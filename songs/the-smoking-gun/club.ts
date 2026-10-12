@@ -443,7 +443,7 @@ export class Club {
     });
     this.meterRed = ownGlow('#ff3240', 1);
     const redLamp = shapeMesh(circleShape(METER.h * 0.07), this.meterRed, 0.006, 12);
-    redLamp.position.set(METER.w * 0.38, METER.h * 0.32, 0);
+    redLamp.position.set(METER.w * 0.38, METER.h * 0.32, 0.006);
     meter.add(redLamp);
     const lab = staticPlane(METER.w * 0.9, METER.h * 0.2, 160, (g, W, H) => {
       g.fillStyle = '#3b2d22'; g.font = `700 ${H * 0.62}px ${UI_FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
@@ -513,7 +513,7 @@ export class Club {
     tri([[0, -0.2], [0, -1.0]]);
     tri([[-0.45, -1.0], [0.45, -1.0]]);
     const olive = shapeMesh(circleShape(0.14), glowMat('#7dff6a', 2), 0.01, 12);
-    olive.position.set(0.25, 0.55, 0);
+    olive.position.set(0.25, 0.55, 0.01);
     glass.add(olive);
     this.add(glass, x + 5.6, 7.3, WALL_Z + 0.1);
     // counter: front panel with a neon strip, a top surface, stools in front
@@ -651,6 +651,10 @@ export class Club {
     sparkle.closePath();
     this.spots = new THREE.InstancedMesh(new THREE.ShapeGeometry(sparkle, 1), this.spotMat, SPOTS);
     this.spots.frustumCulled = false;
+    // a fixed bounding sphere: three.js sorts an instanced mesh by the sphere it computes the first
+    // time it draws it, from whatever frame that was, so a lazy one makes the sort order (and the
+    // picture) depend on which frame rendered first
+    this.spots.boundingSphere = new THREE.Sphere(new THREE.Vector3(BALL.x, 7, WALL_Z + 0.3), 30);
     this.root.add(this.spots);
   }
 

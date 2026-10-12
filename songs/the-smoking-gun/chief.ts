@@ -100,7 +100,7 @@ export class Chief {
       lap.moveTo(side * 0.19, SHOULDER_Y + 0.06); lap.lineTo(side * 0.36, SHOULDER_Y + 0.06); lap.lineTo(side * 0.04, 1.36); lap.closePath();
       this.body.add(shapeMesh(lap, SUIT_DARK, 0.007));
       const btn = shapeMesh(circleShape(0.03), '#1d1e2a', 0.008, 8);
-      btn.position.set(0.02, 1.2 - (side + 1) * 0.08, 0);
+      btn.position.set(0.02, 1.2 - (side + 1) * 0.08, 0.008);
       this.body.add(btn);
     }
     const hanky = new THREE.Shape();
@@ -119,7 +119,7 @@ export class Chief {
     this.body.add(neck, head);
     this.rim.add(circleShape(0.36), this.body, 0, HEAD_Y, -0.02, 0.04);
     const shine = shapeMesh(arcShape(0.2, 0.05, Math.PI * 0.55, Math.PI * 0.8), '#fbe2cf', 0.006, 10);
-    shine.position.set(0, HEAD_Y + 0.02, 0);
+    shine.position.set(0, HEAD_Y + 0.02, 0.006);
     this.body.add(shine);
     for (const side of [-1, 1]) {
       const tuft = inkedRect(0.1, 0.2, 0.05, GREY, 0.025);
@@ -129,7 +129,7 @@ export class Chief {
     }
     for (const side of [-1, 1]) {
       const eye = shapeMesh(roundedRectShape(0.06, 0.08, 0.028), INK, 0.01);
-      eye.position.set(side * 0.11, HEAD_Y + 0.02, 0);
+      eye.position.set(side * 0.11, HEAD_Y + 0.02, 0.01);   // (z in front of the head's fill)
       this.body.add(eye);
       this.pupils.push(eye);
     }
@@ -191,9 +191,9 @@ export class Chief {
     const cup = inkedRect(0.2, 0.24, 0.04, '#f6f3ee', 0.03);
     const band = shapeMesh(roundedRectShape(0.2, 0.05, 0.01, 0, 0.04), '#c92f3c', 0.004);
     const handle = shapeMesh(arcShape(0.07, 0.035, Math.PI / 2, Math.PI * 1.5), INK, -0.002, 10);
-    handle.position.set(-0.11, 0, 0);
+    handle.position.set(-0.11, 0, -0.002);
     const handle2 = shapeMesh(arcShape(0.07, 0.018, Math.PI / 2, Math.PI * 1.5), '#f6f3ee', -0.001, 10);
-    handle2.position.set(-0.11, 0, 0);
+    handle2.position.set(-0.11, 0, -0.001);
     const coffee = shapeMesh(roundedRectShape(0.17, 0.03, 0.01, 0, 0.11), '#5a3524', 0.005);
     cupG.add(cup, band, handle, handle2, coffee);
     for (let k = 0; k < 3; k++) {

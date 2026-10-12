@@ -12,7 +12,7 @@ import { DISCO_LYRICS } from '../lyrics-layout';
 
 const clubs = new WeakMap<Stage, Club>();
 const streets = new WeakMap<Stage, Street>();
-export const getClub = (stage: Stage) => { let c = clubs.get(stage); if (!c) { c = new Club(); clubs.set(stage, c); } return c; };
+export const getClub = (stage: Stage) => { let c = clubs.get(stage); if (!c) { c = new Club(); clubs.set(stage, c); (globalThis as any).__club = c; } return c; };
 export const getStreet = (stage: Stage) => { let c = streets.get(stage); if (!c) { c = new Street(); streets.set(stage, c); } return c; };
 
 export interface Ctx {

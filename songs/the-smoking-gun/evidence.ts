@@ -215,13 +215,13 @@ export class Timeline {
   /**
    * slide: the track's x offset. pop(j): how far marker j has popped up (0..1+, eased by the shot).
    * tag: the commit tag's glow 0..1. cross: seconds since the X landed (negative = not yet).
-   * extra: the extra tags' sizes (see the constructor).
+   * extra: the extra tags' size and glow (see the constructor).
    */
-  set(t: number, o: { slide: number; pop: (j: number) => number; tag: number; cross: number; lit?: number; extra?: number[] }) {
+  set(t: number, o: { slide: number; pop: (j: number) => number; tag: number; cross: number; lit?: number; extra?: { size: number; glow: number }[] }) {
     const lit = o.lit ?? 1;
-    // the extra tags: extra[i] is tag i's size (0 hidden, overshoots as it pops), its glow follows
+    // the extra tags: size 0 hides one (it overshoots as it pops); glow as the commit tag's
     this.extras.forEach((e, i) => {
-      const k = o.extra?.[i] ?? 0, g = clamp(k);
+      const k = o.extra?.[i]?.size ?? 0, g = clamp(o.extra?.[i]?.glow ?? 0);
       e.g.visible = k > 0.01;
       e.g.scale.setScalar(Math.max(0.01, k));
       setGlow(e.mat, PAL.gold, lerp(0.7, 1.9, g) * (1 + 0.08 * Math.sin(t * 9) * g));
@@ -327,7 +327,7 @@ export class Revolver {
       grip.add(sc);
     }
     const guard = shapeMesh(arcShape(0.085, 0.028, Math.PI * 1.05, Math.PI * 1.95), INK, 0.001, 10);
-    guard.position.set(0.12, -0.02, 0);
+    guard.position.set(0.12, -0.02, 0.001);
     const trigger = shapeMesh(roundedRectShape(0.03, 0.09, 0.012, 0.1, -0.05), INK, 0.001);
     const frame = inkedRect(0.36, 0.16, 0.04, steel, 0.03);
     frame.position.set(0.1, 0.05, 0.004);

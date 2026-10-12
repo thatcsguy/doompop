@@ -88,6 +88,7 @@ export function introShots(audio: AudioData): Shot[] {
     const N = 70;
     const motes = new THREE.InstancedMesh(new THREE.CircleGeometry(0.018, 6), lightMat('#ffffff', 0.7), N);
     motes.frustumCulled = false;
+    motes.boundingSphere = new THREE.Sphere(new THREE.Vector3(0, 4, -0.3), 6);   // fixed: see Club.spots
     scene.add(motes);
     // sparkles that wake up in the dark on the snap
     const sparkMats: THREE.MeshBasicMaterial[] = [];

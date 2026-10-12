@@ -291,10 +291,14 @@ export class Rain {
     const geo = new THREE.PlaneGeometry(0.018, 0.55);
     this.streaks = new THREE.InstancedMesh(geo, lightMat('#9fb8ff', 0.55), count);
     this.streaks.frustumCulled = false;
+    // fixed bounding spheres, so the transparent sort doesn't depend on the first frame drawn
+    const mid = new THREE.Vector3((box.x0 + box.x1) / 2, box.top / 2, (box.z0 + box.z1) / 2);
+    this.streaks.boundingSphere = new THREE.Sphere(mid, 1e3);
     const ring = new THREE.RingGeometry(0.7, 1, 24);
     ring.rotateX(-Math.PI / 2);
     this.splashes = new THREE.InstancedMesh(ring, lightMat('#b9c8ff', 0.4), splashCount);
     this.splashes.frustumCulled = false;
+    this.splashes.boundingSphere = new THREE.Sphere(mid.clone().setY(0.02), 1e3);
     this.root.add(this.streaks, this.splashes);
   }
 
