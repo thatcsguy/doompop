@@ -10,15 +10,14 @@ import type { AudioData, LyricsData } from '../../../engine/song';
 import { clamp, decay, easeInCubic, easeInOutCubic, easeOutBack, easeOutCubic, lerp, smooth } from '../../../engine/ease';
 import { hash } from '../../../engine/rng';
 import { PAL, aimCam, beamTexture, frameCam, glowMat, lightMat } from '../look';
-import { BAR, BOOTH_SPOT, CONSOLE, FLOOR, METER, RISER, WALL_Z, aliveFloor, allRed, clearBooth, deadFloor, tileCenter, type ClubState, type Painter } from '../club';
+import { BAR, BOOTH_SPOT, FLOOR, WALL_Z, aliveFloor, allRed, clearBooth, deadFloor, tileCenter, type ClubState, type Painter } from '../club';
 import { ARM_LEN, DiscoClawd, DISCO_MOODS, REST, dance, mixDance, type DanceOut, type DiscoLook, type Pose } from '../clawd-disco';
-import { Bouncer, Cache, sp } from '../suspects';
+import { Bouncer, Cache, Field, sp } from '../suspects';
 import { Burst, Cuffs, Pager, Turntable, lightPool, martini, sweatDrop } from '../props';
 import { FloorLogs, NeonArrow, Revolver, Smoke, Timeline, drawSpotlight, spotScreen } from '../evidence';
 import { shake, shot } from './common';
 
 const P = (p: Partial<Pose>): Pose => ({ ...REST, ...p });
-const TOP = RISER.h + CONSOLE.h;
 
 /** The first time in [from, to) that the mix's loudness jumps past `level`: hits the beat tracker
  *  doesn't list (the stabs in the pause) still come from the analysed envelope. */
@@ -224,7 +223,7 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
   const ARROW_TILE: [number, number] = [8, 4];
   const TILE = tileCenter(...ARROW_TILE);
   const ARROW_AT = new THREE.Vector3(TILE.x, 5.6, TILE.z);
-  const ON = W(20, 0), SPIN = W(20, 1), POINT = W(20, 2), HERE = W(20, 3);
+  const ON = W(20, 0), SPIN = W(20, 1), HERE = W(20, 3);
   const SETTLE = HERE - 0.06;
   const arrowAngle = (t: number) => {
     if (t < SPIN) return Math.PI;
@@ -266,7 +265,6 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       const k = easeInOutCubic(f.p);
       aimCam(camera, lerp(0.0, 0.5, k), lerp(2.6, 2.9, k), lerp(7.8, 7.0, k), lerp(0.6, 0.8, k), 3.0, -3.0);
       shake(camera, f, HOP1, 0.05, 0.15);
-      void POINT;
     };
   }));
 
@@ -446,7 +444,8 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     const cuffsAt = dangleCuffs(c);
     const snap = new Burst(PAL.cyan, 12);
     snap.root.position.set(CACHE_AT.x, 1.05, CACHE_AT.z + 0.2);
-    scene.add(ca.root, smoke.root, dropped.root, drop, c.root, snap.root);
+    const fi = new Field();
+    scene.add(ca.root, smoke.root, dropped.root, drop, c.root, snap.root, fi.root);
     const muzzle = new THREE.Vector3();
     // the dancers between the camera and the arrest step out of this shot
     const inTheWay = (i: number) => {
@@ -493,6 +492,11 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
         dropped.root.position.set(CACHE_AT.x + 0.75 + fall * 0.6, Math.max(0.06, y), CACHE_AT.z + 0.35);
         dropped.root.rotation.z = fall < land ? 1.2 - fall * 9 : 0.15;
       }
+      // the tiny Field peeks out from behind it once the lights are up, and ducks back as the
+      // cuffs go on (nobody notices; it pays off on a rewatch)
+      const peek = smooth(clamp((f.t - (IMPACT + 0.25)) / 0.2)) * (1 - smooth(clamp((f.t - (CUFF_T + 0.05)) / 0.15)));
+      fi.root.position.set(CACHE_AT.x + lerp(0.1, 0.85, peek), 0, CACHE_AT.z - 0.35);
+      fi.set(sp({ look: -0.9, open: 1 }), f.t);
       // a sweat drop rolls off it under the light
       const sw = f.t - (W(24, 1) + 0.2);
       drop.visible = sw > 0 && sw < 0.9 && !lights;
@@ -503,7 +507,18 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       const slide = easeOutCubic(glide);
       const popUp = clamp((f.t - SLIDE1) / 0.18);
       const kneel = glide > 0 && popUp < 1 ? 1 - smooth(popUp) : 0;
-      c.root.visible = f.t >= SLIDE0;
+      // until then he's where the spotlight left him, frozen with the cuffs (dark once it's gone)
+      c.root.visible = f.t < TICK || f.t >= SLIDE0;
+      if (f.t < SLIDE0) {
+        c.root.position.copy(CL_MID);
+        c.set(DISCO_MOODS.smug, P({ armR: 0.55, armL: -0.55, lean: -0.05 }), { shades: 1, puff: 0.7 }, f.t);
+        cuffsAt(true, 0.55, -0.05, 0);
+        snap.set(f.t - CUFF_T, 1.1);
+        gunCam(camera, f.t);
+        shake(camera, f, TICK, 0.05, 0.12);
+        shake(camera, f, IMPACT, 0.12, 0.3);
+        return;
+      }
       c.root.position.set(lerp(CL_CUFF.x - 3.6, CL_CUFF.x, slide), 0.12 * Math.sin(smooth(popUp) * Math.PI), CL_CUFF.z);
       const slap = clamp((f.t - (CUFF_T - 0.12)) / 0.12);
       const after = clamp((f.t - CUFF_T) / 0.2);
@@ -692,8 +707,6 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
   // them, the ball winds down, and Clawd freezes mid-point
   const RED0 = B(153), RED1 = B(153) + 0.9;
   const CLAWD_STOP = RED0 + 0.42;   // when the red reaches his tile
-  const stopped = dance('point', 0, 1);
-  const frozenPoint = (t: number) => (t < CLAWD_STOP ? dance('point', 0, 0) : stopped);
   const redFloor = redWave(victoryFloor, RED0, RED1 - RED0);
   const redState = (s: ClubState, f: Frame, club: { dancers: { x: number }[] }) => {
     partyState(s, f);
@@ -724,7 +737,6 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       c.set(live ? DISCO_MOODS.triumphant : DISCO_MOODS.ohno, dn.pose, { shades: lerp(1, 2, shock), jiggle: live ? dn.jiggle : 0, puff: 0.9 * (1 - shock * 0.3) }, f.t);
       const k = easeInOutCubic(f.p);
       aimCam(camera, lerp(0.4, 0.2, k), lerp(3.7, 3.4, k), lerp(14.2, 12.8, k), 0.8, 4.0, -2.5);
-      void frozenPoint;
     };
   }));
 
@@ -780,6 +792,5 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     };
   }));
 
-  void TOP; void METER; void hash;
   return shots;
 }
