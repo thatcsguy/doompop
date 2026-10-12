@@ -8,7 +8,7 @@ import { MOODS, REST, mixMood, type Pose } from '../../../engine/characters/claw
 import { INK, canvasPlane, inkedRect, ownMat, shapeMesh, roundedRectShape, staticPlane } from '../../../engine/flat';
 import { hash } from '../../../engine/rng';
 import { clamp, decay, easeInOutCubic, easeOutBack, easeOutCubic, lerp, smooth, unlerp } from '../../../engine/ease';
-import { BUBBLE, DAY_LYRICS, FIELD, FLAT_POST, FLOOR_Y, PAL, beatHop, buildDesk, frameCam, hop, label, wordBlock, type DeskSet } from '../world';
+import { BUBBLE, DAY_LYRICS, FONT, FIELD, FLAT_POST, FLOOR_Y, PAL, beatHop, buildDesk, frameCam, hop, label, wordBlock, type DeskSet } from '../world';
 
 type Update = (f: Frame) => void;
 interface Extra { overlay?: ShotWorld['overlay']; lyrics?: boolean }
@@ -208,7 +208,7 @@ export function verse1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       // he stands centre looking up, hops onto YES, then over to NO
       let x = 0, y = 0, land = 0;
       const toYes = hop(f.t, tYes + 0.05, tYes + 0.35, 0, -2.6, 1.6);
-      const toNo = hop(f.t, tNo + 0.08, tNo + 0.42, -2.6, 2.6, 1.4);
+      const toNo = hop(f.t, tNo + 0.08, tNo + 0.42, -2.6, 2.6, 0.9);
       if (f.t >= tNo + 0.08) { x = toNo.x; y = 1.0 + toNo.y; land = decay(f.t - (tNo + 0.42), 0.09); }
       else if (f.t >= tYes + 0.05) { x = toYes.x; y = lerp(0, 1.0, toYes.k) + toYes.y; land = decay(f.t - (tYes + 0.35), 0.09); }
       s.clawd.root.position.set(x, FLOOR_Y + y, 0.25);
@@ -427,12 +427,24 @@ export function verse1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     tail.moveTo(-1.2, -0.45); tail.lineTo(-1.5, -0.95); tail.lineTo(-0.7, -0.45); tail.closePath();
     const tailInk = new THREE.Shape();
     tailInk.moveTo(-1.32, -0.42); tailInk.lineTo(-1.62, -1.05); tailInk.lineTo(-0.58, -0.42); tailInk.closePath();
-    const txt = label('How can I help?', 3.4, 1.0, { size: 0.4, weight: 800 });
-    txt.position.z = 0.012;
-    bubble.add(bb, shapeMesh(tailInk, INK, -0.001), shapeMesh(tail, '#ffffff', 0.004), txt);
+    // the sung words "I'm here to help" type into the bubble as they are sung
+    const said = L(8).words.slice(4);
+    const txt = canvasPlane(3.4, 1.0, 160, (g, f: Frame, Wd, Hd) => {
+      g.font = `900 ${Hd * 0.42}px ${FONT}`;
+      g.textBaseline = 'middle';
+      const full = said.map(w => w.w.replace(/[“”"]/g, '')).join(' ');
+      const shown = said.filter(w => f.t >= w.start - 1 / 30).map(w => w.w.replace(/[“”"]/g, '')).join(' ');
+      const x0 = (Wd - g.measureText(full).width) / 2;
+      g.fillStyle = INK;
+      g.fillText(shown, x0, Hd * 0.53);
+      const caret = g.measureText(shown).width + (shown ? Hd * 0.06 : 0);
+      if (f.t < said[said.length - 1].end && Math.floor(f.t / 0.25) % 2 === 0) g.fillRect(x0 + caret, Hd * 0.3, Hd * 0.05, Hd * 0.45);
+    });
+    txt.mesh.position.z = 0.012;
+    bubble.add(bb, shapeMesh(tailInk, INK, -0.001), shapeMesh(tail, '#ffffff', 0.004), txt.mesh);
     s.screen.add(bubble);
     return f => {
-      const tSay = W(8, 3), tHere = W(8, 5), tHelp = W(8, 7);
+      const tSay = W(8, 3), tHelp = W(8, 7);
       const burst = easeOutBack(unlerp(f.t, tSay, tSay + 0.35));
       rays.visible = burst > 0.01;
       rays.position.set(-0.4, FLOOR_Y + 0.6, 0.05);
@@ -441,7 +453,9 @@ export function verse1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       const j = hop(f.t, tSay - 0.25, tSay + 0.05, 0, 0, 0.8);
       const strike = f.t >= tSay;
       s.clawd.root.position.set(-0.4, FLOOR_Y + j.y, 0.2);
-      const pop = easeOutBack(unlerp(f.t, tHere - 0.1, tHere + 0.2), 2);
+      const tIm = W(8, 4);
+      const pop = easeOutBack(unlerp(f.t, tIm - 0.25, tIm + 0.05), 2);
+      txt.update(f);
       bubble.visible = pop > 0.01;
       bubble.position.set(1.75, FLOOR_Y + 2.0, 0.3);
       bubble.scale.setScalar(Math.max(0.01, pop));

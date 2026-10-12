@@ -43,7 +43,7 @@ The ending returns to the opening image, the chat box with the blinking cursor, 
   - panicked: huge eyes, sweat, a hard shake, colour starting to drain
   - sad: drooping eyes, falling tears, body sagging, mostly grey
 - **Palette:** cream, terracotta and soft blues early on. Midnight blue and screen cyan in verse 2. Alarm red and black in the bridge. Ash grey and dim orange at the end, where Clawd is the only warm thing left in frame.
-- **Type:** the karaoke lyrics sit at the bottom in a clean sans-serif, with the sung word highlighted. In the bridge, each command word ("Answer", "Route", "Close") also appears as a terminal-style command on the control-room screens. The countdown is a big monospace HUD clock.
+- **Type:** the lyrics are kinetic typography: chunky sticker-style words that pop, drop, stamp or type in as each is sung, placed in each shot's empty space (layouts in `lyrics-layout.ts`). Quoted lines can go into speech bubbles or screens in the picture. In the bridge, each command word ("Answer", "Route", "Close") also appears as a terminal-style command on the control-room screens. The countdown is a big monospace HUD clock.
 
 ## Pacing
 

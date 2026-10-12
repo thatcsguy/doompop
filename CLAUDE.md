@@ -25,6 +25,9 @@ Code-rendered music videos. Read README.md for the pipeline and docs/ANIMATION_G
 ## Taste rules (from the genre's best videos)
 
 - Something happens in every shot. Tell the story with pictures; keep extra text light, since the
-  karaoke already shows the words.
+  lyric layer already shows the words.
+- Lyrics are kinetic typography (`engine/kinetic.ts`): words appear only when sung, animated and placed
+  per line in empty space. No static karaoke bar unless a song's direction asks for one.
+- Wide shots get set dressing and small moving details; a bare backdrop reads as unfinished.
 - A through-line (one set, one device, one escalating prop) beats a string of unrelated visuals.
 - Turn every note the director gives into a written rule here or in the song's docs, the same day.

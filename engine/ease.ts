@@ -11,3 +11,12 @@ export const easeInOutCubic = (k: number) => { k = clamp(k); return k < 0.5 ? 4 
 export const easeOutBack = (k: number, s = 1.70158) => { k = clamp(k) - 1; return 1 + (s + 1) * k * k * k + s * k * k; };
 /** Exponential decay from an event: 1 at dt = 0, falling with time constant tau. 0 before the event. */
 export const decay = (dt: number, tau: number) => (dt < 0 || !isFinite(dt) ? 0 : Math.exp(-dt / tau));
+/** Bounces to rest at 1 (falling things landing). */
+export const easeOutBounce = (k: number) => {
+  k = clamp(k);
+  const n = 7.5625, d = 2.75;
+  if (k < 1 / d) return n * k * k;
+  if (k < 2 / d) return n * (k -= 1.5 / d) * k + 0.75;
+  if (k < 2.5 / d) return n * (k -= 2.25 / d) * k + 0.9375;
+  return n * (k -= 2.625 / d) * k + 0.984375;
+};

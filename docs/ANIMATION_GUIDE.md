@@ -22,7 +22,7 @@ export const myShot = (start: number, end: number) => defineShot({
       update(f) { /* set every animated property from f */ },
       overlay(g, f) { /* optional 2D canvas drawing on top (titles, HUD) */ },
       post: f => ({ bloom: 0.8 }),              // optional per-frame post settings
-      lyrics: true,                             // false hides the default karaoke layer
+      lyrics: true,                             // false hides the lyric layer for this shot
     };
   },
 });
@@ -52,7 +52,8 @@ shot), `w`/`h` (pixels) and `clock`.
 2. **Set everything you animate, every frame.** The world persists between frames, so a property you
    set in one shot window and forget to reset will leak.
 3. **Lyrics at sung time.** Words appear at their measured start (a frame or two early reads as on
-   time). Don't snap words to beats. Keep faces and key action above the karaoke band (bottom ~150 px).
+   time). Don't snap words to beats. Each line's kinetic layout (position, size, animation) is set per
+   line in the song's lyric layout; put it in the shot's empty space, away from faces and key action.
 4. **Musical motion from the grid.** Camera punches on kicks (small: scale 0.01–0.03), bigger moves
    on impacts, cuts on bar lines unless a lyric says otherwise.
 5. **Photosensitivity.** No more than three full-frame flashes in any second.

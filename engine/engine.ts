@@ -1,6 +1,7 @@
 import { Stage, DEFAULT_POST } from './stage';
 import { SongClock } from './song';
 import { DEFAULT_LYRIC_STYLE, drawLyrics } from './lyrics';
+import { drawKinetic } from './kinetic';
 import { clamp } from './ease';
 import type { Frame, PostSettings, Shot, ShotWorld, Song, LyricStyle } from './types';
 
@@ -70,7 +71,11 @@ export class Engine {
     const i = this.shotIndexAt(t), shot = this.shots[i], world = this.world(shot);
     const f = this.frame(shot, t);
     if (world.overlay) { o.save(); world.overlay(o, f); o.restore(); }
-    if (world.lyrics !== false) drawLyrics(o, f, world.lyricStyle ? { ...this.lyricStyle, ...world.lyricStyle } : this.lyricStyle);
+    if (world.lyrics !== false) {
+      const style = world.lyricStyle ? { ...this.lyricStyle, ...world.lyricStyle } : this.lyricStyle;
+      if (style.mode === 'kinetic') drawKinetic(o, f, style, this.song.kinetic ?? {});
+      else drawLyrics(o, f, style);
+    }
     this.drawTransitionFlash(o, shot, t);
     return this.out;
   }

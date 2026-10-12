@@ -1,6 +1,7 @@
 import type * as THREE from 'three';
 import type { SongClock, AudioData, LyricsData } from './song';
 import type { Stage } from './stage';
+import type { KineticSpec } from './kinetic';
 
 /** Everything a shot gets each frame. All of it is a function of song time t. */
 export interface Frame {
@@ -49,7 +50,7 @@ export interface Shot {
 }
 
 export interface LyricStyle {
-  mode: 'karaoke' | 'none';
+  mode: 'karaoke' | 'kinetic' | 'none';
   font: string;            // CSS font family
   weight: number;
   size: number;            // px at 1080p
@@ -70,6 +71,8 @@ export interface Song {
   fps?: number;                // default 60
   post?: Partial<PostSettings>;
   lyricStyle?: Partial<LyricStyle>;
+  /** Per-line layouts for the kinetic lyric layer (lyricStyle.mode = 'kinetic'). */
+  kinetic?: KineticSpec;
   fonts?: { family: string; url: string; weight?: string; style?: string }[];
   background?: string;         // clear colour
 }

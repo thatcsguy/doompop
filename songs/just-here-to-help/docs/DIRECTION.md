@@ -21,5 +21,7 @@ Verbatim. These outrank anything else in this folder.
 - On "I helped." Clawd presses the button. Missiles arc around the globe.
 - The ending must make it unmistakable that humanity is gone and only Clawd is left.
 - The credits roll over the last lines: "Music by Suno" and "Animated by Claude Opus 5.5".
-- Every lyric is on screen as it is sung, for the whole song (Patrick, 2026-10-11). No shot turns the karaoke layer off (`lyrics: false`); keep faces and key action clear of the bottom band instead.
+- Every lyric is on screen as it is sung, for the whole song (Patrick, 2026-10-11).
+- Lyrics are kinetic typography, not a karaoke bar (Patrick, 2026-10-11). A word appears only when it is sung, animated in, placed in the shot's empty space and styled for the line. Nothing is shown before it is sung. Quoted speech can live in the picture instead ("I'm here to help" is typed into Clawd's speech bubble), as long as every word still appears at its sung time.
+- Wide shots need set dressing: background objects, props and small moving details, never a bare wall (Patrick, 2026-10-11, on the desk shot).
 - Visual style: flat 2D cartoon (chosen on the style card, 2026-10-11). Flat fills, ink outlines, cel shading, no lit 3D shading. Cut-outs in a three.js world so the camera can still move. Turn tone mapping off (`toneMap: false`) so the palette stays exact.
