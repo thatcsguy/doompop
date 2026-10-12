@@ -50,7 +50,9 @@ shot), `w`/`h` (pixels) and `clock`.
    nothing that depends on the previous frame. Objects keep a stable identity: derive their index
    from position or time, as `tunnel.ts` does for its rings.
 2. **Set everything you animate, every frame.** The world persists between frames, so a property you
-   set in one shot window and forget to reset will leak.
+   set in one shot window and forget to reset will leak. A colour string passed to `shapeMesh` or
+   `inkedRect` gets a cached material that every mesh of that colour shares, in every shot: never
+   change its colour or opacity. Anything you animate gets its own `ownMat(...)`.
 3. **Lyrics at sung time.** Words appear at their measured start (a frame or two early reads as on
    time). Don't snap words to beats. Each line's kinetic layout (position, size, animation) is set per
    line in the song's lyric layout; put it in the shot's empty space, away from faces and key action.

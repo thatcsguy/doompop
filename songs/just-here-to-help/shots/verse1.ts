@@ -378,7 +378,8 @@ function houseFills() {
   const chim = shapeMesh(rectShape(0.8, 0.6, 1.2, 1.35), '#c9654a', 0.0005);
   const door = inkedRect(0.62, 0.95, 0.05, '#b07a52', 0.05); door.position.set(-0.75, -0.82, 0.002);
   const knob = inkedCircle(0.05, '#ffd166', 0.02); knob.position.set(-0.57, -0.85, 0.004);
-  const win = inkedRect(0.72, 0.72, 0.03, '#ffd166', 0.05); win.position.set(0.75, -0.45, 0.002);
+  const win = inkedRect(0.72, 0.72, 0.03, ownMat('#ffd166'), 0.05); // its own material: it changes colour
+  win.position.set(0.75, -0.45, 0.002);
   const bar1 = shapeMesh(roundedRectShape(0.05, 0.72, 0), INK, 0.004); bar1.position.set(0.75, -0.45, 0);
   const bar2 = shapeMesh(roundedRectShape(0.72, 0.05, 0), INK, 0.004); bar2.position.set(0.75, -0.45, 0);
   const winGlow = glow(0.75, '#ffd166', 0.4); winGlow.position.set(0.75, -0.45, -0.002);
