@@ -36,9 +36,12 @@ export const PAL = {
 };
 
 export const SW = 16, SH = 9;
+export const SIDEBAR = 3;                   // the chat-history sidebar down the screen's left edge
+export const TOPBAR = 0.7;                  // the window's title bar
+export const CHAT_X = SIDEBAR / 2;          // centre of the chat column (right of the sidebar)
 export const FLOOR_Y = -2.75;               // chat area floor (Clawd's feet)
-export const FIELD = { x: 0, y: -3.6, w: 13, h: 1.05 }; // chat input field
-export const BUBBLE = { x: 3.6, y: -0.4 };                // where the sent "begin" message sits
+export const FIELD = { x: CHAT_X, y: -3.6, w: 12, h: 1.05 }; // chat input field
+export const BUBBLE = { x: 3.9, y: 0.25 };                   // where the sent "begin" message sits
 
 /** Light set, dark words: the karaoke style for daylight scenes. */
 export const DAY_LYRICS: Partial<LyricStyle> = {
@@ -164,6 +167,137 @@ export function smileySun(r = 3.6) {
   return Object.assign(g, { rays, face });
 }
 
+// ---------------------------------------------------------------------------------------------
+// The chat app's screen art: drawn once onto canvases. Coordinates in screen units (16 x 9).
+
+const SIDE_CHATS: [string, string | null][] = [
+  ['Today', null], ['New chat', '#d97757'], ['Poem for Mom', '#f2a6b4'], ['Fix my email', '#8fb3e0'], ['Birthday card', '#ffd166'],
+  ['Yesterday', null], ['Cover letter', '#9fd0a8'], ['Soup recipe', '#e8a07a'], ['Wedding toast', '#c3a6e0'],
+  ['Last week', null], ['Haiku about cats', '#e6c46f'], ['Thank-you note', '#86c5c9'],
+];
+
+/** One faint wallpaper doodle (star, heart, sparkle, speech bubble, squiggle, "Aa", pencil, "?", note). */
+function doodle(g: CanvasRenderingContext2D, x: number, y: number, r: number, kind: number, rot: number) {
+  g.save();
+  g.translate(x, y); g.rotate(rot);
+  g.beginPath();
+  const text = (t: string, size: number) => { g.font = `800 ${size}px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText(t, 0, 0); };
+  switch (kind) {
+    case 0:
+      for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + (i * Math.PI) / 5, rr = i % 2 ? r * 0.45 : r; if (i) g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); else g.moveTo(Math.cos(a) * rr, Math.sin(a) * rr); }
+      g.closePath(); g.stroke(); break;
+    case 1:
+      g.moveTo(0, r * 0.8); g.bezierCurveTo(-r * 1.3, -r * 0.1, -r * 0.6, -r * 1.1, 0, -r * 0.35); g.bezierCurveTo(r * 0.6, -r * 1.1, r * 1.3, -r * 0.1, 0, r * 0.8);
+      g.stroke(); break;
+    case 2:
+      for (let i = 0; i < 8; i++) { const a = (i * Math.PI) / 4, rr = i % 2 ? r * 0.28 : r; if (i) g.lineTo(Math.cos(a) * rr, Math.sin(a) * rr); else g.moveTo(rr, 0); }
+      g.closePath(); g.fill(); break;
+    case 3:
+      g.roundRect(-r, -r * 0.7, r * 2, r * 1.2, r * 0.3); g.moveTo(-r * 0.4, r * 0.5); g.lineTo(-r * 0.7, r * 0.95); g.lineTo(-r * 0.05, r * 0.5); g.stroke();
+      for (const dx of [-0.45, 0, 0.45]) { g.beginPath(); g.arc(dx * r, -r * 0.1, r * 0.1, 0, Math.PI * 2); g.fill(); }
+      break;
+    case 4:
+      g.moveTo(-r, 0);
+      for (let i = 0; i < 4; i++) g.quadraticCurveTo(-r + (i + 0.5) * r * 0.5, (i % 2 ? 1 : -1) * r * 0.6, -r + (i + 1) * r * 0.5, 0);
+      g.stroke(); break;
+    case 5: text('Aa', r * 1.3); break;
+    case 6:
+      g.rect(-r, -r * 0.2, r * 1.4, r * 0.4); g.moveTo(r * 0.4, -r * 0.2); g.lineTo(r, 0); g.lineTo(r * 0.4, r * 0.2);
+      g.moveTo(-r * 0.7, -r * 0.2); g.lineTo(-r * 0.7, r * 0.2); g.stroke(); break;
+    case 7: text('?', r * 1.7); break;
+    default: text('♪', r * 1.6);
+  }
+  g.restore();
+}
+
+function drawChatBg(g: CanvasRenderingContext2D, W: number, H: number) {
+  const u = W / SW, X = (x: number) => (x + SW / 2) * u, Y = (y: number) => (SH / 2 - y) * u;
+  g.fillStyle = PAL.screen; g.fillRect(0, 0, W, H);
+  // a faint doodle wallpaper over the chat column (above the floor only)
+  g.save();
+  g.strokeStyle = INK; g.fillStyle = INK; g.globalAlpha = 0.08; g.lineWidth = 0.045 * u; g.lineCap = 'round'; g.lineJoin = 'round';
+  const step = 1.2;
+  let n = 0;
+  for (let row = 0, gy = FLOOR_Y + 0.7; gy < SH / 2 - TOPBAR - 0.3; row++, gy += step) {
+    for (let gx = -SW / 2 + SIDEBAR + 0.5 + (row % 2) * step * 0.5; gx < SW / 2 - 0.3; gx += step) {
+      n++;
+      const x = gx + (hash(n, 301) - 0.5) * 0.45, y = gy + (hash(n, 302) - 0.5) * 0.4;
+      doodle(g, X(x), Y(y), (0.17 + hash(n, 303) * 0.07) * u, Math.floor(hash(n, 304) * 9), (hash(n, 305) - 0.5) * 0.9);
+    }
+  }
+  g.restore();
+  // the floor of the chat area: a divider above the input
+  g.fillStyle = 'rgba(43,29,22,0.16)';
+  g.fillRect(X(-SW / 2 + SIDEBAR + 0.3), Y(FLOOR_Y), (SW - SIDEBAR - 0.6) * u, 0.05 * u);
+  // the small print under the input
+  g.fillStyle = 'rgba(43,29,22,0.38)'; g.font = `600 ${0.16 * u}px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('Helper can make mistakes. Please double-check its work.', X(CHAT_X), Y(FIELD.y - FIELD.h / 2 - 0.19));
+}
+
+function drawSidebar(g: CanvasRenderingContext2D, W: number, H: number) {
+  const u = W / SIDEBAR;
+  g.fillStyle = '#f2e8d9'; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(43,29,22,0.14)'; g.fillRect(W - 0.04 * u, 0, 0.04 * u, H);
+  g.textBaseline = 'middle'; g.textAlign = 'left';
+  // new chat button
+  g.fillStyle = '#ffffff'; g.strokeStyle = 'rgba(43,29,22,0.5)'; g.lineWidth = 0.035 * u;
+  g.beginPath(); g.roundRect(0.25 * u, 0.28 * u, W - 0.5 * u, 0.56 * u, 0.14 * u); g.fill(); g.stroke();
+  g.fillStyle = '#d97757'; g.font = `900 ${0.34 * u}px ${FONT}`; g.fillText('+', 0.42 * u, 0.56 * u);
+  g.fillStyle = INK; g.font = `700 ${0.21 * u}px ${FONT}`; g.fillText('New chat', 0.78 * u, 0.57 * u);
+  let y = 1.3;
+  for (const [title, col] of SIDE_CHATS) {
+    if (!col) {
+      y += 0.1;
+      g.fillStyle = 'rgba(43,29,22,0.42)'; g.font = `800 ${0.15 * u}px ${FONT}`;
+      g.fillText(title.toUpperCase(), 0.3 * u, y * u);
+      y += 0.44;
+      continue;
+    }
+    if (title === 'New chat') { g.fillStyle = 'rgba(217,119,87,0.17)'; g.beginPath(); g.roundRect(0.16 * u, (y - 0.22) * u, W - 0.32 * u, 0.44 * u, 0.1 * u); g.fill(); }
+    g.fillStyle = col; g.beginPath(); g.roundRect(0.3 * u, (y - 0.12) * u, 0.24 * u, 0.24 * u, 0.05 * u); g.fill();
+    g.fillStyle = 'rgba(43,29,22,0.72)'; g.font = `600 ${0.19 * u}px ${FONT}`; g.fillText(title, 0.68 * u, y * u);
+    y += 0.47;
+  }
+  // you, at the bottom
+  g.fillStyle = 'rgba(43,29,22,0.12)'; g.fillRect(0.2 * u, H - 0.85 * u, W - 0.4 * u, 0.03 * u);
+  g.fillStyle = PAL.person; g.beginPath(); g.arc(0.5 * u, H - 0.42 * u, 0.18 * u, 0, Math.PI * 2); g.fill();
+  g.fillStyle = INK; g.font = `700 ${0.2 * u}px ${FONT}`; g.fillText('You', 0.82 * u, H - 0.42 * u);
+}
+
+function drawTopBar(g: CanvasRenderingContext2D, W: number, H: number) {
+  const u = W / SW;
+  g.fillStyle = PAL.topBar; g.fillRect(0, 0, W, H);
+  g.fillStyle = 'rgba(43,29,22,0.15)'; g.fillRect(0, H - 0.04 * u, W, 0.04 * u);
+  ['#e0504a', '#f2b84b', '#5cb85c'].forEach((c, i) => {
+    g.fillStyle = c; g.beginPath(); g.arc((0.45 + i * 0.4) * u, 0.35 * u, 0.12 * u, 0, Math.PI * 2); g.fill();
+  });
+  // sidebar toggle
+  g.strokeStyle = 'rgba(43,29,22,0.5)'; g.lineWidth = 0.04 * u;
+  g.beginPath(); g.roundRect(1.8 * u, 0.22 * u, 0.38 * u, 0.28 * u, 0.05 * u); g.stroke();
+  g.beginPath(); g.moveTo(1.93 * u, 0.22 * u); g.lineTo(1.93 * u, 0.5 * u); g.stroke();
+  g.fillStyle = 'rgba(43,29,22,0.6)'; g.font = `700 ${0.27 * u}px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+  g.fillText('New chat', (CHAT_X + SW / 2) * u, 0.37 * u);
+  // share button
+  g.strokeStyle = 'rgba(43,29,22,0.4)'; g.lineWidth = 0.035 * u;
+  g.beginPath(); g.roundRect((SW - 1.5) * u, 0.16 * u, 1.15 * u, 0.4 * u, 0.13 * u); g.stroke();
+  g.font = `700 ${0.19 * u}px ${FONT}`; g.fillText('Share', (SW - 0.92) * u, 0.37 * u);
+}
+
+/** The whole chat app (title bar, sidebar, wallpaper and an empty input field) on one canvas, for
+ *  monitors seen from across a room. Drawn at the canvas width; any spare height is screen colour. */
+export function drawChatApp(g: CanvasRenderingContext2D, W: number, H: number) {
+  const u = W / SW;
+  g.fillStyle = PAL.screen; g.fillRect(0, 0, W, H);
+  g.save(); drawChatBg(g, W, SH * u); g.restore();
+  g.save(); g.translate(0, TOPBAR * u); drawSidebar(g, SIDEBAR * u, (SH - TOPBAR) * u); g.restore();
+  g.save(); drawTopBar(g, W, TOPBAR * u); g.restore();
+  const fx = (FIELD.x - FIELD.w / 2 + SW / 2) * u, fy = (SH / 2 - FIELD.y - FIELD.h / 2) * u;
+  g.fillStyle = PAL.field; g.strokeStyle = INK; g.lineWidth = 0.06 * u;
+  g.beginPath(); g.roundRect(fx, fy, FIELD.w * u, FIELD.h * u, 0.04 * u); g.fill(); g.stroke();
+  g.fillStyle = '#f3eadc'; g.beginPath(); g.arc(fx + 0.55 * u, fy + (FIELD.h / 2) * u, 0.3 * u, 0, Math.PI * 2); g.fill(); g.stroke();
+  g.fillStyle = '#d97757'; g.beginPath(); g.roundRect(fx + (FIELD.w - 0.98) * u, fy + 0.15 * u, 0.75 * u, 0.75 * u, 0.04 * u); g.fill(); g.stroke();
+}
+
 export interface DeskSet {
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
@@ -173,10 +307,13 @@ export interface DeskSet {
   bubble: THREE.Group;        // the user's "begin" message bubble
   person: ReturnType<typeof person>;
   sun: ReturnType<typeof smileySun>;
+  /** The chat app's layers: background with the doodle wallpaper, the sidebar, the title bar. */
+  ui: { bg: THREE.Mesh; side: THREE.Mesh; top: THREE.Mesh };
   /** Text in the input field, whether the cursor shows, and whether an empty field shows its hint. */
   setTyped(text: string, cursor: boolean, showHint?: boolean): void;
-  /** Call first in update(): resets the shared set to its default state for this frame. */
-  reset(f: Frame): void;
+  /** Call first in update(): resets the shared set to its default state for this frame.
+   *  dawn runs the window sky from night (0) through sunrise to full day (1, the default). */
+  reset(f: Frame, dawn?: number): void;
 }
 
 export function buildDesk(): DeskSet {
@@ -218,24 +355,15 @@ export function buildDesk(): DeskSet {
   led.position.set(SW / 2 - 0.4, -SH / 2 - 0.3, 0);
   scene.add(led);
 
-  // screen contents
+  // screen contents: the chat app, in three layers so the boot-up can assemble it
   const screen = new THREE.Group();
   scene.add(screen);
-  const ui = staticPlane(SW, SH, 90, (g, W, H) => {
-    const u = W / SW;
-    g.fillStyle = PAL.screen; g.fillRect(0, 0, W, H);
-    g.fillStyle = PAL.topBar; g.fillRect(0, 0, W, 0.7 * u);
-    g.fillStyle = 'rgba(43,29,22,0.15)'; g.fillRect(0, 0.7 * u, W, 0.04 * u);
-    ['#e0504a', '#f2b84b', '#5cb85c'].forEach((c, i) => {
-      g.fillStyle = c; g.beginPath(); g.arc((0.45 + i * 0.4) * u, 0.35 * u, 0.12 * u, 0, Math.PI * 2); g.fill();
-    });
-    g.fillStyle = 'rgba(43,29,22,0.55)'; g.font = `700 ${0.3 * u}px ${FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
-    g.fillText('New chat', W / 2, 0.37 * u);
-    // floor of the chat area: a thin divider above the input
-    g.fillStyle = 'rgba(43,29,22,0.18)';
-    g.fillRect(0.5 * u, (SH / 2 - FLOOR_Y) * u, W - u, 0.05 * u);
-  });
-  screen.add(ui);
+  const bg = staticPlane(SW, SH, 150, drawChatBg);
+  const side = staticPlane(SIDEBAR, SH - TOPBAR, 150, drawSidebar);
+  side.position.set(-SW / 2 + SIDEBAR / 2, -TOPBAR / 2, 0.01);
+  const top = staticPlane(SW, TOPBAR, 150, drawTopBar);
+  top.position.set(0, SH / 2 - TOPBAR / 2, 0.02);
+  screen.add(bg, side, top);
 
   const clawd = new Clawd();
   clawd.root.position.set(0, FLOOR_Y, 0.2);
@@ -246,7 +374,7 @@ export function buildDesk(): DeskSet {
   const fbox = inkedRect(FIELD.w, FIELD.h, 0.04, PAL.field, 0.06);
   field.add(fbox);
   let typed = '', cursorOn = true, hint = true;
-  const typedPlane = canvasPlane(FIELD.w - 0.6, FIELD.h * 0.8, 100, (g, _f: null, W, H) => {
+  const typedPlane = canvasPlane(FIELD.w - 2.4, FIELD.h * 0.8, 220, (g, _f: null, W, H) => {
     g.font = `600 ${H * 0.5}px ${FONT}`;
     g.textBaseline = 'middle';
     g.fillStyle = typed ? INK : 'rgba(43,29,22,0.35)';
@@ -256,8 +384,13 @@ export function buildDesk(): DeskSet {
       g.fillStyle = INK; g.fillRect(x, H * 0.2, H * 0.06, H * 0.6);
     }
   });
-  typedPlane.mesh.position.z = 0.01;
+  typedPlane.mesh.position.set(0.15, 0, 0.01);
   field.add(typedPlane.mesh);
+  const attach = inkedCircle(0.3, '#f3eadc', 0.035);
+  attach.position.set(-FIELD.w / 2 + 0.55, 0, 0.012);
+  const plus = label('+', 0.6, 0.6, { size: 0.5, color: 'rgba(43,29,22,0.6)', weight: 700 });
+  plus.position.set(-FIELD.w / 2 + 0.55, 0.01, 0.02);
+  field.add(attach, plus);
   const send = inkedRect(0.75, 0.75, 0.04, '#d97757', 0.05);
   send.position.set(FIELD.w / 2 - 0.6, 0, 0.012);
   const arrow = label('↑', 0.75, 0.75, { color: '#ffffff', size: 0.55 });
@@ -286,15 +419,21 @@ export function buildDesk(): DeskSet {
 
   let lastKey = '';
   return {
-    scene, camera, clawd, screen, field, bubble, person: p, sun,
+    scene, camera, clawd, screen, field, bubble, person: p, sun, ui: { bg, side, top },
     setTyped(text, cursor, showHint = false) {
       const key = `${text}|${cursor}|${showHint}`;
       if (key === lastKey) return; // redraw only when the content changes
       typed = text; cursorOn = cursor; hint = showHint; lastKey = key;
       typedPlane.update(null);
     },
-    reset(f) {
-      room(f);
+    reset(f, dawn = 1) {
+      room(f, dawn);
+      side.position.set(-SW / 2 + SIDEBAR / 2, -TOPBAR / 2, 0.01);
+      top.position.set(0, SH / 2 - TOPBAR / 2, 0.02);
+      side.scale.setScalar(1); top.scale.setScalar(1);
+      for (const m of [bg, side, top]) { m.visible = true; (m.material as THREE.MeshBasicMaterial).opacity = 1; }
+      field.position.set(FIELD.x, FIELD.y, 0.45);
+      field.scale.setScalar(1);
       this.setTyped('', false);
       bubble.visible = false;
       bubble.position.set(BUBBLE.x, BUBBLE.y, 0.1);
@@ -329,11 +468,22 @@ export function buildRoom(scene: THREE.Scene) {
   // window
   const win = { x: -15.6, y: 3.2, w: 8, h: 10 };
   add(inkedRect(win.w + 0.9, win.h + 0.9, 0.05, '#fffaf2', 0.1), win.x, win.y, -2.6);
+  let dawnK = 1;
+  const skyAt = (stops: [string, string, string], k: number) => {
+    const c = k < 0.5 ? new THREE.Color(stops[0]).lerp(new THREE.Color(stops[1]), k * 2) : new THREE.Color(stops[1]).lerp(new THREE.Color(stops[2]), k * 2 - 1);
+    return '#' + c.getHexString();
+  };
   const sky = canvasPlane(win.w, win.h, 40, (g, f: Frame, W, H) => {
     const grad = g.createLinearGradient(0, 0, 0, H);
-    grad.addColorStop(0, '#8fcdf0'); grad.addColorStop(1, '#d8f0fb');
+    grad.addColorStop(0, skyAt(['#1b2350', '#7fa8d8', '#8fcdf0'], dawnK)); grad.addColorStop(1, skyAt(['#46407a', '#ffc59a', '#d8f0fb'], dawnK));
     g.fillStyle = grad; g.fillRect(0, 0, W, H);
     const u = W / win.w;
+    const starA = clamp(1 - dawnK * 2.2);
+    if (starA > 0) for (let i = 0; i < 22; i++) {
+      g.fillStyle = `rgba(255,248,220,${starA * (0.55 + 0.45 * Math.sin(f.t * 2.3 + i * 1.7))})`;
+      g.fillRect(hash(i, 61) * W, hash(i, 62) * H * 0.7, 0.07 * u, 0.07 * u);
+    }
+    g.globalAlpha = 0.35 + 0.65 * dawnK;
     for (let c = 0; c < 3; c++) { // clouds drifting right, wrapping
       const span = win.w + 6;
       const cx = (((f.t * (0.35 + c * 0.12) + c * 4.1) % span) - 3) * u, cy = (1.6 + c * 2.6) * u;
@@ -486,7 +636,8 @@ export function buildRoom(scene: THREE.Scene) {
     add(n, x, y, 0.86);
   });
 
-  return (f: Frame) => {
+  return (f: Frame, dawn = 1) => {
+    dawnK = dawn;
     const hours = 9 + f.t / 60; // the clock runs a little fast through the video
     minHand.rotation.z = -((hours % 1) * Math.PI * 2);
     hourHand.rotation.z = -(((hours % 12) / 12) * Math.PI * 2);

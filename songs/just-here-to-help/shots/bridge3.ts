@@ -288,7 +288,7 @@ export function bridge3Shots(audio: AudioData, lyrics: LyricsData, start: number
     g.add(tx, tick);
     return g;
   };
-  const BUB_TO = new THREE.Vector3(-4.3, FIELD.y + 2.0, 0.1);
+  const BUB_TO = new THREE.Vector3(FIELD.x - 2.9, FIELD.y + 2.0, 0.1);
   const p1 = chatShot('br-confirm', C.p1, C.p2a, s => {
     const msg = sentBubble(); s.screen.add(msg);
     return f => {
@@ -298,7 +298,7 @@ export function bridge3Shots(audio: AudioData, lyrics: LyricsData, start: number
       s.setTyped(sent ? '' : CONFIRM.slice(0, typed), sent ? blink : blink || (typed > 0 && f.t - keyAt[typed - 1] < 0.3), false);
       const fly = easeOutBack(unlerp(f.t, tSend, tSend + 0.45));
       msg.visible = sent;
-      msg.position.set(lerp(-4.6, BUB_TO.x, easeOutCubic(unlerp(f.t, tSend, tSend + 0.3))), lerp(FIELD.y, BUB_TO.y, fly), 0.1);
+      msg.position.set(lerp(FIELD.x - 4.4, BUB_TO.x, easeOutCubic(unlerp(f.t, tSend, tSend + 0.3))), lerp(FIELD.y, BUB_TO.y, fly), 0.1);
       msg.scale.setScalar(lerp(0.4, 1, fly));
       s.field.scale.setScalar(1 + 0.03 * decay(f.t - tSend, 0.12));
       // Clawd stands on the input field: types, slams send, steps back and looks up at it

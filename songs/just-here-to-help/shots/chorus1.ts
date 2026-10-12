@@ -9,11 +9,11 @@ import { MOODS, REST, mixMood, type Mood, type Pose } from '../../../engine/char
 import { INK, canvasPlane, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh } from '../../../engine/flat';
 import { hash, noise1 } from '../../../engine/rng';
 import { clamp, decay, easeInCubic, easeInOutCubic, easeOutBack, easeOutBounce, easeOutCubic, lerp, smooth, unlerp } from '../../../engine/ease';
-import { DAY_LYRICS, FLAT_POST, beatHop } from '../world';
+import { DAY_LYRICS, FLAT_POST, FONT, beatHop } from '../world';
 import { DESK_Y, HERO, buildOffice, officeTint, type OfficeSet } from '../office';
 import {
-  DONE_GREEN, STAND, cardboardBox, confetti, doneMark, helperTag, pointerHand, questionBalloon, rubberStamp,
-  pawAt, sparkles, speedLines, standingPerson, wearTag, wobble,
+  DONE_GREEN, STAND, blob, cardboardBox, confetti, doneMark, pointerHand, questionBalloon, rubberStamp,
+  pawAt, sparkles, speedLines, standingPerson, wobble,
 } from '../props';
 
 type Update = (f: Frame) => void;
@@ -75,17 +75,52 @@ function bug() {
   });
 }
 
-/** An office arm in a sleeve, reaching in from the right. Origin at the hand. */
+/** An office arm in a sleeve, reaching in from the right, a marker in its fist. Origin at the
+ *  fist; the marker's tip sits at MARKER_TIP from it. */
+const MARKER_TIP = new THREE.Vector2(-0.5, 0.17);
 function reachingArm(color: string) {
   const g = new THREE.Group();
-  const sleeve = inkedRect(4.0, 0.34, 0.16, color, 0.06);
-  sleeve.position.x = 2.1;
-  const cuff = inkedRect(0.2, 0.4, 0.06, '#f4f1ea', 0.05);
-  cuff.position.set(0.18, 0, 0.004);
-  const hand = inkedCircle(0.22, color, 0.06);
-  hand.position.z = 0.008;
-  g.add(sleeve, cuff, hand);
+  const sleeve = inkedRect(4.0, 0.36, 0.16, color, 0.06);
+  sleeve.position.x = 2.3;
+  const cuff = inkedRect(0.2, 0.42, 0.06, '#f4f1ea', 0.05);
+  cuff.position.set(0.32, 0, 0.004);
+  const hand = blob([
+    { w: 0.44, h: 0.36, r: 0.16 },
+    { w: 0.14, h: 0.26, r: 0.07, x: -0.14, y: 0.16, rot: 0.7 }, // thumb
+  ], color, 0.05);
+  hand.position.z = 0.012;
+  const marker = new THREE.Group();
+  const barrel = inkedRect(0.1, 0.64, 0.03, '#2b2b3a', 0.025); barrel.position.y = 0.36;
+  const nib = shapeMesh(roundedRectShape(0.05, 0.08, 0.015, 0, 0.03), '#2b2b3a', 0.002);
+  const band = shapeMesh(roundedRectShape(0.1, 0.06, 0), '#e0504a', 0.004); band.position.y = 0.2;
+  marker.add(barrel, nib, band);
+  marker.position.set(MARKER_TIP.x, MARKER_TIP.y, 0.006);
+  marker.rotation.z = -1.92;
+  g.add(sleeve, cuff, marker, hand);
   return g;
+}
+
+/** A blank HELLO tag; write(f, k) fills in HELPER, left to right, up to fraction k. */
+function namingTag(w = 0.46) {
+  let k = 0;
+  const tag = canvasPlane(w, w * 0.72, 600, (c, _f: Frame, W, H) => {
+    c.fillStyle = '#d6453d'; c.strokeStyle = INK; c.lineWidth = H * 0.05;
+    c.beginPath(); c.roundRect(H * 0.04, H * 0.04, W - H * 0.08, H - H * 0.08, H * 0.1); c.fill(); c.stroke();
+    c.fillStyle = '#ffffff';
+    c.fillRect(H * 0.1, H * 0.36, W - H * 0.2, H * 0.52);
+    c.textAlign = 'center'; c.textBaseline = 'middle';
+    c.font = `900 ${H * 0.2}px ${FONT}`;
+    c.fillText('HELLO', W / 2, H * 0.17);
+    c.font = `700 ${H * 0.09}px ${FONT}`;
+    c.fillText('my name is', W / 2, H * 0.3);
+    if (k <= 0) return;
+    c.save();
+    c.beginPath(); c.rect(0, 0, H * 0.14 + (W - H * 0.28) * k, H); c.clip();
+    c.fillStyle = INK; c.font = `italic 900 ${H * 0.3}px ${FONT}`;
+    c.fillText('HELPER', W / 2, H * 0.63);
+    c.restore();
+  });
+  return Object.assign(tag, { write(f: Frame, kk: number) { k = kk; tag.update(f); } });
 }
 
 export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number): Shot[] {
@@ -143,13 +178,31 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
   const p1 = officeShot('pc-question', C.p1, C.p2, s => {
     const bunch = balloonBunch(s);
     const pop = sparkles(6, 0.5, '#ffffff', 3);
-    s.scene.add(pop.group);
+    // where he breaks out of the screen: two rings spread over the glass and pixels spray out
+    const exitAt = new THREE.Vector3(HERO.monitorX - 0.25, HERO.screenY - 0.12, -0.26);
+    const rings = [0, 1].map(i => {
+      const sh = new THREE.Shape().absarc(0, 0, 0.3, 0, Math.PI * 2, false);
+      sh.holes.push(new THREE.Path().absarc(0, 0, 0.25, 0, Math.PI * 2, true));
+      const m = shapeMesh(sh, ownMat(i ? '#d97757' : '#ffffff', 1, true), 0, 24);
+      m.position.copy(exitAt).add(v3.set(0, 0, 0.01 + i * 0.002));
+      return m;
+    });
+    const pixels = confetti(18, 33, { size: 0.06, speed: 2.4, life: 0.8, spread: Math.PI * 2, gravity: 2, colors: ['#d97757', '#ffffff', '#ffd166', '#9fc7f2'] });
+    pixels.group.position.copy(exitAt).add(v3.set(0, 0, 0.05));
+    s.scene.add(pop.group, ...rings, pixels.group);
     return f => {
-      // camera: from the hero screen straight back to the room
+      // camera: from the hero screen straight back to a medium shot of the desk
       const k = easeInOutCubic(unlerp(f.t, C.p1 + 0.05, 31.15));
       const wb = wobble(f.t, 0.04, 1);
-      const cx = lerp(HERO.monitorX, -1.1, k), cy = lerp(HERO.screenY, 3.7, k), cz = lerp(-0.28 + 2.55, 11.5, k);
-      s.aim(cx + wb.x, cy + wb.y, cz - (f.t - 31.15 > 0 ? (f.t - 31.15) * 0.5 : 0), lerp(HERO.monitorX, -1.1, k), lerp(HERO.screenY, 2.6, k), lerp(-0.28, -4, k));
+      const cx = lerp(HERO.monitorX, -1.25, k), cy = lerp(HERO.screenY, 3.2, k), cz = lerp(-0.28 + 2.55, 9.0, k);
+      s.aim(cx + wb.x, cy + wb.y, cz - (f.t - 31.15 > 0 ? (f.t - 31.15) * 0.5 : 0), lerp(HERO.monitorX, -1.25, k), lerp(HERO.screenY, 2.45, k), lerp(-0.28, -3, k));
+      rings.forEach((r, i) => {
+        const rk = unlerp(f.t, tLeap - 0.02 + i * 0.07, tLeap + 0.45 + i * 0.07);
+        r.visible = rk > 0 && rk < 1;
+        r.scale.setScalar(0.3 + easeOutCubic(rk) * 2.2);
+        (r.material as THREE.MeshBasicMaterial).opacity = 1 - rk;
+      });
+      pixels.update(f.t - tLeap);
       // Clawd: tiny on the screen, then a leap out to full size onto the desk
       const leap = unlerp(f.t, tLeap, tLand);
       const sc = lerp(0.14, 1, easeInCubic(leap));
@@ -165,14 +218,15 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
       const jump = f.t > tLand ? Math.max(0, ...catchAt.map(c => Math.max(0, 1 - Math.abs(f.t - c) / 0.18))) * 0.35 : 0;
       s.clawd.root.position.y = jump;
       s.clawd.setMood(MOODS.excited, f.t);
+      const crouch = f.t < tLeap ? smooth(unlerp(f.t, tLeap - 0.3, tLeap - 0.04)) : 0;
       s.clawd.setPose(pose({
-        bounce: f.t < tLeap ? beatHop(f.clock, f.t) * 0.4 : 0,
-        squash: land * 0.6 - (leap > 0 && leap < 1 ? 0.35 : 0) - jump * 0.6,
-        armR: f.t > tLand ? 2.4 + reach * 0.2 : 0.6 + leap * 1.2,
-        armL: f.t > tLand ? 0.5 + reach * 0.8 : 0.6 + leap * 1.2,
-        lean: f.t > tLand ? -0.06 : 0,
+        bounce: f.t < tLeap ? beatHop(f.clock, f.t) * 0.4 * (1 - crouch) : 0,
+        squash: land * 0.6 - (leap > 0 && leap < 1 ? 0.35 : 0) - jump * 0.6 + crouch * 0.4,
+        armL: f.t > tLand ? 2.4 + reach * 0.2 : 0.6 + leap * 1.2,
+        armR: f.t > tLand ? 0.5 + reach * 0.8 : 0.6 + leap * 1.2,
+        lean: f.t > tLand ? 0.06 : 0,
       }));
-      pawAt(s.clawd, 1, v3);
+      pawAt(s.clawd, 0, v3);
       const paw = v3.clone();
       bunch(f, paw, true);
       pop.group.position.set(to.x, DESK_Y + 0.6, 0.4);
@@ -180,51 +234,72 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
     };
   }, { tagged: false });
 
-  // P2 "Give me a name": the person at the desk reaches over and slaps a HELPER tag on him.
-  const tName = W(10, 3);
+  // P2 "Give me a name": a hand slaps a blank HELLO tag on him and writes HELPER on it with a
+  // marker. It tickles; he squirms, reads it upside down, and beams.
+  const tName = W(10, 3), tWrite0 = tName + 0.1, tWrite1 = tName + 0.62;
   const p2 = officeShot('pc-name', C.p2, C.p3, s => {
     const bunch = balloonBunch(s);
-    const tag = wearTag(s.clawd.body);
+    const tag = namingTag();
+    tag.mesh.position.set(0.02, 0.4, 0.03);
+    tag.mesh.rotation.z = -0.06;
+    s.clawd.body.add(tag.mesh);
     const arm = reachingArm('#8fb3e0');
-    const held = helperTag(0.46);
-    held.position.set(-0.05, 0.02, 0.02);
-    held.rotation.z = -0.06;
-    arm.add(held);
+    const held = namingTag();
+    held.mesh.position.set(-0.04, 0.0, 0.03);
+    held.mesh.rotation.z = -0.06;
+    arm.add(held.mesh);
     s.scene.add(arm);
-    const pop = sparkles(7, 0.42, '#ffd166', 5);
-    s.scene.add(pop.group);
+    const pop = sparkles(6, 0.3, '#ffd166', 5);
+    const hearts = sparkles(5, 0.6, '#ff8fa3', 7);
+    s.scene.add(pop.group, hearts.group);
+    const tagAt = new THREE.Vector3();
     return f => {
       const wb = wobble(f.t, 0.03, 2);
-      s.aim(-1.0 + wb.x + (f.t - C.p2) * 0.05, 3.2 + wb.y, 8.0 - (f.t - C.p2) * 0.3, -1.0, 2.85, 0.25);
+      s.aim(-1.3 + wb.x, 2.55 + wb.y, 6.2 - (f.t - C.p2) * 0.25, -1.3, 2.35, 0.25);
       const slap = f.t >= tName;
-      // the hand comes in from the right, presses the tag on, and leaves
+      const hit = decay(f.t - tName, 0.09);
+      const writing = f.t >= tName && f.t < tWrite1 + 0.05;
+      const tickle = writing ? 1 : 0;
+      const proud = smooth(unlerp(f.t, tWrite1 + 0.05, tWrite1 + 0.3));
+      const look = writing ? { x: 0.15, y: -1 } : { x: 0, y: 0 };
+      s.clawd.setMood(writing ? { ...MOODS.excited, blush: 1.1, jitter: 0.25 } : mixMood(MOODS.excited, { ...MOODS.proud, blush: 1.3 }, proud), f.t, look);
+      s.clawd.setPose(pose({
+        squash: hit * 0.5 + tickle * (0.08 + Math.sin(f.t * 34) * 0.06),
+        lean: hit * 0.15 + tickle * Math.sin(f.t * 21) * 0.07 - proud * 0.05,
+        armL: 2.4, armR: 0.4 + tickle * (0.5 + Math.sin(f.t * 27) * 0.3) + proud * 1.9,
+        bounce: proud * beatHop(f.clock, f.t) * 0.35,
+      }));
+      s.clawd.root.updateMatrixWorld(true);
+      tag.mesh.getWorldPosition(tagAt);
+      // the hand: in from the right with the blank tag, presses it on, writes, leaves
       const inK = easeOutCubic(unlerp(f.t, tName - 0.35, tName - 0.02));
-      const outK = easeInCubic(unlerp(f.t, tName + 0.18, tName + 0.55));
-      const target = new THREE.Vector3(-1.73, DESK_Y + 0.4, 0.55);
-      arm.position.set(lerp(1.8, target.x, inK) + outK * 3.5, lerp(DESK_Y + 0.9, target.y, inK) + outK * 0.4, 0.55);
+      const outK = easeInCubic(unlerp(f.t, tWrite1 + 0.06, tWrite1 + 0.4));
+      const wk = unlerp(f.t, tWrite0, tWrite1);
+      const toWrite = smooth(unlerp(f.t, tName + 0.02, tWrite0));
+      // the marker's tip runs along the name line, with a little up-and-down for the letters
+      const tipX = tagAt.x + lerp(-0.17, 0.17, wk), tipY = tagAt.y - 0.04 + Math.sin(wk * Math.PI * 12) * 0.025 * (wk > 0 && wk < 1 ? 1 : 0);
+      const pressX = tagAt.x + 0.08, pressY = tagAt.y - 0.06;
+      const hx = lerp(pressX, tipX - MARKER_TIP.x, toWrite), hy = lerp(pressY, tipY - MARKER_TIP.y, toWrite);
+      arm.position.set(lerp(1.6, hx, inK) + outK * 3.2, lerp(DESK_Y + 1.0, hy, inK) + outK * 0.5, tagAt.z + 0.3);
       arm.rotation.z = lerp(-0.25, 0, inK) - outK * 0.15;
       arm.visible = inK > 0 && outK < 1;
-      held.visible = !slap;
-      tag.visible = slap;
-      const hit = decay(f.t - tName, 0.09);
-      const proud = smooth(unlerp(f.t, tName + 0.25, tName + 0.6));
-      s.clawd.setMood(mixMood(MOODS.excited, { ...MOODS.proud, blush: 1.2 }, proud), f.t);
-      s.clawd.setPose(pose({
-        squash: hit * 0.5, lean: hit * 0.15 - proud * 0.05,
-        armR: 2.4, armL: 0.4 + proud * 0.9 + hit * 0.5,
-        bounce: proud * beatHop(f.clock, f.t) * 0.3,
-      }));
-      bunch(f, pawAt(s.clawd, 1, new THREE.Vector3()), false);
-      pop.group.position.set(-1.73, DESK_Y + 0.45, 0.6);
-      pop.update(f.t - tName, 0.5);
+      held.mesh.visible = !slap;
+      if (!slap) held.write(f, 0);
+      tag.mesh.visible = slap;
+      tag.write(f, clamp(wk));
+      bunch(f, pawAt(s.clawd, 0, new THREE.Vector3()), false);
+      pop.group.position.set(tagAt.x, tagAt.y - 0.05, tagAt.z + 0.3);
+      pop.update(f.t - (tWrite1 + 0.08), 0.4);
+      hearts.group.position.set(tagAt.x + 0.15, tagAt.y + 1.15, tagAt.z + 0.25);
+      hearts.update(f.t - (tWrite1 + 0.15), 0.8);
     };
   }, { tagged: false });
 
-  // P3 "Point at the problem": a bug crawls across the keyboard; the pointer hand taps it; it
-  // bolts to the right and Clawd zooms after it.
+  // P3 "Point at the problem": Clawd at the end of the desk watches a bug crawl onto the
+  // keyboard. The pointer hand swoops in and taps it; "!", the bug bolts and Clawd zooms after it.
   const tPoint = W(11, 0), tProblem = W(11, 3);
   const bugX = (t: number) => {
-    if (t < tProblem) return lerp(-0.7, 0.15, unlerp(t, C.p3, tProblem));
+    if (t < tProblem) return lerp(-0.45, 0.15, unlerp(t, C.p3, tProblem));
     return 0.15 + easeInCubic(unlerp(t, tProblem + 0.12, tProblem + 0.75)) * 3.2;
   };
   const p3 = officeShot('pc-point', C.p3, C.p4, s => {
@@ -237,10 +312,17 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
     const bang = new THREE.Group();
     bang.add(inkedRect(0.07, 0.24, 0.03, '#e0504a', 0.025));
     const dot = inkedCircle(0.04, '#e0504a', 0.02); dot.position.y = -0.2; bang.add(dot);
-    s.scene.add(b, hand, ring, lines.group, bang);
+    // Clawd's own "!" when the finger lands
+    const alarm = new THREE.Group();
+    alarm.add(inkedRect(0.13, 0.4, 0.05, '#ffd166', 0.04));
+    const adot = inkedCircle(0.075, '#ffd166', 0.035); adot.position.y = -0.35; alarm.add(adot);
+    s.scene.add(b, hand, ring, lines.group, bang, alarm);
     return f => {
+      // camera: a medium on the desk with Clawd at the left; it follows the chase to the right
+      const follow = easeInOutCubic(unlerp(f.t, tProblem + 0.25, C.p4 + 0.1));
+      const camX = lerp(-0.35, 1.5, follow) + (f.t - C.p3) * 0.04;
       const wb = wobble(f.t, 0.02, 3);
-      s.aim(0.2 + wb.x + (f.t - C.p3) * 0.12, DESK_Y + 0.95 + wb.y, 4.4, 0.2 + (f.t - C.p3) * 0.12, DESK_Y + 0.55, 0.2);
+      s.aim(camX + wb.x, DESK_Y + 1.1 + wb.y, 5.3, camX, DESK_Y + 0.68, 0.2);
       const bx = bugX(f.t), scared = f.t > tProblem && f.t < tProblem + 0.2 ? 1 : 0;
       b.position.set(bx, DESK_Y, 0.3);
       b.animate(f.t < tProblem ? (f.t - C.p3) * 2.2 : (f.t - tProblem) * 9, scared, f.t);
@@ -258,12 +340,29 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
       ring.visible = rk > 0 && rk < 1;
       ring.position.set(0.15, DESK_Y + 0.12, 0.32);
       ring.scale.set(0.4 + rk * 1.4, (0.4 + rk * 1.4) * 0.35, 1);
-      // Clawd zooms in from the left after the bug
+      // Clawd: watches the bug, then the finger coming in; jumps on "problem", then zooms after it
       const zk = unlerp(f.t, tProblem + 0.3, C.p4 + 0.05);
-      const cx = lerp(-2.6, bugX(f.t) - 1.0, easeInCubic(zk));
-      s.clawd.root.position.set(f.t < tProblem + 0.3 ? -3.5 : cx, DESK_Y, 0.25);
-      s.clawd.setMood(mixMood(MOODS.excited, MOODS.focused, 0.6), f.t);
-      s.clawd.setPose(pose({ lean: -0.25, walk: (f.t - tProblem) * 7, armL: 0.9, armR: 0.9, squash: -0.15 }));
+      const cx = lerp(-1.65, bugX(f.t) - 1.0, easeInCubic(zk));
+      const startle = hop(f.t, tProblem + 0.02, tProblem + 0.3, 0.32);
+      s.clawd.root.position.set(cx, DESK_Y + startle, 0.25);
+      const seeHand = smooth(unlerp(f.t, tPoint - 0.1, tPoint + 0.15)) * (1 - smooth(unlerp(f.t, tProblem - 0.2, tProblem)));
+      const look = { x: lerp(0.7, 0.9, seeHand), y: lerp(-0.5, 0.6, seeHand) };
+      const alert = f.t >= tProblem;
+      s.clawd.setMood(alert ? { ...MOODS.focused, open: 1.35, squint: 0.2 } : mixMood(MOODS.excited, MOODS.focused, 0.25), f.t, look);
+      const chasing = zk > 0;
+      s.clawd.setPose(pose(chasing
+        ? { lean: -0.25, walk: (f.t - tProblem) * 7, armL: 0.9, armR: 0.9, squash: -0.15 }
+        : {
+          squash: startle > 0 ? -0.3 : decay(f.t - (tProblem + 0.3), 0.08) * 0.3,
+          armL: alert ? 1.7 : 0.35, armR: alert ? 1.7 : 0.35 + seeHand * 0.5,
+          lean: alert ? 0 : 0.06 * Math.sin(f.t * 3), bounce: alert ? 0 : beatHop(f.clock, f.t) * 0.25,
+        }));
+      const ak = unlerp(f.t, tProblem, tProblem + 0.55);
+      alarm.visible = ak > 0 && ak < 1;
+      alarm.position.set(cx + 0.82, DESK_Y + startle + 1.25, 0.35);
+      alarm.rotation.z = -0.25;
+      alarm.scale.setScalar(Math.max(0.01, easeOutBack(clamp(ak * 4), 2.5)) * (1 - smooth(unlerp(ak, 0.8, 1))));
+      alarm.rotation.z += Math.sin(f.t * 40) * 0.08;
       lines.group.position.set(cx - 0.6, DESK_Y + 0.6, 0.3);
       lines.update(zk > 0 && zk < 1 ? 1 : 0, 1, f.t);
     };
@@ -546,8 +645,16 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
   });
   const c4 = officeShot('c1-between', C.c4, C.c5, s => {
     const wall = blockWall(s);
+    const snug = sparkles(8, 0.9, '#ffffff', 25);
+    const party = confetti(46, 27, { size: 0.12, speed: 4.2, life: 1.5, spread: 2.4 });
+    s.scene.add(snug.group, party.group);
     return f => {
       wall(f);
+      // the office cheers the clear: thumbs up around the room, staggered
+      s.stations.forEach((st, i) => {
+        const up = easeOutBack(unlerp(f.t, tClear2 + 0.1 + hash(i, 811) * 0.4, tClear2 + 0.4 + hash(i, 811) * 0.4));
+        if (up > 0.01) st.person.pose(up * 1.1, up, beatHop(f.clock, f.t) * up);
+      });
       const jump = unlerp(f.t, tIn + 0.1, tBetween);
       const inHole = f.t >= tBetween;
       const floorY = -2 * CELL + HOLE.r0 * CELL + CELL - 0.22 * 1 - 0.16; // feet so his body fills the gap
@@ -565,9 +672,12 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
         armL: inHole && !out ? 0.1 : out ? 1.0 + dust * 0.3 : 1.4, armR: inHole && !out ? 0.1 : out ? 1.0 - dust * 0.3 : 1.4,
         bounce: out && f.t > tClear2 + 0.5 ? beatHop(f.clock, f.t) * 0.3 : 0,
       }));
-      const close = 1 - easeInOutCubic(unlerp(f.t, tClear2 - 0.1, tClear2 + 0.6));
+      snug.group.position.set(holeX, floorY + 0.55, BZ + 0.3); snug.update(f.t - tBetween, 0.5);
+      party.group.position.set(holeX, 0.9, BZ + 0.25); party.update(f.t - tClear2);
+      // close on the last piece clicking home; after the clear, pull back and up to the cheering office
+      const close = 1 - easeInOutCubic(unlerp(f.t, tClear2 - 0.1, tClear2 + 0.9));
       const wb = wobble(f.t, 0.03, 10), punch = decay(f.t - tBetween, 0.1) * 0.3 + decay(f.t - tClear2, 0.12) * 0.3;
-      s.aim(lerp(0.35, holeX + 0.6, close) + wb.x, lerp(2.15, 1.6, close) + wb.y, lerp(10.0, 6.8, close) - punch, lerp(0.35, holeX + 0.6, close), lerp(1.1, 0.85, close), BZ);
+      s.aim(lerp(0.35, holeX + 0.6, close) + wb.x, lerp(2.9, 1.6, close) + wb.y, lerp(10.6, 6.8, close) - punch, lerp(0.35, holeX + 0.6, close), lerp(1.75, 0.85, close), BZ);
     };
   });
 
@@ -704,8 +814,9 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
           puffs[i].group.position.set(st.x + 1.25, 2.3, st.z + 0.2);
           puffs[i].update(night ? (nk - (hash(i, 991) * 0.85 + 0.05)) * 1.1 : -1, 0.35);
         });
+        // the wavers stand either side of his desk, never in front of him
         wavers.forEach((p, i) => {
-          p.root.position.set(-6.5 + i * 2.2 + (i > 2 ? 3.6 : 0), 0, 2.2 + (i % 2) * 0.4);
+          p.root.position.set([-8.2, -6.1, -4.1, 2.9, 4.9, 6.9][i], 0, 2.2 + (i % 2) * 0.4);
           p.root.visible = !night;
           p.pose({ ...STAND, armR: 2.6 + Math.sin(f.t * 9 + i) * 0.35, armL: 0.15, bob: beatHop(f.clock, f.t + i * 0.07) * 0.6 });
         });
@@ -716,8 +827,9 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
         s.clawd.setPose(pose({ armL: 2.3, armR: night ? 2.3 : 1.4 + Math.sin(f.t * 10) * 0.5, squash: 0.4 + Math.sin(f.t * 14) * 0.02, lean: Math.sin(f.t * 3.1) * 0.03 }));
         const wb = wobble(f.t, 0.04, 14);
         if (!night) {
-          const k = easeInOutCubic(unlerp(f.t, C.c8, C.c8b));
-          s.aim(lerp(-1.5, -0.5, k) + wb.x, lerp(4.3, 5.0, k) + wb.y, lerp(12.5, 17, k), lerp(-1.5, -0.5, k), lerp(2.9, 3.1, k), -3);
+          // from a medium on Clawd under his tower, waving, back to the whole office waving at him
+          const k = easeInOutCubic(unlerp(f.t, C.c8 + 0.2, C.c8b));
+          s.aim(lerp(-1.55, -0.6, k) + wb.x, lerp(3.0, 5.0, k) + wb.y, lerp(6.8, 17, k), lerp(-1.6, -0.6, k), lerp(2.75, 3.1, k), lerp(0.25, -3, k));
         } else {
           const k = easeInOutCubic(unlerp(f.t, 61.0, C.end + 0.1));
           s.aim(lerp(-0.6, HERO.monitorX, k) + wb.x * (1 - k), lerp(4.6, HERO.screenY, k) + wb.y * (1 - k), lerp(15.5, -0.28 + 1.4, k), lerp(-0.6, HERO.monitorX, k), lerp(3.0, HERO.screenY, k), -0.28);

@@ -11,8 +11,8 @@ import { INK, canvasPlane, inkedCircle, inkedRect, ownMat, roundedRectShape, sha
 import { Clawd } from '../../engine/characters/clawd';
 import { hash, noise1 } from '../../engine/rng';
 import { clamp, lerp, smooth, unlerp } from '../../engine/ease';
-import { FONT, beatHop, person } from './world';
-import { HAIRS, SHIRTS, bandShape, pick, wearTag } from './props';
+import { beatHop, drawChatApp, person } from './world';
+import { HAIRS, SHIRTS, STAND, bandShape, pick, standingPerson, wearTag } from './props';
 
 export const DESK_Y = 1.45;
 export const WALL_Z = -14;
@@ -69,24 +69,18 @@ function workstation(seed: number, opts: { hero?: boolean; far?: boolean } = {})
   const ppu = opts.hero ? 700 : opts.far ? 90 : 160;
   const screen = staticPlane(1.75, 1.02, ppu, (c, W, H) => {
     const u = W / 1.75;
+    if (opts.hero) { drawChatApp(c, W, H); return; } // the same app Clawd lived in through verse 1
     c.fillStyle = '#fbf7f0'; c.fillRect(0, 0, W, H);
     c.fillStyle = '#efe4d3'; c.fillRect(0, 0, W, 0.08 * u);
     ['#e0504a', '#f2b84b', '#5cb85c'].forEach((col, i) => { c.fillStyle = col; c.beginPath(); c.arc((0.06 + i * 0.05) * u, 0.04 * u, 0.014 * u, 0, Math.PI * 2); c.fill(); });
-    if (opts.hero) {
-      c.fillStyle = 'rgba(43,29,22,0.55)'; c.font = `700 ${0.035 * u}px ${FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
-      c.fillText('New chat', W / 2, 0.042 * u);
-      c.fillStyle = 'rgba(43,29,22,0.18)'; c.fillRect(0.06 * u, 0.72 * u, W - 0.12 * u, 0.006 * u);
-      c.fillStyle = '#e9dfd0'; c.beginPath(); c.roundRect(1.38 * u, 0.16 * u, 0.24 * u, 0.09 * u, 0.02 * u); c.fill();
-    } else {
-      // a little conversation: their messages on the right, Clawd's (with his face) on the left
-      for (let r = 0; r < 3; r++) {
-        const mine = r % 2 === 0, y = (0.16 + r * 0.19) * u, w = (0.5 + hash(seed, r) * 0.45) * u;
-        c.fillStyle = mine ? '#e9dfd0' : '#ffffff';
-        c.beginPath(); c.roundRect(mine ? W - w - 0.08 * u : 0.24 * u, y, w, 0.12 * u, 0.03 * u); c.fill();
-        if (!mine) { c.fillStyle = '#d97757'; c.fillRect(0.08 * u, y + 0.01 * u, 0.12 * u, 0.08 * u); c.fillStyle = INK; c.fillRect(0.11 * u, y + 0.035 * u, 0.015 * u, 0.03 * u); c.fillRect(0.165 * u, y + 0.035 * u, 0.015 * u, 0.03 * u); }
-        c.fillStyle = 'rgba(43,29,22,0.25)';
-        c.fillRect((mine ? W - w - 0.04 * u : 0.28 * u), y + 0.05 * u, w * 0.6, 0.02 * u);
-      }
+    // a little conversation: their messages on the right, Clawd's (with his face) on the left
+    for (let r = 0; r < 3; r++) {
+      const mine = r % 2 === 0, y = (0.16 + r * 0.19) * u, w = (0.5 + hash(seed, r) * 0.45) * u;
+      c.fillStyle = mine ? '#e9dfd0' : '#ffffff';
+      c.beginPath(); c.roundRect(mine ? W - w - 0.08 * u : 0.24 * u, y, w, 0.12 * u, 0.03 * u); c.fill();
+      if (!mine) { c.fillStyle = '#d97757'; c.fillRect(0.08 * u, y + 0.01 * u, 0.12 * u, 0.08 * u); c.fillStyle = INK; c.fillRect(0.11 * u, y + 0.035 * u, 0.015 * u, 0.03 * u); c.fillRect(0.165 * u, y + 0.035 * u, 0.015 * u, 0.03 * u); }
+      c.fillStyle = 'rgba(43,29,22,0.25)';
+      c.fillRect((mine ? W - w - 0.04 * u : 0.28 * u), y + 0.05 * u, w * 0.6, 0.02 * u);
     }
     c.fillStyle = '#ffffff'; c.strokeStyle = 'rgba(43,29,22,0.6)'; c.lineWidth = 0.008 * u;
     c.beginPath(); c.roundRect(0.12 * u, 0.82 * u, W - 0.24 * u, 0.12 * u, 0.02 * u); c.fill(); c.stroke();
@@ -398,6 +392,25 @@ export function buildOffice(opts: { tagged?: boolean } = {}): OfficeSet {
   scene.add(rig);
   if (opts.tagged) wearTag(clawd.body);
 
+  // sunlight from the windows lying across the floor, warming at sunset and gone by dusk
+  const sunMat = ownMat('#fff4cf', 0.16, true);
+  for (const wx of WIN.xs) {
+    const patch = new THREE.Shape();
+    patch.moveTo(wx - WIN.w / 2 + 2.6, 0); patch.lineTo(wx + WIN.w / 2 + 2.6, 0); patch.lineTo(wx + WIN.w / 2, 6.5); patch.lineTo(wx - WIN.w / 2, 6.5); patch.closePath();
+    const m = shapeMesh(patch, sunMat, 0);
+    m.rotation.x = -Math.PI / 2;
+    add(m, 0, 0.012, WALL_Z + 6.8);
+  }
+  // two coworkers wandering along the back aisle with their coffee
+  const walkers = [0, 1].map(i => {
+    const w = standingPerson(60 + i * 7);
+    const mug = inkedRect(0.26, 0.3, 0.04, i ? '#8fc59a' : '#d97757', 0.03);
+    mug.position.set(0.3, -0.15, 0);
+    w.hands.add(mug);
+    scene.add(w.root);
+    return { w, speed: 1.25 + i * 0.2, phase: i * 17, z: WALL_Z + 1.7 + i * 0.5 };
+  });
+
   return {
     scene, camera, clawd, rig, hero, stations, heroDesk,
     aim(x, y, z, tx, ty, tz) { camera.position.set(x, y, z); camera.lookAt(tx, ty, tz); },
@@ -408,6 +421,15 @@ export function buildOffice(opts: { tagged?: boolean } = {}): OfficeSet {
       minHand.rotation.z = -((hours % 1) * Math.PI * 2);
       hourHand.rotation.z = -(((hours % 12) / 12) * Math.PI * 2);
       lamps.forEach((l, i) => { l.rotation.z = Math.sin(f.t * 0.8 + i * 1.3) * 0.02; });
+      const tod = timeOfDay(f.t);
+      sunMat.opacity = 0.16 * (1 - clamp(tod / 1.5));
+      sunMat.color.set('#fff4cf').lerp(new THREE.Color('#ffc58a'), clamp(tod));
+      walkers.forEach(({ w, speed, phase, z }, i) => {
+        const span = 34, x = (((f.t * speed + phase) % span) - span / 2) * (i ? -1 : 1);
+        w.root.visible = tod < 1.6;
+        w.root.position.set(x, 0, z);
+        w.pose({ ...STAND, walk: f.t * speed * 0.9, flip: i === 1, armL: 0.15, armR: 0.15 });
+      });
       bubbles.forEach((b, i) => { const k = (f.t * 0.7 + i / 3) % 1; b.position.y = 0.95 + k * 0.7; b.visible = k < 0.9; });
       const pk = (f.t % 6) / 6; // a page slides out of the printer every few seconds
       paper.position.set(0, 0.25 + smooth(unlerp(pk, 0.1, 0.35)) * 0.15, 0.03);
