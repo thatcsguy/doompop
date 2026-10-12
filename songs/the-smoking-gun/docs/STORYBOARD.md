@@ -74,6 +74,18 @@ Draft for Patrick's approval, one row per lyric line, following [TREATMENT.md](T
 | 39 | 1:44.3 ~ | The actual root cause may be | The thread runs under the DJ booth. Clawd crawls in, afro first. |
 | 40 | 1:46.2 ~ | The path I first misplaced | He pulls out the dusty first trace from verse 1 (the handler path) with a "huh" face. [sheepish] |
 
+**As built (2026-10-12).** Verse 2 is set in a forensics lab on the floor in front of the booth: a pull-up screen with a projector off to the left, an X-ray light box, a byte ticker and a service door in the riser. Changes from the rows above:
+
+- 25: a pull-UP screen (the pun) that springs out of a case on the floor, not a pull-down over the decks.
+- 26: each panel's prod line slides onto staging's and a gold MATCH badge stamps on "exact".
+- 27 and 28: the twins wear white suits and pageant sashes; on 28 they mirror each other through an empty gold frame and Clawd steps in behind it as a third twin.
+- 30: the "lamp" is an X-ray light box with two printouts and their fingerprints.
+- 32: the ticker brakes on "field" and the tiny Field pops up in front of the red pair, blinks at us and ducks.
+- 33: the Chief (coffee, moustache, eyebrow) taps the red pair; only "Good catch!" goes in the bubble.
+- 35: the Cache holds a tower of the booth's gear on its head, rather than standing in as the booth's pillar.
+- 36 cuts to the meter slamming red on "certain". 37: the flag pops out of his afro.
+- 39 and 40: the thread runs under a little service door in the riser. He drops onto a mechanic's creeper and rolls in head first, then rolls back out hugging the dusty handler-path coil, which lights back up cyan when he blows the dust off.
+
 ## Chorus 2 (the strings snap on the misplaced path)
 
 | # | Time | Line | Shot |

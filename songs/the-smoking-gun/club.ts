@@ -11,7 +11,7 @@
 import * as THREE from 'three';
 import type { Frame } from '../../engine/types';
 import { INK, arcShape, canvasPlane, circleShape, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh, staticPlane } from '../../engine/flat';
-import { clamp, lerp, smooth } from '../../engine/ease';
+import { clamp, easeOutCubic, lerp, smooth } from '../../engine/ease';
 import { hash, noise1 } from '../../engine/rng';
 import { CRT_FONT, PAL, SIGN_FONT, TERM_FONT, UI_FONT, beamTexture, cutout, glowMat, lightMat, ownGlow, radialTexture, setGlow, solid } from './look';
 import { Dancer, dancePose, frozenPose, outfit } from './people';
@@ -39,7 +39,7 @@ export function tileCenter(ix: number, iz: number) {
 export interface TileLight { color: THREE.ColorRepresentation; power: number }
 export type Painter = (ix: number, iz: number, f: Frame) => TileLight;
 
-export type TermMode = 'off' | 'boot' | 'logs' | 'grep' | 'trace' | 'sync' | 'error' | 'no' | 'tests';
+export type TermMode = 'off' | 'boot' | 'logs' | 'grep' | 'trace' | 'sync' | 'error' | 'no' | 'tests' | 'json';
 
 export interface ClubState {
   floor: Painter;
@@ -57,7 +57,9 @@ export interface ClubState {
   terms: TermMode;
   termT0: number;           // song time the current terminal mode started (boot sequence etc.)
   termOffset: number;       // extra scroll, in lines (DJ scratching the logs back and forth)
-  termSync: number;         // 'sync' screens: 0 = every screen its own trace, 1 = all the same one
+  termSync: number;         // 'sync' screens: 0 = every screen its own trace, 1 = all the same one;
+                            // 'json' screens: the match glow (0 none, 1 every line green)
+  termLine: number;         // 'json' screens: the request line lit on both sides (fractional; -1 none)
   meter: number;            // the confidence VU meter, 0..1 (1 = pinned in the red)
   sign: number;             // CLUB PROD neon, 0..1
   incidentDays: number;     // the "days since last incident" sign
@@ -110,7 +112,7 @@ export const clearBooth = (i: number) => !(Math.abs(DANCER_SPOTS[i][0]) < 4.6 &&
 export function defaultState(): ClubState {
   return {
     floor: deadFloor(), ball: { angle: 0, lit: 0.2, sparkle: 0 }, beams: 0, alarm: 1, pars: 0.25, frozen: 1, danceEnergy: 1,
-    crowd: 1, terms: 'off', termT0: 0, termOffset: 0, termSync: 0, meter: 0.08, sign: 1, incidentDays: 0, records: { spin: 0, label: '/checkout' },
+    crowd: 1, terms: 'off', termT0: 0, termOffset: 0, termSync: 0, termLine: -1, meter: 0.08, sign: 1, incidentDays: 0, records: { spin: 0, label: '/checkout' },
     wallLight: 0.4, boardStrings: 1, boardFocus: 0, boardRing: 0, boardLine: 0, boardTwang: 0, blackout: 0,
   };
 }
@@ -764,6 +766,43 @@ const GREP_FILES = ['src/checkout.ts', 'src/cart/cache.ts', 'lib/handler.js', 'a
 /** The one trace every screen agrees on (start, length, colour), the failing span in red. */
 const SYNC_SPANS: [number, number, string][] = [[0, 0.96, '#2fe2ff'], [0.04, 0.5, '#45ff8a'], [0.1, 0.26, '#ffae3d'], [0.42, 0.44, '#45ff8a'], [0.5, 0.22, '#ff3240'], [0.62, 0.3, '#2fe2ff']];
 const SYNC_OWN = ['#2fe2ff', '#45ff8a', '#ffae3d', '#c38bff'];
+/** The checkout request body, as both staging and prod send it (verse 2 compares the two). */
+export const REQUEST_LINES = ['{', '  "cart": 91,', '  "items": [', '    { "sku": "A12", "qty": 2 },', '    { "sku": "C07", "qty": 1 }', '  ],', '  "total": 59.00,', '  "v": 1', '}'];
+
+/** One request body in a box: a header, the lines, the lit line and the ticks (the 'json' mode). */
+function drawRequest(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, u: number, prod: boolean, s: ClubState, f: Frame) {
+  const head = Math.max(0.16 * u, h * 0.13);
+  g.fillStyle = prod ? '#3a0f2a' : '#0b2a36';
+  g.fillRect(x, y, w, head);
+  g.fillStyle = prod ? '#ff6fbf' : '#5fe8ff';
+  g.font = `400 ${head * 0.8}px ${CRT_FONT}`;
+  g.textBaseline = 'middle';
+  g.fillText(prod ? 'prod  POST /checkout' : 'staging  POST /checkout', x + 0.06 * u, y + head * 0.55);
+  const lh = Math.max(0.12 * u, (h - head) / 7.2);
+  g.font = `400 ${lh * 0.9}px ${CRT_FONT}`;
+  const rows = Math.floor((h - head) / lh) - 1;
+  const hi = s.termLine, n = REQUEST_LINES.length;
+  // small screens scroll to keep the lit line in view
+  const scroll = clamp(Math.floor(hi) - rows + 2, 0, Math.max(0, n - rows - 1));
+  const match = clamp(s.termSync), pulse = s.termSync > 1 ? s.termSync - 1 : 0;
+  for (let L = scroll; L < n; L++) {
+    const yy = y + head + (L - scroll + 0.6) * lh;
+    if (yy > y + h) break;
+    const lit = hi >= 0 && Math.floor(hi) === L;
+    const done = hi >= 0 && L < Math.floor(hi);
+    if (lit || match > 0) {
+      g.fillStyle = match > 0 ? `rgba(69,255,138,${0.12 + 0.25 * pulse})` : 'rgba(255,255,255,0.2)';
+      g.fillRect(x, yy - lh * 0.5, w, lh);
+    }
+    g.fillStyle = match > 0 ? '#9dffc0' : lit ? '#ffffff' : done ? '#b9ffd2' : '#7f86ad';
+    g.fillText(REQUEST_LINES[L], x + 0.06 * u, yy);
+    if ((done || match > 0) && L > 0 && L < n - 1) {
+      g.fillStyle = '#45ff8a';
+      g.fillText('✓', x + w - lh * 0.9, yy);
+    }
+  }
+  void f;
+}
 
 function drawTerminals(g: CanvasRenderingContext2D, W: number, H: number, TW: { w: number; h: number }, f: Frame, s: ClubState) {
   const u = W / TW.w;
@@ -860,6 +899,17 @@ function drawTerminals(g: CanvasRenderingContext2D, W: number, H: number, TW: { 
         const ph = (b / 4) - Math.floor(b / 4);
         g.fillStyle = `rgba(255,255,255,${0.55 * k})`;
         g.fillRect(x + pad + ph * (w - pad * 2), top - lineH * 0.2, Math.max(1.5, 0.012 * u), h - (top - y));
+      }
+    } else if (mode === 'json') {
+      // staging's request on the left screens, prod's on the right, both side by side on the big
+      // one; each slides in from its own side
+      const k = easeOutCubic(clamp(dt / 0.35 - Math.abs(sc.x) * 0.04));
+      if (Math.abs(sc.x) < 0.1) {
+        drawRequest(g, x - (1 - k) * w * 0.5, y, w / 2 - 0.02 * u, h, u, false, s, f);
+        drawRequest(g, x + w / 2 + 0.02 * u + (1 - k) * w * 0.5, y, w / 2 - 0.02 * u, h, u, true, s, f);
+      } else {
+        const prod = sc.x > 0;
+        drawRequest(g, x + (prod ? 1 : -1) * (1 - k) * w, y, w, h, u, prod, s, f);
       }
     } else if (mode === 'error' || mode === 'no') {
       g.fillStyle = '#2a0306'; g.fillRect(x, y, w, h);

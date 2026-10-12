@@ -44,10 +44,11 @@ export interface DiscoLook {
   medal: number;    // medallion glint, 0..1
   prop: 'none' | 'magnifier' | 'flag' | 'gun' | 'mic';
   propK: number;    // prop scale (0 hidden .. 1)
+  cross: number;    // arms folded across his front (above 0.5; the side arms and any prop hide)
 }
 export const LOOK: DiscoLook = {
   shades: 1, puff: 0, flat: 0, jiggle: 0, spin: 0, rim: 1, rimL: PAL.pink, rimR: PAL.cyan, halo: 0.6, medal: 0,
-  prop: 'none', propK: 1,
+  prop: 'none', propK: 1, cross: 0,
 };
 
 /** The scalloped afro outline: an ellipse with rounded lobes and soft cusps between them. */
@@ -78,12 +79,13 @@ export class DiscoClawd {
   private medalGlint: THREE.MeshBasicMaterial;
   private haloMesh: THREE.Mesh;
   private props: Record<string, THREE.Group> = {};
+  private crossed = new THREE.Group();
 
   constructor() {
     this.root = this.rig.root;
     // The rig keeps its parts private; reach the two we attach to by name and fail loudly if they move.
-    const parts = this.rig as unknown as { body?: THREE.Group; arms?: THREE.Group[]; bodyFill?: THREE.MeshBasicMaterial };
-    if (!parts.body || !parts.arms || parts.arms.length !== 2 || !parts.bodyFill) throw new Error('Clawd rig changed: body/arms/bodyFill not found');
+    const parts = this.rig as unknown as { body?: THREE.Group; arms?: THREE.Group[]; bodyFill?: THREE.MeshBasicMaterial; shadeFill?: THREE.MeshBasicMaterial };
+    if (!parts.body || !parts.arms || parts.arms.length !== 2 || !parts.bodyFill || !parts.shadeFill) throw new Error('Clawd rig changed: body/arms/bodyFill/shadeFill not found');
     this.body = parts.body;
     this.armPivots = parts.arms;
 
@@ -226,6 +228,19 @@ export class DiscoClawd {
       g.add(handle, head);
       return g;
     })();
+    // folded arms: two forearms across the bottom of his front, the far one in shadow, under the
+    // chain (so the medallion hangs over them) and clear of his eyes and cheeks
+    const fold = (fill: THREE.MeshBasicMaterial, y: number, rot: number, z: number) => {
+      const a = inkedRect(1.02, 0.17, 0.01, fill, 0.035);
+      a.position.set(0, y, z);
+      a.rotation.z = rot;
+      this.crossed.add(a);
+    };
+    fold(parts.shadeFill, 0.34, -0.13, 0.011);
+    fold(parts.bodyFill, 0.31, 0.13, 0.0135);
+    this.crossed.visible = false;
+    this.body.add(this.crossed);
+
     this.props.gun = new THREE.Group(); // the smoking gun prop lives in props.ts; shots attach it here
     for (const g of Object.values(this.props)) { g.visible = false; g.position.x = ARM_LEN - 0.3; paw.add(g); }
   }
@@ -235,6 +250,8 @@ export class DiscoClawd {
   get pawL(): THREE.Group { return this.armPivots[0]; }
   /** The afro group (for shots that pull things out of it or pop things over it). */
   get afroGroup(): THREE.Group { return this.afro; }
+  /** The flag's free bottom corner in world space (call after set() and a matrix update). */
+  flagCorner(out: THREE.Vector3) { return this.props.flag.localToWorld(out.set(0.56, 0.45, 0.03)); }
 
   set(mood: Mood, pose: Pose, look: Partial<DiscoLook>, t: number) {
     const L = { ...LOOK, ...look };
@@ -275,6 +292,9 @@ export class DiscoClawd {
       g.visible = on;
       if (on) g.scale.setScalar(L.propK);
     }
+    const folded = L.cross > 0.5;
+    this.crossed.visible = folded;
+    this.armPivots.forEach(p => { p.visible = !folded; });
   }
 }
 

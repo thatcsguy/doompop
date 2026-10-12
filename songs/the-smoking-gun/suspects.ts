@@ -35,7 +35,7 @@ export const SUSPECT_REST: SuspectState = {
 export const sp = (p: Partial<SuspectState>): SuspectState => ({ ...SUSPECT_REST, ...p });
 
 /** Two-tone rim: offset copies of a silhouette just behind it (pink from the left, cyan from the right). */
-class Rim {
+export class Rim {
   private parts: { mesh: THREE.Mesh; mat: THREE.MeshBasicMaterial; side: number }[] = [];
   add(shape: THREE.Shape, parent: THREE.Object3D, x: number, y: number, z: number, off = 0.045) {
     const geo = new THREE.ShapeGeometry(shape, 8);
