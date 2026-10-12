@@ -468,7 +468,7 @@ export function keyRing(scale = 1) {
     const t1 = inkedRect(0.09, 0.06, 0.005, i === 2 || i === 3 ? '#c9ced6' : col, 0.025); t1.position.set(0.07, -0.5, -0.006);
     const t2 = inkedRect(0.07, 0.05, 0.005, i === 2 || i === 3 ? '#c9ced6' : col, 0.025); t2.position.set(0.06, -0.58, -0.006);
     k.add(shaft, t1, t2, bow, hole);
-    k.position.set(0, -0.3, 0.01 + i * 0.004);
+    k.position.set(0, -0.3, 0.01 + i * 0.016); // each key spans 0.014 in depth
     k.rotation.z = (i - 1.5) * 0.35;
     swing.add(k);
     return k;

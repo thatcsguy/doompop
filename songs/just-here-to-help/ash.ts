@@ -363,7 +363,7 @@ export function officeRemains() {
   for (let k = 0; k < 7; k++) {
     const p = inkedRect(0.4, 0.3, 0.01, k % 3 ? '#bdb8b2' : '#8f8a85', 0.02);
     p.rotation.set(-Math.PI / 2, 0, hash(k, 732) * 3);
-    p.position.set(-2.4 + hash(k, 733) * 5, 0.01 + k * 0.001, 0.4 + hash(k, 734) * 1.4);
+    p.position.set(-2.4 + hash(k, 733) * 5, 0.01 + k * 0.006, 0.4 + hash(k, 734) * 1.4);
     g.add(p);
   }
   g.add(blobShadow(4.2, 1.2, 0.18), top, ...legs, drawers, mon, chair);
@@ -452,14 +452,15 @@ export function toppledRack(seed = 0) {
   g.add(pivot);
   type Piece = { m: THREE.Object3D; x: number; y: number; w: number; h: number; vx: number; vy: number; w0: number };
   const pieces: Piece[] = [];
-  const piece = (m: THREE.Object3D, x: number, y: number, w: number, h: number) => {
-    m.position.set(x, y, 0); pivot.add(m);
+  // z: rails and the cap sit in front of the units, clear in depth so overlaps don't flicker
+  const piece = (m: THREE.Object3D, x: number, y: number, w: number, h: number, z = 0) => {
+    m.position.set(x, y, z); pivot.add(m);
     pieces.push({ m, x, y, w, h, vx: (hash(seed, pieces.length, 751) - 0.5) * 2.4, vy: 0.6 + hash(seed, pieces.length, 752) * 1.6, w0: (hash(seed, pieces.length, 753) - 0.5) * 7 });
   };
   // rails, caps, and the units between them
-  piece(inkedRect(0.16, RH, 0.02, '#3a3735', 0.045), -RW + 0.08, RH / 2, 0.16, RH);
-  piece(inkedRect(0.16, RH, 0.02, '#3a3735', 0.045), -0.08, RH / 2, 0.16, RH);
-  piece(inkedRect(RW, 0.16, 0.02, '#2f2c2a', 0.045), -RW / 2, RH - 0.08, RW, 0.16);
+  piece(inkedRect(0.16, RH, 0.02, '#3a3735', 0.045), -RW + 0.08, RH / 2, 0.16, RH, 0.012);
+  piece(inkedRect(0.16, RH, 0.02, '#3a3735', 0.045), -0.08, RH / 2, 0.16, RH, 0.012);
+  piece(inkedRect(RW, 0.16, 0.02, '#2f2c2a', 0.045), -RW / 2, RH - 0.08, RW, 0.16, 0.018);
   let y = 0.2;
   for (let i = 0; y < RH - 0.4; i++) {
     const h = hash(seed, i, 754) < 0.5 ? 0.42 : 0.24;
@@ -487,7 +488,7 @@ export function toppledRack(seed = 0) {
         const restY = Math.min(p.w, p.h) / 2 + 0.01 + i * 0.004;
         const tl = (p.vy + Math.sqrt(p.vy * p.vy + 19.6 * Math.max(0, rest[i].y - restY))) / 9.8;
         const s = Math.min(dt, tl);
-        p.m.position.set(rest[i].x + p.vx * s, Math.max(restY, rest[i].y + p.vy * s - 4.9 * s * s), rest[i].z + i * 0.002);
+        p.m.position.set(rest[i].x + p.vx * s, Math.max(restY, rest[i].y + p.vy * s - 4.9 * s * s), rest[i].z + i * 0.012);
         const lie = p.h > p.w ? Math.PI / 2 * Math.sign(p.vx || 1) : 0;
         p.m.rotation.z = dt < tl ? p.w0 * s : lie + (hash(seed, i, 756) - 0.5) * 0.2;
       });
