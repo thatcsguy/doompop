@@ -54,6 +54,7 @@ export interface ClubState {
   crowdShift?: (i: number, f: Frame) => THREE.Vector3 | null; // per-dancer offset (shooing, parting)
   terms: TermMode;
   termT0: number;           // song time the current terminal mode started (boot sequence etc.)
+  termOffset: number;       // extra scroll, in lines (DJ scratching the logs back and forth)
   meter: number;            // the confidence VU meter, 0..1 (1 = pinned in the red)
   sign: number;             // CLUB PROD neon, 0..1
   incidentDays: number;     // the "days since last incident" sign
@@ -61,6 +62,7 @@ export interface ClubState {
   wallLight: number;        // general wash on the back wall, 0..1
   boardStrings: number;     // evidence board: how much red string is up, 0..1
   boardFocus: number;       // 0 = strings all over, 1 = every string swung to the Cache
+  boardRing: number;        // a red marker ring going round the Cache's photo, 0..1
 }
 
 /** Production is down: dead floor with red error tiles that pulse on the beat. */
@@ -88,14 +90,22 @@ export function aliveFloor(power = 1.6): Painter {
   };
 }
 
+/** Every tile red: the crash. */
+export function allRed(power = 1.3): Painter {
+  return (ix, iz, f) => {
+    const beat = f.clock.beat(f.t), ph = beat - Math.floor(beat);
+    return { color: PAL.red, power: power * (0.75 + 0.25 * Math.exp(-ph * 4)) * (0.9 + 0.1 * hash(ix, iz, 8)) };
+  };
+}
+
 /** Hide the dancers that would stand between a booth camera and the DJ booth. */
 export const clearBooth = (i: number) => !(Math.abs(DANCER_SPOTS[i][0]) < 4.6 && DANCER_SPOTS[i][1] < -3);
 
 export function defaultState(): ClubState {
   return {
     floor: deadFloor(), ball: { angle: 0, lit: 0.2, sparkle: 0 }, beams: 0, alarm: 1, pars: 0.25, frozen: 1, danceEnergy: 1,
-    crowd: 1, terms: 'off', termT0: 0, meter: 0.08, sign: 1, incidentDays: 0, records: { spin: 0, label: '/checkout' },
-    wallLight: 0.4, boardStrings: 1, boardFocus: 0,
+    crowd: 1, terms: 'off', termT0: 0, termOffset: 0, meter: 0.08, sign: 1, incidentDays: 0, records: { spin: 0, label: '/checkout' },
+    wallLight: 0.4, boardStrings: 1, boardFocus: 0, boardRing: 0,
   };
 }
 
@@ -299,7 +309,7 @@ export class Club {
     // terminal wall: bezels drawn once with holes; the screens are one canvas behind them
     const TW = { x: 0, y: 3.95, w: 9.4, h: 4.6 };
     const screens = TERMINALS;
-    this.terms = canvasPlane(TW.w, TW.h, 64, (g, st: { f: Frame; s: ClubState }, W, H) => drawTerminals(g, W, H, TW, st.f, st.s));
+    this.terms = canvasPlane(TW.w, TW.h, 160, (g, st: { f: Frame; s: ClubState }, W, H) => drawTerminals(g, W, H, TW, st.f, st.s));
     this.termMat = this.terms.mesh.material as THREE.MeshBasicMaterial;
     this.terms.mesh.position.set(TW.x, TW.y, WALL_Z + 0.2);
     solid(this.terms.mesh);
@@ -394,11 +404,12 @@ export class Club {
     meter.add(inkedRect(METER.w, METER.h, 0.05, '#f1e6c8', 0.035));
     const hubY = -METER.h * 0.3;
     const zones: [number, number, string][] = [[Math.PI * 0.95, Math.PI * 0.55, '#3fbf6b'], [Math.PI * 0.55, Math.PI * 0.35, '#ffcc3d'], [Math.PI * 0.35, Math.PI * 0.08, '#ff3240']];
-    for (const [a0, a1, col] of zones) {
-      const arc = shapeMesh(arcShape(METER.h * 0.56, METER.h * 0.09, a1, a0), col, 0.004, 16);
+    zones.forEach(([a0, a1, col], i) => {
+      // each zone a hair in front of the last so the round caps where they meet don't z-fight
+      const arc = shapeMesh(arcShape(METER.h * 0.56, METER.h * 0.09, a1, a0), col, 0.004 + i * 0.0012, 16);
       arc.position.y = hubY;
       meter.add(arc);
-    }
+    });
     this.meterRed = ownGlow('#ff3240', 1);
     const redLamp = shapeMesh(circleShape(METER.h * 0.07), this.meterRed, 0.006, 12);
     redLamp.position.set(METER.w * 0.38, METER.h * 0.32, 0);
@@ -494,11 +505,11 @@ export class Club {
   private buildBoard() {
     const { x, y, w, h } = BOARD;
     this.add(inkedRect(w + 0.5, h + 0.5, 0.06, '#5a3b22', 0.08), x, y, WALL_Z + 0.1);
-    this.board = canvasPlane(w, h, 70, (g, st: { f: Frame; s: ClubState }, W, H) => drawBoard(g, W, H, st.f, st.s));
+    this.board = canvasPlane(w, h, 200, (g, st: { f: Frame; s: ClubState }, W, H) => drawBoard(g, W, H, st.f, st.s));
     solid(this.board.mesh);
     this.board.mesh.position.set(x, y, WALL_Z + 0.16);
     this.root.add(this.board.mesh);
-    const lamp = lightMat('#ffd27a', 0.25, radialTexture());
+    const lamp = lightMat('#ffd27a', 0.1, radialTexture());
     this.add(new THREE.Mesh(new THREE.PlaneGeometry(w * 1.6, h * 1.4), lamp), x, y + 0.6, WALL_Z + 0.2);
   }
 
@@ -746,10 +757,13 @@ function drawTerminals(g: CanvasRenderingContext2D, W: number, H: number, TW: { 
         g.fillStyle = 'rgba(80,90,140,0.12)';
         g.beginPath(); g.ellipse(x + w * 0.3, y + h * 0.3, w * 0.25, h * 0.15, -0.4, 0, Math.PI * 2); g.fill();
       } else if (k < 0.18) {
-        // CRT power-on: a bright line that opens into the screen
-        const open = k / 0.18;
-        g.fillStyle = '#dfffe9';
-        g.fillRect(x, y + h / 2 - (h / 2) * open * open - 2, w, Math.max(3, h * open * open));
+        // CRT power-on: a thin phosphor line that opens into a dim green screen (no white flash)
+        const open = k / 0.18, oh = h * open * open;
+        g.fillStyle = '#0f3a22';
+        g.fillRect(x, y + h / 2 - oh / 2, w, oh);
+        g.fillStyle = '#7dffb0';
+        const lh = Math.max(2, 0.02 * u) * (1 - open * 0.6);
+        g.fillRect(x + w * 0.5 * (1 - Math.min(1, open * 3)), y + h / 2 - lh / 2, w * Math.min(1, open * 3), lh);
       } else {
         g.fillStyle = '#45ff8a';
         const n = Math.min(BOOT_LINES.length, Math.floor((k - 0.18) * 9) + 1);
@@ -763,7 +777,7 @@ function drawTerminals(g: CanvasRenderingContext2D, W: number, H: number, TW: { 
       }
     } else if (mode === 'logs' || mode === 'grep' || mode === 'tests') {
       const speed = mode === 'grep' ? 14 : mode === 'tests' ? 8 : 4;
-      const scroll = dt * speed + i * 3.7;
+      const scroll = dt * speed + i * 3.7 + s.termOffset;
       const n0 = Math.floor(scroll), frac = scroll - n0;
       const rows = Math.ceil(h / lineH) + 1;
       for (let r = 0; r < rows; r++) {
@@ -815,13 +829,26 @@ export const SUSPECT_PINS: Record<string, [number, number]> = {
 };
 
 function drawBoard(g: CanvasRenderingContext2D, W: number, H: number, f: Frame, s: ClubState) {
+  const px = W / 400;   // the board was laid out at 400 px wide
   // cork
   g.fillStyle = '#9b6a3c'; g.fillRect(0, 0, W, H);
-  for (let i = 0; i < 260; i++) {
+  for (let i = 0; i < 520; i++) {
     g.fillStyle = hash(i, 71) < 0.5 ? 'rgba(60,30,10,0.25)' : 'rgba(255,220,160,0.12)';
-    g.fillRect(hash(i, 72) * W, hash(i, 73) * H, 3 + hash(i, 74) * 5, 2 + hash(i, 75) * 3);
+    g.fillRect(hash(i, 72) * W, hash(i, 73) * H, (2 + hash(i, 74) * 4) * px, (1.5 + hash(i, 75) * 2.5) * px);
   }
   const P = (k: string) => ({ x: SUSPECT_PINS[k][0] * W, y: SUSPECT_PINS[k][1] * H });
+  // sticky notes and a scribbled timeline under the photos
+  const note = (x: number, y: number, rot: number, color: string, lines: string[]) => {
+    g.save(); g.translate(x * W, y * H); g.rotate(rot);
+    g.fillStyle = 'rgba(0,0,0,0.3)'; g.fillRect(-26 * px + 3 * px, -20 * px + 3 * px, 52 * px, 40 * px);
+    g.fillStyle = color; g.fillRect(-26 * px, -20 * px, 52 * px, 40 * px);
+    g.fillStyle = '#3a2a1a'; g.font = `700 ${7 * px}px ${TERM_FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    lines.forEach((t, i) => g.fillText(t, 0, (-8 + i * 10) * px));
+    g.restore();
+  };
+  note(0.42, 0.52, -0.08, '#ffe17a', ['500s since', 'deploy?']);
+  note(0.9, 0.62, 0.1, '#ff9ad5', ['cache', 'hit 0%??']);
+  note(0.08, 0.55, 0.06, '#9ae8ff', ['repro:', '/checkout']);
   // strings: all over the place at first; boardFocus swings every string's far end onto the Cache
   const pairs: [string, string][] = [['function', 'handler'], ['handler', 'cache'], ['logs', 'function'], ['traces', 'handler'], ['logs', 'traces'], ['traces', 'cache'], ['function', 'traces']];
   const strings = clamp(s.boardStrings);
@@ -834,27 +861,72 @@ function drawBoard(g: CanvasRenderingContext2D, W: number, H: number, f: Frame, 
     const B = { x: lerp(B0.x, cache.x, smooth(s.boardFocus)), y: lerp(B0.y, cache.y, smooth(s.boardFocus)) };
     const ex = lerp(A.x, B.x, k), ey = lerp(A.y, B.y, k);
     const sag = (1 - s.boardFocus) * 0.06 * H;
-    g.strokeStyle = '#e0142c'; g.lineWidth = W * 0.008;
+    g.strokeStyle = '#7a0816'; g.lineWidth = W * 0.011;
+    g.beginPath(); g.moveTo(A.x, A.y); g.quadraticCurveTo((A.x + ex) / 2, (A.y + ey) / 2 + sag, ex, ey); g.stroke();
+    g.strokeStyle = '#e0142c'; g.lineWidth = W * 0.007;
     g.beginPath(); g.moveTo(A.x, A.y); g.quadraticCurveTo((A.x + ex) / 2, (A.y + ey) / 2 + sag, ex, ey); g.stroke();
   });
-  // polaroids
+  // polaroids of the suspects, drawn on-model
+  const INKC = '#2b1d16';
   const photo = (k: string, label: string, draw: (cx: number, cy: number, r: number) => void) => {
     const { x, y } = P(k), w = W * 0.17, h = W * 0.19;
     g.save(); g.translate(x, y); g.rotate((hash(k.length, 76) - 0.5) * 0.2);
-    g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(-w / 2 + 6, -h / 2 + 6, w, h);
-    g.fillStyle = '#f6f0e2'; g.fillRect(-w / 2, -h / 2, w, h);
+    g.fillStyle = 'rgba(0,0,0,0.35)'; g.fillRect(-w / 2 + 5 * px, -h / 2 + 5 * px, w, h);
+    g.fillStyle = '#e6dcc6'; g.fillRect(-w / 2, -h / 2, w, h);
     g.fillStyle = '#231a3a'; g.fillRect(-w / 2 + w * 0.08, -h / 2 + w * 0.08, w * 0.84, w * 0.84);
+    g.save(); g.beginPath(); g.rect(-w / 2 + w * 0.08, -h / 2 + w * 0.08, w * 0.84, w * 0.84); g.clip();
+    g.lineJoin = 'round'; g.lineCap = 'round';
     draw(0, -h / 2 + w * 0.5, w * 0.3);
-    g.fillStyle = '#2b1d16'; g.font = `700 ${w * 0.15}px ${TERM_FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.restore();
+    g.fillStyle = INKC; g.font = `700 ${w * 0.15}px ${TERM_FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
     g.fillText(label, 0, h / 2 - w * 0.12);
-    g.fillStyle = '#e0142c'; g.beginPath(); g.arc(0, -h / 2 + 4, 7, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#e0142c'; g.beginPath(); g.arc(0, -h / 2 + 4 * px, 7 * px, 0, Math.PI * 2); g.fill();
+    g.fillStyle = 'rgba(255,255,255,0.5)'; g.beginPath(); g.arc(-2 * px, -h / 2 + 2 * px, 2.2 * px, 0, Math.PI * 2); g.fill();
     g.restore();
   };
-  photo('function', 'fn()', (cx, cy, r) => { g.fillStyle = '#8f8a9e'; g.fillRect(cx - r, cy - r * 0.9, r * 2, r * 1.8); g.strokeStyle = '#2b1d16'; g.lineWidth = 3; g.beginPath(); g.arc(cx - r * 0.35, cy - r * 0.1, r * 0.25, 0, Math.PI * 2); g.arc(cx + r * 0.35, cy - r * 0.1, r * 0.25, 0, Math.PI * 2); g.stroke(); });
-  photo('handler', 'handler', (cx, cy, r) => { g.fillStyle = '#2b2b3a'; g.fillRect(cx - r * 1.1, cy - r * 0.6, r * 2.2, r * 1.6); g.fillStyle = '#c69c6d'; g.beginPath(); g.arc(cx, cy - r * 0.75, r * 0.45, 0, Math.PI * 2); g.fill(); g.fillStyle = '#111'; g.fillRect(cx - r * 0.45, cy - r * 0.85, r * 0.9, r * 0.2); });
-  photo('cache', 'cache', (cx, cy, r) => { g.fillStyle = '#6f8f6a'; g.fillRect(cx - r * 0.8, cy - r, r * 1.6, r * 2); g.fillStyle = '#2b1d16'; for (const yy of [-0.5, 0.15, 0.8]) g.fillRect(cx - r * 0.25, cy + yy * r - 2, r * 0.5, 5); g.fillStyle = '#111'; g.fillRect(cx - r * 0.7, cy - r * 0.8, r * 1.4, r * 0.25); });
-  photo('logs', 'logs', (cx, cy, r) => { g.fillStyle = '#45ff8a'; for (let i = 0; i < 5; i++) g.fillRect(cx - r, cy - r * 0.8 + i * r * 0.38, r * (1.2 + hash(i, 77) * 0.8), r * 0.16); });
-  photo('traces', 'traces', (cx, cy, r) => { for (let i = 0; i < 4; i++) { g.fillStyle = ['#2fe2ff', '#ffae3d', '#45ff8a', '#ff3240'][i]; g.fillRect(cx - r + i * r * 0.25, cy - r * 0.7 + i * r * 0.45, r * (1.6 - i * 0.3), r * 0.25); } });
-  // pins
+  photo('function', 'fn()', (cx, cy, r) => {
+    g.fillStyle = INKC; g.fillRect(cx - r * 0.95, cy - r * 0.75, r * 1.9, r * 1.75);
+    g.fillStyle = '#8f8a9e'; g.fillRect(cx - r * 0.85, cy - r * 0.65, r * 1.7, r * 1.6);
+    g.strokeStyle = 'rgba(240,236,250,0.8)'; g.lineWidth = 1.2 * px;
+    for (let i = 0; i < 4; i++) { const a = (i / 3) * Math.PI / 2; g.beginPath(); g.moveTo(cx - r * 0.85, cy - r * 0.65); g.lineTo(cx - r * 0.85 + Math.cos(a) * r * 0.6, cy - r * 0.65 + Math.sin(a) * r * 0.6); g.stroke(); }
+    g.fillStyle = '#f2efe6'; g.fillRect(cx - r * 0.5, cy - r * 0.45, r * 0.35, r * 0.1); g.fillRect(cx + r * 0.15, cy - r * 0.45, r * 0.35, r * 0.1);
+    g.strokeStyle = '#d9b44a'; g.lineWidth = 2.5 * px;
+    g.beginPath(); g.arc(cx - r * 0.32, cy - r * 0.12, r * 0.24, 0, Math.PI * 2); g.stroke();
+    g.beginPath(); g.arc(cx + r * 0.32, cy - r * 0.12, r * 0.24, 0, Math.PI * 2); g.stroke();
+    g.fillStyle = INKC; g.fillRect(cx - r * 0.36, cy - r * 0.16, r * 0.08, r * 0.12); g.fillRect(cx + r * 0.28, cy - r * 0.16, r * 0.08, r * 0.12);
+    g.fillStyle = '#e8dfc6'; g.fillRect(cx - r * 0.6, cy + r * 0.35, r * 0.62, r * 0.28);
+    g.fillStyle = INKC; g.font = `700 ${r * 0.2}px ${TERM_FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle'; g.fillText('fn()', cx - r * 0.29, cy + r * 0.5);
+  });
+  photo('handler', 'handler', (cx, cy, r) => {
+    g.fillStyle = INKC; g.beginPath(); g.moveTo(cx - r * 1.05, cy + r * 1.1); g.lineTo(cx - r * 0.7, cy - r * 0.1); g.lineTo(cx + r * 0.7, cy - r * 0.1); g.lineTo(cx + r * 1.05, cy + r * 1.1); g.fill();
+    g.fillStyle = '#23222e'; g.beginPath(); g.moveTo(cx - r * 0.95, cy + r * 1.1); g.lineTo(cx - r * 0.64, cy - r * 0.02); g.lineTo(cx + r * 0.64, cy - r * 0.02); g.lineTo(cx + r * 0.95, cy + r * 1.1); g.fill();
+    g.fillStyle = '#f2efe6'; g.beginPath(); g.moveTo(cx - r * 0.18, cy - r * 0.02); g.lineTo(cx + r * 0.18, cy - r * 0.02); g.lineTo(cx, cy + r * 0.45); g.fill();
+    g.fillStyle = '#111'; g.fillRect(cx - r * 0.04, cy + r * 0.02, r * 0.08, r * 0.4);
+    g.fillStyle = INKC; g.beginPath(); g.arc(cx, cy - r * 0.48, r * 0.44, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#8a5a3a'; g.beginPath(); g.arc(cx, cy - r * 0.48, r * 0.38, 0, Math.PI * 2); g.fill();
+    g.fillStyle = '#111'; g.fillRect(cx - r * 0.32, cy - r * 0.58, r * 0.64, r * 0.16);
+    g.fillStyle = 'rgba(255,255,255,0.7)'; g.fillRect(cx - r * 0.24, cy - r * 0.56, r * 0.1, r * 0.04);
+    g.fillStyle = '#ffcc3d'; g.fillRect(cx - r * 0.6, cy + r * 0.25, r * 0.3, r * 0.14);
+  });
+  photo('cache', 'cache', (cx, cy, r) => {
+    g.fillStyle = INKC; g.fillRect(cx - r * 0.68, cy - r * 0.9, r * 1.36, r * 2.0);
+    g.fillStyle = '#5f8a5c'; g.fillRect(cx - r * 0.6, cy - r * 0.82, r * 1.2, r * 1.9);
+    g.fillStyle = '#9cc7ea'; g.fillRect(cx - r * 1.0, cy + r * 0.1, r * 0.42, r * 0.95); g.fillRect(cx + r * 0.58, cy + r * 0.1, r * 0.42, r * 0.95);
+    g.fillStyle = '#e8dfc6'; for (const yy of [0.25, 0.75]) { g.fillRect(cx - r * 0.2, cy + yy * r, r * 0.4, r * 0.1); }
+    g.strokeStyle = '#d9b44a'; g.lineWidth = 2.5 * px; g.fillStyle = '#1a1a22';
+    for (const sx of [-1, 1]) { g.beginPath(); g.roundRect(cx + sx * r * 0.27 - r * 0.22, cy - r * 0.45, r * 0.44, r * 0.26, r * 0.08); g.fill(); g.stroke(); }
+    g.beginPath(); g.moveTo(cx - r * 0.06, cy - r * 0.36); g.lineTo(cx + r * 0.06, cy - r * 0.36); g.stroke();
+    g.strokeStyle = INKC; g.lineWidth = 2 * px; g.beginPath(); g.arc(cx + r * 0.05, cy - r * 0.08, r * 0.16, 0.2, Math.PI - 0.6); g.stroke();
+  });
+  photo('logs', 'logs', (cx, cy, r) => { for (let i = 0; i < 6; i++) { g.fillStyle = i === 3 ? '#ff3240' : '#45ff8a'; g.fillRect(cx - r * 0.9, cy - r * 0.8 + i * r * 0.32, r * (0.9 + hash(i, 77) * 0.9), r * 0.14); } });
+  photo('traces', 'traces', (cx, cy, r) => { for (let i = 0; i < 4; i++) { g.fillStyle = ['#2fe2ff', '#ffae3d', '#45ff8a', '#ff3240'][i]; g.fillRect(cx - r * 0.9 + i * r * 0.25, cy - r * 0.7 + i * r * 0.45, r * (1.6 - i * 0.3), r * 0.25); } });
+  // a red marker ring round the Cache's photo
+  const ring = clamp(s.boardRing);
+  if (ring > 0) {
+    g.save(); g.translate(cache.x, cache.y + W * 0.02); g.rotate(-0.1);
+    g.strokeStyle = '#e0142c'; g.lineWidth = 4.5 * px; g.lineCap = 'round';
+    g.beginPath(); g.ellipse(0, 0, W * 0.12, W * 0.135, 0, -Math.PI * 0.6, -Math.PI * 0.6 + Math.PI * 2.15 * ring); g.stroke();
+    g.restore();
+  }
   void f;
 }

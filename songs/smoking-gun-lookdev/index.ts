@@ -8,6 +8,7 @@ import { DiscoClawd, DISCO_MOODS, REST, dance, type DiscoLook, type Move } from 
 import { CLUB_POST, FONTS, PAL, aimCam, frameCam, glowMat, lightMat, radialTexture } from '../the-smoking-gun/look';
 import { Club, aliveFloor, clearBooth, defaultState, BOOTH_SPOT } from '../the-smoking-gun/club';
 import type { Stage } from '../../engine/stage';
+import { Bouncer, Cache, Field, Fn, sp } from '../the-smoking-gun/suspects';
 
 const CAST: { label: string; mood: string; look: Partial<DiscoLook>; move: Move; beat?: number; tile: string }[] = [
   { label: 'cool', mood: 'cool', look: { shades: 1 }, move: 'still', tile: PAL.violetNeon },
@@ -76,6 +77,50 @@ const sheet = defineShot({
   },
 });
 
+/** The suspects line-up (50-60 s). */
+const lineup = defineShot({
+  id: 'suspects', start: 50, end: 60,
+  build() {
+    const scene = new THREE.Scene();
+    scene.background = new THREE.Color(PAL.night);
+    const camera = new THREE.PerspectiveCamera(30, 16 / 9, 0.1, 100);
+    const back = new THREE.Mesh(new THREE.PlaneGeometry(30, 12), lightMat('#5a2fb0', 0.35, radialTexture()));
+    back.position.set(0, 1.6, -3);
+    scene.add(back);
+    // height chart behind them, like a police line-up
+    for (let i = 0; i <= 6; i++) {
+      const bar = new THREE.Mesh(new THREE.PlaneGeometry(14, 0.03), lightMat('#b9a8ff', 0.35));
+      bar.position.set(0, i * 0.5, -1);
+      scene.add(bar);
+    }
+    const fn = new Fn(), bo = new Bouncer(), ca = new Cache(), fi = new Field(), cl = new DiscoClawd();
+    const cast = [[fn.root, -4.4, 'the Function'], [bo.root, -2.1, 'the Handler'], [cl.root, 0.2, 'Clawd'], [ca.root, 2.5, 'the Cache'], [fi.root, 4.3, 'the Field']] as const;
+    for (const [r, x] of cast) { r.position.set(x, 0, 0); scene.add(r); }
+    return {
+      scene, camera,
+      update(f) {
+        frameCam(camera, 0, 1.6, 6.0);
+        fn.set(sp({ open: 0.6, brow: 0.2, cuffs: f.t > 55 ? 1 : 0 }), f.t);
+        bo.set(sp({ wag: f.t > 55 ? 1 : 0 }), f.t);
+        ca.set(sp({ mouth: 0.5, wag: f.t > 55 ? 1 : 0, shades: f.t > 55 ? 1 : 0 }), f.t);
+        fi.set(sp({ look: 0.6 }), f.t);
+        cl.set(DISCO_MOODS.smug, REST, { shades: 1 }, f.t);
+      },
+      overlay(g, f) {
+        g.fillStyle = '#d9cdfa';
+        g.font = `600 ${Math.round(f.h * 0.026)}px Inter, system-ui, sans-serif`;
+        g.textAlign = 'center';
+        for (const [, x, label] of cast) {
+          const v = new THREE.Vector3(x, -0.3, 0).project(camera);
+          g.fillText(label, (v.x * 0.5 + 0.5) * f.w, (-v.y * 0.5 + 0.5) * f.h);
+        }
+      },
+      post: () => CLUB_POST,
+      lyrics: false,
+    };
+  },
+});
+
 const clubs = new WeakMap<Stage, Club>();
 const getClub = (stage: Stage) => { let c = clubs.get(stage); if (!c) { c = new Club(); clubs.set(stage, c); } return c; };
 
@@ -126,5 +171,5 @@ function clubShot(id: string, start: number, end: number, alive: boolean, cam: '
 
 export default defineSong({
   slug: 'smoking-gun-lookdev', title: 'The Smoking Gun: look development', audioUrl, audio, lyrics: { lines: [] },
-  shots: [sheet, clubShot('club-dead', 10, 20, false, 'wide'), clubShot('club-alive', 20, 30, true, 'wide'), clubShot('booth', 30, 40, false, 'booth'), clubShot('booth-alive', 40, 50, true, 'booth')], fonts: FONTS, background: PAL.night,
+  shots: [sheet, clubShot('club-dead', 10, 20, false, 'wide'), clubShot('club-alive', 20, 30, true, 'wide'), clubShot('booth', 30, 40, false, 'booth'), clubShot('booth-alive', 40, 50, true, 'booth'), lineup], fonts: FONTS, background: PAL.night,
 });
