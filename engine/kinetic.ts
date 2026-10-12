@@ -75,7 +75,7 @@ function drawLine(g: CanvasRenderingContext2D, f: Frame, line: Line, li: number,
     const text = w.w.replace(/[“”"]/g, '');
     return { w, k, look, px, text, width: g.measureText(text).width };
   }).filter(it => !lay.skip.includes(it.k));
-  const gap = lay.size * s * (lay.boxed ? 0.75 : 0.32); // boxes need room for their padding
+  const gap = lay.size * s * (lay.boxed ? 0.75 : 0.42); // boxes need room for their padding
   const rows: (typeof items)[] = [[]];
   let rowW = 0;
   // emphasised (scaled) words get proportionally more room so they never touch their neighbours
@@ -129,7 +129,7 @@ function drawWord(
     case 'wave': { const e = easeOutBack(k, 2); sx = sy = Math.max(0.001, e); oy = Math.sin(f.t * 4.2 - order * 0.8) * px * 0.1; rot = Math.sin(f.t * 4.2 - order * 0.8 - 1) * 0.05; break; }
   }
   // the word being sung swells a little
-  const sing = f.t < it.w.end ? 1 + 0.07 * Math.sin(clamp(dt / Math.max(0.1, it.w.end - it.w.start)) * Math.PI) : 1;
+  const sing = f.t < it.w.end ? 1 + 0.04 * Math.sin(clamp(dt / Math.max(0.1, it.w.end - it.w.start)) * Math.PI) : 1;
   sx *= sing; sy *= sing;
   const shake = it.look?.shake ?? 0;
   if (shake) { ox += Math.sin(f.t * 37 + it.k) * px * 0.03 * shake; rot += Math.sin(f.t * 23 + it.k * 2) * 0.08 * shake; }
