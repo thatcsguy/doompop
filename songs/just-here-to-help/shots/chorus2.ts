@@ -22,7 +22,7 @@ const COLD = '#aab3de';
 const v3 = new THREE.Vector3();
 
 /** The office after hours: nobody at the desks, monitors off except the hero's terminal. */
-function nightOfficeShot(id: string, start: number, end: number, setup: (s: OfficeSet) => Update): Shot {
+export function nightOfficeShot(id: string, start: number, end: number, setup: (s: OfficeSet) => Update): Shot {
   return defineShot({
     id, start, end,
     build() {

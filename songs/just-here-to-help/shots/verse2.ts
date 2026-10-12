@@ -726,7 +726,7 @@ export function verse2Shots(audio: AudioData, lyrics: LyricsData, start: number)
 // ---------------------------------------------------------------------------------------------
 // The apartment block for V7
 
-function apartments(lyrics: LyricsData) {
+export function apartments(lyrics: LyricsData) {
   const scene = new THREE.Scene();
   scene.background = new THREE.Color('#141a33');
   const camera = new THREE.PerspectiveCamera(30, 16 / 9, 0.1, 200);
@@ -874,7 +874,7 @@ const pickC = <T,>(xs: T[], k: number) => xs[k % xs.length];
 // ---------------------------------------------------------------------------------------------
 // Little painters and helpers
 
-function ringShape(r: number, t: number) {
+export function ringShape(r: number, t: number) {
   const s = new THREE.Shape(); s.absarc(0, 0, r + t / 2, 0, Math.PI * 2, false);
   s.holes.push(new THREE.Path().absarc(0, 0, r - t / 2, 0, Math.PI * 2, true));
   return s;

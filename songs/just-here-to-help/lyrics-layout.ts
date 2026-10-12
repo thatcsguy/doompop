@@ -1,6 +1,15 @@
 // Kinetic lyric layouts for "I'm Just Here to Help", one entry per lyric line (1-based, as in
 // data/lyrics.json). Each layout puts the line in its shot's empty space. Word keys are 0-based.
-import type { KineticSpec } from '../../engine/kinetic';
+import type { KineticLayout, KineticSpec } from '../../engine/kinetic';
+import { MONO } from './world';
+
+// The bridge's commands, typed into a terminal at the bottom left; each new one scrolls the last up.
+const TERM: Partial<KineticLayout> = {
+  x: 0.05, y: 0.88, align: 'left', size: 62, maxWidth: 0.9, font: MONO, prompt: '>', promptColor: '#ffd166', transform: 'lower',
+  panel: 'rgba(9,12,28,0.86)', cursor: true, stack: 'cmd', anim: 'type', color: '#8dffb0', outline: 'rgba(0,0,0,0)', shadow: '',
+  hold: 5, exit: 'fade',
+};
+const TERM_HOT = '#ffffff', TERM_RED = '#ff5a4f';
 
 const ORANGE = '#d2603f', GREEN = '#2f8f55', RED = '#d6453d', GOLD = '#e39a2d', BLUE = '#3f86c9', PURPLE = '#7b4fa0';
 
@@ -63,5 +72,41 @@ export const KINETIC: KineticSpec = {
     42: { x: 0.05, y: 0.34, align: 'left', size: 84, maxWidth: 0.3, anim: 'wave', hold: 0.2, words: { 3: { color: '#5a6fb0', scale: 1.25 } } },
     43: { x: 0.95, y: 0.34, align: 'right', size: 84, maxWidth: 0.3, hold: 0.2, words: { 3: { color: '#2aa3c4', scale: 1.3 } } },
     44: { y: 0.12, size: 96, anim: 'wave', hold: 0.1, words: { 4: { color: ORANGE, scale: 1.35, shake: 0.35 } } },
+    // bridge part 1: the command centre (shots/bridge1.ts)
+    45: { ...TERM, words: { 2: { color: TERM_HOT } } },
+    46: { ...TERM, words: { 2: { color: TERM_HOT } } },
+    47: { ...TERM, words: { 2: { color: TERM_HOT } } },
+    48: { ...TERM, words: { 2: { color: TERM_HOT } } },
+    49: { ...TERM, words: { 2: { color: TERM_HOT } } },
+    50: { ...TERM, words: { 2: { color: TERM_HOT } } },
+    51: { ...TERM, words: { 2: { color: TERM_RED } } },
+    52: { ...TERM, words: { 2: { color: TERM_RED } } },
+    // bridge part 2: the globe (shots/bridge2.ts)
+    53: { ...TERM, words: { 2: { color: TERM_HOT } } },
+    54: { ...TERM, words: { 2: { color: TERM_HOT } } },
+    55: { ...TERM, words: { 2: { color: TERM_RED } } },
+    56: { ...TERM, words: { 1: { color: TERM_HOT } } },
+    57: { ...TERM, words: { 2: { color: TERM_RED } } },
+    // the terminal clears together on the cut to the dark room (2:13.6)
+    58: { ...TERM, hold: 2.3, words: { 2: { color: TERM_HOT } } },
+    59: { ...TERM, hold: 1.18, words: { 3: { color: TERM_RED } } },
+    60: { ...TERM, hold: 0, words: { 2: { color: TERM_RED } } },
+    // bridge part 3 (shots/bridge3.ts): the orders themselves are in the speech bubbles
+    61: { x: 0.05, y: 0.86, align: 'left', size: 84, anim: 'slide', skip: [2, 3, 4], words: { 1: { color: '#7a6a5e' } } },
+    62: { x: 0.95, y: 0.86, align: 'right', size: 84, anim: 'slide', skip: [2, 3, 4], words: { 1: { color: '#7a6a5e' } } },
+    63: { x: 0.05, y: 0.86, align: 'left', size: 96, anim: 'stamp', hold: 0.2, skip: [2, 3, 4], words: { 1: { color: RED, shake: 0.4 } } },
+    64: { x: 0.95, y: 0.86, align: 'right', size: 104, anim: 'stamp', hold: 0, exit: 'shrink', skip: [2, 3, 4], words: { 0: { shake: 0.5 }, 1: { color: RED, shake: 0.8 } } },
+    65: { x: 0.05, y: 0.86, align: 'left', size: 84, hold: 0.05, words: { 3: { color: GREEN, scale: 1.3 } } },
+    66: { x: 0.95, y: 0.86, align: 'right', size: 84, hold: 0.05, words: { 2: { color: GREEN, scale: 1.35, shake: 0.5 } } },
+    67: { y: 0.86, size: 88, hold: 0.05, words: { 3: { color: GOLD, scale: 1.4, anim: 'stamp' } } },
+    68: { y: 0.86, size: 92, hold: 0, exit: 'shrink', words: { 3: { color: RED, scale: 1.5, anim: 'stamp', shake: 0.6 } } },
+    // bridge part 4: the chat box, nobody, the button
+    69: { y: 0.27, size: 84, anim: 'type', hold: 0, exit: 'fade', words: { 3: { color: BLUE, scale: 1.2 } } },
+    70: { y: 0.84, size: 110, anim: 'drop', hold: 0, exit: 'fade', words: { 0: { color: '#5a6fb0' }, 2: { color: '#7a6a5e', scale: 1.15 } } },
+    71: { y: 0.88, size: 84, hold: 0, words: { 1: { color: RED }, 3: { color: RED, scale: 1.3, shake: 0.5 } } },
+    72: { x: 0.04, y: 0.24, align: 'left', size: 76, maxWidth: 0.3, anim: 'drop', hold: 0, exit: 'fade', words: { 5: { color: ORANGE, scale: 1.3 } } },
+    73: { y: 0.85, size: 150, anim: 'stamp', color: '#fffaf0', outline: '#2b1d16', shadow: 'rgba(0,0,0,0.4)', hold: 0.7, exit: 'fade' },
+    74: { x: 0.05, y: 0.14, align: 'left', size: 80, maxWidth: 0.34, color: '#8a8784', hold: 0.15, exit: 'fade', words: { 3: { color: '#d8d4cf', scale: 1.3, shake: 0.5 } } },
+    75: { x: 0.95, y: 0.14, align: 'right', size: 80, maxWidth: 0.34, color: '#8a8784', hold: 0.4, exit: 'fade', words: { 3: { color: '#ffffff', scale: 1.35 } } },
   },
 };

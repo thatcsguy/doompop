@@ -35,6 +35,18 @@ export interface KineticLayout {
   words: Record<number, WordLook>;
   /** Word indices drawn elsewhere (in the picture, e.g. a speech bubble). */
   skip: number[];
+  /** Font family for the whole line ('' = the lyric style's font). */
+  font: string;
+  /** Text drawn before the first word and arriving with it (a terminal prompt like '>'). */
+  prompt: string;
+  promptColor: string;
+  transform: 'none' | 'lower' | 'upper';
+  /** Fill of a rounded panel behind the words sung so far ('' = none). */
+  panel: string;
+  /** A blinking block cursor after the last word sung, until the line ends. */
+  cursor: boolean;
+  /** Lines sharing a stack id scroll up like a terminal as newer ones arrive, fading after three. */
+  stack: string;
 }
 
 export interface KineticSpec {
@@ -47,6 +59,7 @@ export const DEFAULT_KINETIC: KineticLayout = {
   x: 0.5, y: 0.18, align: 'center', size: 84, maxWidth: 0.7, anim: 'pop', tilt: 0,
   color: '#2b1d16', outline: '#fffaf0', shadow: 'rgba(43,29,22,0.28)', boxed: false, box: '#ffffff',
   hold: 0.35, exit: 'drop', words: {}, skip: [],
+  font: '', prompt: '', promptColor: '#ffd166', transform: 'none', panel: '', cursor: false, stack: '',
 };
 
 const ANIM_IN = 0.28; // seconds for a word to arrive
@@ -54,27 +67,43 @@ const ANIM_IN = 0.28; // seconds for a word to arrive
 /** Draw every line that is on screen at f.t. */
 export function drawKinetic(g: CanvasRenderingContext2D, f: Frame, style: LyricStyle, spec: KineticSpec) {
   const lines = f.clock.lyrics.lines;
+  const lays = lines.map((_, i) => ({ ...DEFAULT_KINETIC, ...spec.base, ...spec.lines?.[i + 1] } as KineticLayout));
+  const firstAt = lines.map((line, i) => {
+    const first = line.words.findIndex((_, k) => !lays[i].skip.includes(k));
+    return first < 0 ? Infinity : line.words[first].start - 1 / 30;
+  });
   lines.forEach((line, i) => {
-    const lay = { ...DEFAULT_KINETIC, ...spec.base, ...spec.lines?.[i + 1] } as KineticLayout;
-    const first = line.words.findIndex((_, k) => !lay.skip.includes(k));
-    if (first < 0) return;
-    if (f.t < line.words[first].start - 1 / 30) return;
+    const lay = lays[i];
+    if (f.t < firstAt[i]) return;
     if (f.t > line.end + lay.hold + 0.6) return;
-    drawLine(g, f, line, i, lay, style);
+    // a terminal stack: every newer line in the same stack pushes this one up a row
+    let shift = 0;
+    if (lay.stack) for (let j = i + 1; j < lines.length && firstAt[j] <= f.t; j++) {
+      if (lays[j].stack === lay.stack) shift += easeOutCubic(clamp((f.t - firstAt[j]) / 0.16));
+    }
+    if (shift >= 2.6) return;
+    drawLine(g, f, line, i, lay, style, shift);
   });
 }
 
-function drawLine(g: CanvasRenderingContext2D, f: Frame, line: Line, li: number, lay: KineticLayout, style: LyricStyle) {
+function drawLine(g: CanvasRenderingContext2D, f: Frame, line: Line, li: number, lay: KineticLayout, style: LyricStyle, shift = 0) {
   const s = f.h / 1080;
-  const font = (w: WordLook | undefined, px: number) => `900 ${px}px ${w?.font ?? style.font}`;
+  const fam = lay.font || style.font;
+  const font = (w: WordLook | undefined, px: number) => `900 ${px}px ${w?.font ?? fam}`;
+  const shape = (x: string) => (lay.transform === 'lower' ? x.toLowerCase() : lay.transform === 'upper' ? x.toUpperCase() : x);
   // measure at final size so the layout never shifts as words arrive
   const items = line.words.map((w, k) => {
     const look = lay.words[k];
     const px = lay.size * (look?.scale ?? 1) * s;
     g.font = font(look, px);
-    const text = w.w.replace(/[“”"]/g, '');
+    const text = shape(w.w.replace(/[“”"]/g, ''));
     return { w, k, look, px, text, width: g.measureText(text).width };
   }).filter(it => !lay.skip.includes(it.k));
+  if (lay.prompt && items.length) {
+    const px = lay.size * s, w0 = items[0].w;
+    g.font = font(undefined, px);
+    items.unshift({ w: { ...w0, end: w0.start + 0.05, w: lay.prompt }, k: -1, look: { color: lay.promptColor }, px, text: lay.prompt, width: g.measureText(lay.prompt).width });
+  }
   const gap = lay.size * s * (lay.boxed ? 0.75 : 0.42); // boxes need room for their padding
   const rows: (typeof items)[] = [[]];
   let rowW = 0;
@@ -88,16 +117,39 @@ function drawLine(g: CanvasRenderingContext2D, f: Frame, line: Line, li: number,
   }
   const rowH = rows.map(r => Math.max(...r.map(it => it.px)) * 1.12);
   const totalH = rowH.reduce((a, b) => a + b, 0);
-  const ax = lay.x * f.w, ay = lay.y * f.h;
+  const ax = lay.x * f.w, ay = lay.y * f.h - shift * lay.size * s * 1.5;
 
   g.save();
+  // the newest two lines read fully; the one above them dims, then scrolls away
+  g.globalAlpha = shift <= 1 ? 1 : shift <= 2 ? lerp(1, 0.45, shift - 1) : lerp(0.45, 0, clamp((shift - 2) / 0.6));
   g.translate(ax, ay);
   g.rotate(lay.tilt);
   let y = -totalH / 2;
+  const sung = (it: (typeof items)[number]) => f.t >= it.w.start - 1 / 30;
+  const te = line.end + lay.hold;
+  const fadeOut = 1 - clamp((f.t - te) / 0.3);
   rows.forEach((row, r) => {
     const w = row.reduce((a, it, k) => a + width(it) + (k ? gap : 0), 0);
     let x = lay.align === 'left' ? 0 : lay.align === 'right' ? -w : -w / 2;
     const base = y + rowH[r] * 0.8;
+    // the panel and cursor follow the words sung so far
+    const vis = row.filter(sung);
+    if ((lay.panel || lay.cursor) && vis.length) {
+      const px = lay.size * s, pad = px * 0.32;
+      const right = x + vis.reduce((a, it, k) => a + width(it) + (k ? gap : 0), 0);
+      const isLast = vis.length === row.length ? r === rows.length - 1 || !rows[r + 1].some(sung) : true;
+      const cur = lay.cursor && isLast && shift < 0.5 && (f.t < line.end || Math.floor(f.t * 2.5) % 2 === 0) && f.t < te;
+      if (lay.panel) {
+        g.save();
+        g.globalAlpha *= fadeOut;
+        g.fillStyle = 'rgba(0,0,0,0.35)';
+        roundRect(g, x - pad + px * 0.08, base - px * 0.92 + px * 0.1, right - x + pad * 2 + (cur ? px * 0.7 : 0), px * 1.3, px * 0.22); g.fill();
+        g.fillStyle = lay.panel;
+        roundRect(g, x - pad, base - px * 0.92, right - x + pad * 2 + (cur ? px * 0.7 : 0), px * 1.3, px * 0.22); g.fill();
+        g.restore();
+      }
+      if (cur) { g.fillStyle = lay.color; g.fillRect(right + px * 0.18, base - px * 0.72, px * 0.48, px * 0.82); }
+    }
     row.forEach((it, order) => {
       drawWord(g, f, it, x + width(it) / 2, base, lay, li, order, line, style);
       x += width(it) + gap;
@@ -119,7 +171,7 @@ function drawWord(
   const k = clamp(dt / ANIM_IN);
   const px = it.px;
   let sx = 1, sy = 1, ox = 0, oy = 0, rot = 0, alpha = 1, chars = it.text.length;
-  const settle = (hash(li, it.k, 3) - 0.5) * 0.06; // each word keeps a tiny hand-placed tilt
+  const settle = lay.panel ? 0 : (hash(li, it.k, 3) - 0.5) * 0.06; // each word keeps a tiny hand-placed tilt (not on a panel)
   switch (anim) {
     case 'pop': { const e = easeOutBack(k, 2.2); sx = sy = Math.max(0.001, e); rot = lerp((hash(li, it.k) - 0.5) * 0.6, settle, easeOutCubic(k)); break; }
     case 'drop': { oy = -(1 - easeOutBounce(k)) * px * 2.2; alpha = clamp(dt / 0.06); rot = settle; break; }
@@ -145,12 +197,12 @@ function drawWord(
 
   const text = it.text.slice(0, chars);
   g.save();
-  g.globalAlpha = alpha;
+  g.globalAlpha *= alpha;
   g.translate(cx + ox, base + oy - px * 0.35);
   g.rotate(rot);
   g.scale(sx, sy);
   g.translate(0, px * 0.35);
-  g.font = `900 ${px}px ${it.look?.font ?? style.font}`;
+  g.font = `900 ${px}px ${it.look?.font ?? (lay.font || style.font)}`;
   g.textAlign = 'left';
   g.textBaseline = 'alphabetic';
   g.lineJoin = 'round';
