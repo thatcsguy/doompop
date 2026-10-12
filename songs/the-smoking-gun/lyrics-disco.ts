@@ -62,10 +62,11 @@ interface Exit { at: number; leave: number; stagger: number }
 function exitFor(lines: Line[], i: number, lay: DiscoLayout): Exit {
   const line = lines[i];
   const at = line.end + lay.hold;
-  const next = lines[i + 1]?.words[0]?.start ?? Infinity;
-  if (next - 1 / 30 >= at + LEAVE) return { at, leave: LEAVE, stagger: 0.03 };
-  const forced = Math.max(line.end - 0.05, Math.min(at, next - 0.1));
-  return { at: forced, leave: Math.max(0.08, Math.min(LEAVE, next + 0.04 - forced)), stagger: 0.01 };
+  const next = (lines[i + 1]?.words[0]?.start ?? Infinity) - 1 / 30;   // when the next line's first word shows
+  if (next >= at + LEAVE) return { at, leave: LEAVE, stagger: 0.03 };
+  // the next line comes in before this one would be gone: leave quickly, gone as it arrives
+  const forced = Math.max(line.end - 0.05, Math.min(at, next - 0.12));
+  return { at: forced, leave: Math.max(0.04, next - forced), stagger: 0 };
 }
 
 /** Draw every lyric line on screen at f.t. */
