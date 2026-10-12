@@ -159,7 +159,7 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
         if (caught) {
           b.visible = true;
           const settle = decay(f.t - catchAt[i], 0.15);
-          b.position.copy(paw).add(v3.set(0, 0, 0.05 + i * 0.002));
+          b.position.copy(paw).add(v3.set(0, 0, 0.05 + i * 0.03)); // 0.03 apart in depth: closer and the outlines flicker
           b.rotation.z = (i - 2.5) * 0.26 + sway + settle * 0.4 * Math.sin((f.t - catchAt[i]) * 20);
           b.scale.setScalar(1);
         } else if (flying && f.t >= launch[i]) {
@@ -167,7 +167,7 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
           const [sx, sz] = balloonFrom[i];
           const k = easeInOutCubic(unlerp(f.t, launch[i], catchAt[i]));
           const from = new THREE.Vector3(sx + HERO.monitorX, 2.6, sz - 0.2);
-          b.position.lerpVectors(from, paw, k).add(v3.set(0, Math.sin(k * Math.PI) * 1.4 - (1 - k) * 0.6, 0.05));
+          b.position.lerpVectors(from, paw, k).add(v3.set(0, Math.sin(k * Math.PI) * 1.4 - (1 - k) * 0.6, 0.05 + i * 0.03));
           b.rotation.z = sway * 2 + (1 - k) * 0.2 * Math.sin(f.t * 3 + i);
           b.scale.setScalar(Math.min(1, easeOutBack(unlerp(f.t, launch[i], launch[i] + 0.3))) + 0.001);
         } else b.visible = false;
@@ -684,8 +684,9 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
   const handTimes = [50.81, 51.25, 51.71, 52.27, 52.88, 53.45, 54.03];
   const stackTimes = [W(19, 0), 55.49, 55.79, 56.37, 56.96, 57.27];
   const qMark = 5; // the box with the "?" on it
-  /** Where handed box i lands: a pile on the floor in front of his desk, clear of the monitor. */
-  const pileSpot = (i: number) => new THREE.Vector3(0.15 + (i % 3) * 0.92 + (hash(i, 952) - 0.5) * 0.1, Math.floor(i / 3) * 0.62, 0.85);
+  /** Where handed box i lands: a pile on the floor in front of his desk, clear of the monitor. Each box
+   *  sits in front of the ones under and beside it, so an ink line always shows between them. */
+  const pileSpot = (i: number) => new THREE.Vector3(0.15 + (i % 3) * 0.92 + (hash(i, 952) - 0.5) * 0.1, Math.floor(i / 3) * 0.62, 0.85 + Math.floor(i / 3) * 0.036 + (i % 3) * 0.012);
   function queueSetup(cam: (s: OfficeSet, f: Frame) => void, opts: { tower: boolean }) {
     return (s: OfficeSet) => {
       const N = 15;
@@ -742,7 +743,7 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
           if (!b.visible) return;
           if (f.t >= h + 0.25) towerN = i + 1;
           const sway = Math.sin(f.t * 3.1) * 0.035 * (i + 1) * (i + 1) * 0.5;
-          const top = new THREE.Vector3(-1.75 + sway, DESK_Y + 1.02 + i * 0.6 - 0.02, 0.3 + i * 0.001);
+          const top = new THREE.Vector3(-1.75 + sway, DESK_Y + 1.02 + i * 0.6 - 0.02, 0.3 + i * 0.012);
           const from = new THREE.Vector3(-3.35, 1.15, 1.85);
           b.position.lerpVectors(from, top, easeInOutCubic(u)).add(v3.set(0, Math.sin(u * Math.PI) * 1.2, 0));
           b.rotation.z = (1 - u) * 0.6 + sway * 0.25 + (hash(i, 961) - 0.5) * 0.06;
@@ -799,7 +800,7 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData, start: number
         pile.forEach((b, i) => { b.position.copy(pileSpot(i)); b.rotation.z = (hash(i, 951) - 0.5) * 0.08; });
         tower.forEach((b, i) => {
           const sway = Math.sin(f.t * 3.1) * 0.035 * (i + 1) * (i + 1) * 0.5;
-          b.position.set(-1.75 + sway, DESK_Y + 1.02 + i * 0.6 - 0.02, 0.3 + i * 0.001); b.rotation.z = sway * 0.25 + (hash(i, 961) - 0.5) * 0.06;
+          b.position.set(-1.75 + sway, DESK_Y + 1.02 + i * 0.6 - 0.02, 0.3 + i * 0.012); b.rotation.z = sway * 0.25 + (hash(i, 961) - 0.5) * 0.06;
         });
         const nk = night ? unlerp(f.t, C.c8b, 61.6) : 0;
         s.stations.forEach((st, i) => {

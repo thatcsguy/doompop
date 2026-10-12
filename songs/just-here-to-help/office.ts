@@ -50,7 +50,7 @@ function workstation(seed: number, opts: { hero?: boolean; far?: boolean } = {})
   const shirt = opts.hero ? '#8fb3e0' : pick(SHIRTS, seed, 11);
   const shade = new THREE.Color(shirt).multiplyScalar(0.86).getStyle();
   const p = person(shirt, shade, opts.hero ? '#4a3426' : pick(HAIRS, seed, 12));
-  p.root.scale.setScalar(0.36);
+  p.root.scale.set(0.36, 0.36, 1); // keep full depth spacing, or the head flickers
   p.root.position.set(1.25, 1.0, -0.45);
   const chairCol = pick(['#5f8f87', '#6c7fa8', '#a8746c', '#7a8f5f'], seed, 13);
   const chair = inkedRect(0.85, 1.35, 0.22, chairCol, 0.05);

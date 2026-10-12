@@ -12,7 +12,7 @@ import {
   BUBBLE, CHAT_X, DAY_LYRICS, FIELD, FLAT_POST, FLOOR_Y, FONT, PAL, SH, SIDEBAR, SW, TOPBAR,
   beatHop, buildDesk, frameCam, hop, label, wordBlock, type DeskSet,
 } from '../world';
-import { blob, coffeeMug, confetti, glow, sparkles, speedLines, starShape } from '../props';
+import { blob, confetti, glow, sparkles, speedLines, starShape } from '../props';
 
 type Update = (f: Frame) => void;
 /** Where Clawd's contact shadow sits this frame: FLOOR_Y unless the shot moves it; null hides it. */
@@ -148,69 +148,6 @@ function pointer() {
   };
   const g = new THREE.Group();
   g.add(mk(1.16, INK, 0), mk(1, '#ffffff', 0.003));
-  return g;
-}
-
-// ---------------------------------------------------------------------------------------------
-// Intro props: the keyboard close-up and the person's hands
-
-const KB_ROWS = ['qwertyuiop', 'asdfghjkl', 'zxcvbnm'];
-const KEY = { pitch: 0.84, w: 0.7, h: 0.38 };
-function keyboardProp() {
-  const g = new THREE.Group();
-  const trap = (s: number) => {
-    const sh = new THREE.Shape();
-    sh.moveTo(-5.0 * s, 1.18 * s); sh.lineTo(5.0 * s, 1.18 * s); sh.lineTo(5.5 * s, -1.18 * s); sh.lineTo(-5.5 * s, -1.18 * s); sh.closePath();
-    return sh;
-  };
-  g.add(shapeMesh(trap(1.02), INK, 0), shapeMesh(trap(1), '#e9e4dc', 0.002));
-  const lip = shapeMesh(roundedRectShape(11.1, 0.28, 0.1, 0, -1.3), '#cfc8bd', -0.002);
-  const lipInk = shapeMesh(roundedRectShape(11.22, 0.4, 0.14, 0, -1.3), INK, -0.004);
-  g.add(lipInk, lip);
-  const keys = new Map<string, { g: THREE.Group; top: THREE.Group; mat: THREE.MeshBasicMaterial; x: number; y: number }>();
-  const addKey = (id: string, text: string, x: number, y: number, w: number) => {
-    const k = new THREE.Group();
-    const mat = ownMat('#fbf8f2');
-    const base = inkedRect(w, KEY.h, 0.07, '#cbc3b7', 0.03); base.position.y = -0.06;
-    const top = new THREE.Group();
-    top.add(inkedRect(w, KEY.h, 0.07, mat, 0.03));
-    if (text) { const t = label(text, w, KEY.h, { size: 0.24, color: 'rgba(43,29,22,0.7)', weight: 700 }); t.position.z = 0.01; top.add(t); }
-    top.position.z = 0.01;
-    k.add(base, top);
-    k.position.set(x, y, 0.01);
-    g.add(k);
-    keys.set(id, { g: k, top, mat, x, y });
-  };
-  KB_ROWS.forEach((row, r) => {
-    const y = 0.72 - r * 0.5, x0 = -((row.length - 1) * KEY.pitch) / 2 - 0.3 + r * 0.18;
-    [...row].forEach((ch, i) => addKey(ch, ch, x0 + i * KEY.pitch, y, KEY.w));
-  });
-  addKey('enter', 'enter', 3.95, 0.22, 1.25);
-  addKey('shift', 'shift', -3.95, -0.28, 1.2);
-  addKey('tab', '', -4.25, 0.72, 0.6);
-  addKey('space', '', -0.2, -0.8, 4.6);
-  return Object.assign(g, {
-    keys,
-    /** Press depth 0..1 for a key this frame. */
-    press(id: string, k: number) {
-      const key = keys.get(id)!;
-      key.top.position.y = -0.05 * k;
-      key.mat.color.set('#fbf8f2').lerp(new THREE.Color('#f6c9b6'), k);
-    },
-  });
-}
-
-/** A capsule person's mitten hand and sleeve, reaching up from below. Origin at the fingertips. */
-function mitten(side: -1 | 1) {
-  const g = new THREE.Group();
-  const sleeve = inkedRect(1.1, 4.0, 0.4, PAL.personShade, 0.07); sleeve.position.set(0, -2.6, 0);
-  const cuff = inkedRect(1.2, 0.42, 0.18, '#f2efe8', 0.06); cuff.position.set(0, -0.72, 0.01);
-  const hand = blob([
-    { w: 1.0, h: 0.85, r: 0.38, y: -0.32 },
-    { w: 0.3, h: 0.55, r: 0.15, x: -side * 0.52, y: -0.28, rot: side * 0.5 },
-  ], PAL.person, 0.07);
-  hand.position.z = 0.02;
-  g.add(sleeve, cuff, hand);
   return g;
 }
 
@@ -420,8 +357,8 @@ export function verse1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
   const T_ON = 2.5, T_TYPE = 7.22, T_BLUSH = 26.0; // intro swell, the hi-hats coming in, a downbeat
   const cut = [0, T_TYPE, L(1).start - 0.03, ...[2, 3, 4, 5, 6, 7].map(n => nearestBeat(L(n).start)), T_BLUSH, nearestBeat(L(8).start), nearestBeat(L(9).start)];
 
-  // 0a. Dawn. A dark room; the monitor wakes on the intro's first swell, the app assembles itself,
-  //     the sky warms in the window and the person stretches.
+  // 0a. Dawn. A dark, empty room; the monitor wakes on the intro's first swell, the app assembles
+  //     itself and the sky warms in the window. Nobody is at the desk (Patrick, 2026-10-12).
   const s0a = deskShot('v1-dawn', cut[0], cut[1], s => {
     const night = ownMat('#0b1030', 0.85, true), nightFront = ownMat('#0b1030', 0.85, true);
     const back = shapeMesh(rectShape(-150, -60, 150, 60, [[-18.8, -1.8, -12.4, 8.2]]), night, 0);
@@ -470,9 +407,7 @@ export function verse1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       s.setTyped('', f.t > 5.3 && blink, f.t > 5.2);
       fl(f, 0, 0.55 * smooth(unlerp(f.t, 5.0, 6.0)));
       s.clawd.root.visible = false;
-      // the person wakes: a long stretch, then leans in to type
-      const stretch = smooth(unlerp(f.t, 3.1, 3.7)) * (1 - smooth(unlerp(f.t, 4.3, 4.8)));
-      s.person.pose(stretch, 0, Math.sin(f.t * 1.6) * 0.3 + smooth(unlerp(f.t, 6.0, 7.0)) * 0.6);
+      s.person.root.visible = false;
       const k = easeInOutCubic(unlerp(f.t, 0, cut[1] + 0.6));
       frameCam(s.camera, lerp(0.8, 1.6, k), lerp(-0.2, -1.4, k), lerp(27, 13.5, k));
     };
@@ -487,74 +422,63 @@ export function verse1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     },
   });
 
-  // 0b. "begin": close on the keyboard. Two mitten hands type it, hit enter, and the message flies
-  //     up into the chat. The camera follows it into the screen, and something peeks out of the box.
+  // 0b. "begin": close on the input field. Someone off-screen types it, letter by letter; the
+  //     camera whips to the send button as a cursor clicks it, then rides up with the message into
+  //     the chat, and something peeks out of the box.
   const keyAt = [...'begin'].map((_, i) => 7.5 + i * 0.32 + hash(i, 77) * 0.06), enterAt = 9.2;
+  const SEND = new THREE.Vector3(FIELD.x + FIELD.w / 2 - 0.6, FIELD.y, 0.5);
+  const caretX = [0.26, 0.5, 0.76, 0.87, 1.13].map(c => FIELD.x + 0.15 - (FIELD.w - 2.4) / 2 + 0.13 + c);
   const s0b = deskShot('v1-type', cut[1], cut[2], s => {
-    const desk = shapeMesh(rectShape(-60, -30, 60, -6.35), PAL.desk, 0);
-    const deskEdge = shapeMesh(rectShape(-60, -6.4, 60, -6.3), INK, 0.001);
-    desk.position.z = deskEdge.position.z = 1.35;
-    const kb = keyboardProp(); kb.position.set(1.2, -7.4, 1.5);
-    const mug = coffeeMug('#8fc59a', 2.6); mug.position.set(8.9, -7.6, 1.45);
-    const pad = inkedRect(2.0, 1.4, 0.04, PAL.sticky, 0.06); pad.position.set(-5.9, -7.0, 1.42); pad.rotation.z = 0.12;
-    const pen = inkedRect(2.2, 0.16, 0.08, '#7aa6d6', 0.05); pen.position.set(-5.7, -7.75, 1.44); pen.rotation.z = -0.25;
-    const hands = [mitten(-1), mitten(1)];
-    s.scene.add(desk, deskEdge, kb, mug, pad, pen, ...hands);
     const logo = sparkLogo(0.42); logo.position.set(CHAT_X - 2.2, 0.95, 0.3);
     const hello = label('Good morning', 4.8, 0.8, { size: 0.56, weight: 800, align: 'left' });
     hello.position.set(CHAT_X + 0.65, 0.95, 0.3);
     const fl = floaters(s.screen, 22, 3);
-    s.screen.add(logo, hello);
-    const kpos = (id: string) => { const k = kb.keys.get(id)!; return new THREE.Vector3(kb.position.x + k.x, kb.position.y + k.y, 0); };
-    const plan: { id: string; t: number; hand: 0 | 1 }[] = [
-      { id: 'b', t: keyAt[0], hand: 0 }, { id: 'e', t: keyAt[1], hand: 0 }, { id: 'g', t: keyAt[2], hand: 0 },
-      { id: 'i', t: keyAt[3], hand: 1 }, { id: 'n', t: keyAt[4], hand: 1 }, { id: 'enter', t: enterAt, hand: 1 },
-    ];
-    const rest = [new THREE.Vector3(-1.4, -6.9, 0), new THREE.Vector3(3.6, -7.0, 0)];
+    // a little spark off the caret on every keystroke
+    const ticks = keyAt.map((_, i) => { const t = sparkles(4, 0.3, LETTER_COLS[i], 40 + i); s.screen.add(t.group); return t; });
+    const ptr = pointer();
+    const sendPop = sparkles(7, 0.7, '#ffd166', 46);
+    s.screen.add(logo, hello, ptr, sendPop.group);
     return f => {
       const typedN = keyAt.filter(k => f.t >= k).length;
       const sent = f.t >= enterAt;
       const blink = Math.floor(f.t / 0.53) % 2 === 0;
       s.setTyped(sent ? '' : 'begin'.slice(0, typedN), sent ? blink : blink || (typedN > 0 && f.t - keyAt[typedN - 1] < 0.3), !sent && typedN === 0);
-      for (const p of plan) kb.press(p.id, Math.max(0, Math.sin(clamp((f.t - p.t + 0.05) / 0.16) * Math.PI)) * (p.id === 'enter' ? 1.3 : 1));
-      // hands: hover to each key, dip on the press, withdraw after enter
-      hands.forEach((h, hi) => {
-        const mine = plan.filter(p => p.hand === hi);
-        let at = rest[hi].clone();
-        for (let j = 0; j < mine.length; j++) {
-          const from = j === 0 ? rest[hi] : kpos(mine[j - 1].id), to = kpos(mine[j].id);
-          const k = easeInOutCubic(unlerp(f.t, mine[j].t - (j === 0 ? 0.3 : 0.24), mine[j].t - 0.05));
-          if (f.t >= mine[j].t - (j === 0 ? 0.3 : 0.24)) at = from.clone().lerp(to, k);
-        }
-        const dip = Math.max(...mine.map(p => Math.max(0, Math.sin(clamp((f.t - p.t + 0.07) / 0.18) * Math.PI))));
-        const inK = easeOutCubic(unlerp(f.t, cut[1] + hi * 0.1, cut[1] + 0.35 + hi * 0.1));
-        const outK = easeInCubic(unlerp(f.t, enterAt + 0.25, enterAt + 0.7));
-        h.position.set(at.x + (hi ? 0.15 : -0.15), at.y + 0.52 - dip * 0.22 - (1 - inK) * 5 - outK * 6, 1.6 + hi * 0.01);
-        h.rotation.z = (hi ? -1 : 1) * (0.22 + dip * 0.05);
-        h.scale.set(1, 1 - dip * 0.06, 1);
-      });
-      mug.update(f.t);
-      // the sent message flies from the field up to its place; the greeting clears for the chat
-      const fly = easeOutBack(unlerp(f.t, enterAt, enterAt + 0.5));
+      ticks.forEach((t, i) => { t.group.position.set(caretX[i], FIELD.y + 0.1, 0.55); t.update(f.t - keyAt[i], 0.35); });
+      const key = Math.max(0, ...keyAt.map(k => decay(f.t - k, 0.06) * (f.t >= k ? 1 : 0)));
+      s.field.scale.setScalar(1 + 0.012 * key + 0.03 * decay(f.t - enterAt, 0.12) * (sent ? 1 : 0));
+      // the cursor slides in from the bottom right and clicks send
+      const pin = easeOutCubic(unlerp(f.t, enterAt - 0.45, enterAt - 0.06));
+      const pout = easeInCubic(unlerp(f.t, enterAt + 0.25, enterAt + 0.6));
+      const click = Math.max(0, Math.sin(clamp((f.t - enterAt + 0.04) / 0.14) * Math.PI));
+      ptr.visible = pin > 0 && pout < 1;
+      ptr.position.set(SEND.x + 0.05 + (1 - pin) * 2.2 + pout * 2.5, SEND.y - 0.05 - (1 - pin) * 1.4 - pout * 1.6, 0.6);
+      ptr.scale.setScalar(0.62 * (1 - click * 0.15));
+      sendPop.group.position.copy(SEND); sendPop.update(f.t - enterAt, 0.45);
+      fl(f);
+      // the sent message rises from the send button to its place, the camera riding along with it,
+      // and the greeting clears for the chat
+      const fly = easeInOutCubic(unlerp(f.t, enterAt + 0.05, enterAt + 0.9));
       s.bubble.visible = sent;
-      s.bubble.position.set(lerp(FIELD.x - 4.4, BUBBLE.x, easeOutCubic(unlerp(f.t, enterAt, enterAt + 0.35))), lerp(FIELD.y, BUBBLE.y, fly), 0.1);
-      s.bubble.scale.setScalar(lerp(0.4, 1, fly));
-      s.field.scale.setScalar(1 + 0.03 * decay(f.t - enterAt, 0.12));
+      s.bubble.position.set(lerp(SEND.x - 1.0, BUBBLE.x, fly), lerp(FIELD.y, BUBBLE.y, fly), 0.1);
+      s.bubble.scale.setScalar(lerp(0.6, 1, easeOutBack(unlerp(f.t, enterAt, enterAt + 0.4), 2)) * (1 + 0.1 * Math.sin(clamp((f.t - enterAt - 0.9) / 0.25) * Math.PI)));
       const clear = easeInCubic(unlerp(f.t, enterAt + 0.1, enterAt + 0.5));
       logo.position.y = hello.position.y = 0.95 + clear * 1.2;
       logo.visible = hello.visible = clear < 0.99;
       (hello.material as THREE.MeshBasicMaterial).opacity = 1 - clear;
       logo.scale.setScalar(Math.max(0.01, 1 - clear));
       logo.rotation.z = -f.t * 0.5;
-      fl(f);
       // two eyes peek over the edge of the box just before the verse
       const peek = easeOutBack(unlerp(f.t, 10.35, 10.55)) * (1 - easeInCubic(unlerp(f.t, 10.82, 10.94)));
       s.clawd.root.position.set(1.4, lerp(-4.3, -3.56, peek), 0.2);
       s.clawd.root.visible = peek > 0.01;
       s.clawd.setMood({ ...MOODS.excited, happy: 0, open: 1.1 }, f.t, { x: Math.sin((f.t - 10.5) * 9) * 0.8, y: 0.3 });
       s.clawd.setPose(pose({}));
-      const k = easeInOutCubic(unlerp(f.t, enterAt + 0.05, 10.75));
-      frameCam(s.camera, lerp(lerp(1.6, 1.9, unlerp(f.t, cut[1], enterAt)), 1.2, k), lerp(-5.4, -1.55, k), lerp(7.4, 4.6, k));
+      // camera: close on the words as they're typed, a whip to the send button, then up with the message
+      const push = unlerp(f.t, cut[1], enterAt - 0.35);
+      const whip = easeInOutCubic(unlerp(f.t, enterAt - 0.35, enterAt - 0.08));
+      const rise = easeInOutCubic(unlerp(f.t, enterAt + 0.05, enterAt + 0.95));
+      const cx = lerp(lerp(-1.3, -1.1, push), SEND.x - 1.3, whip), cy = FIELD.y + 0.15, ch = lerp(3.3, 3.0, push);
+      frameCam(s.camera, lerp(cx, 1.2, rise), lerp(cy, -1.55, rise), lerp(ch, 4.6, rise));
     };
   });
 

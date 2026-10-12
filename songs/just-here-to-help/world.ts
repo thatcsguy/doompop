@@ -104,18 +104,19 @@ export function person(color = PAL.person, shade = PAL.personShade, hairColor = 
   const torso = inkedRect(2.2, 3.6, 1.1, ownMat(color), 0.08);
   torso.position.y = 1.8;
   const band = shapeMesh(roundedRectShape(2.2, 1.1, 0.5, 0, 0.55 + 0.02), ownMat(shade), 0.004);
+  // each layer sits clear of the one below (z steps of 0.006 or more), or overlaps flicker
   const head = inkedCircle(1.05, ownMat(color), 0.08);
-  head.position.set(0, 4.55, 0);
+  head.position.set(0, 4.55, 0.01);
   // hair cap toward the back of the head, and a sweater collar
   const hair = new THREE.Shape();
-  hair.absarc(0, 0, 1.13, Math.PI * 0.15, Math.PI * 1.05, true);
+  hair.absarc(0, 0, 1.05, Math.PI * 0.15, Math.PI * 1.05, false); // over the top, inside the ink outline
   hair.lineTo(0.2, -0.1);
   hair.closePath();
-  const hairMesh = shapeMesh(hair, hairColor, 0.01);
-  hairMesh.position.set(0, 4.55, 0);
+  const hairMesh = shapeMesh(hair, hairColor);
+  hairMesh.position.set(0, 4.55, 0.016);
   hairMesh.rotation.z = -0.35;
   const collar = inkedRect(1.6, 0.45, 0.2, '#f2efe8', 0.06);
-  collar.position.set(-0.1, 3.45, 0.01);
+  collar.position.set(-0.1, 3.45, 0.022);
   body.add(torso, band, head, hairMesh, collar);
   // forearm with a thumb, pivoting at the shoulder
   const arm = new THREE.Group();
@@ -601,10 +602,10 @@ export function buildRoom(scene: THREE.Scene) {
   shadeInk.moveTo(-0.62, 0.57); shadeInk.lineTo(0.62, 0.57); shadeInk.lineTo(1.26, -0.7); shadeInk.lineTo(-1.26, -0.7); shadeInk.closePath();
   const shadeG = new THREE.Group();
   shadeG.add(shapeMesh(shadeInk, INK, 0), shapeMesh(shade, '#3f6f8f', 0.003));
-  shadeG.position.set(2.7, 3.6, 0.01); shadeG.rotation.z = -0.5;
+  shadeG.position.set(2.7, 3.6, 0.01); shadeG.rotation.z = 0.35; // opening faces down and to the right, where the beam falls
   lamp.add(shadeG);
   const beam = new THREE.Shape();
-  beam.moveTo(3.0, 2.9); beam.lineTo(5.6, -0.1); beam.lineTo(1.4, -0.1); beam.closePath();
+  beam.moveTo(1.88, 2.66); beam.lineTo(3.94, 3.41); beam.lineTo(6.6, -0.1); beam.lineTo(1.8, -0.1); beam.closePath();
   lamp.add(shapeMesh(beam, ownMat('#fff1b8', 0.35, true), -0.01));
   add(lamp, -13.6, deskY + 0.2, 1.3);
   const pencils = new THREE.Group();
