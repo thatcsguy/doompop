@@ -50,6 +50,11 @@ Video renders are resumable: frames land in `out/<slug>/frames-<scale>x/`, so re
 `--samples N` averages N sub-frames per frame for motion blur. Without a GPU, Chrome falls back to
 SwiftShader (software); that works, just slower. Check with the `gpu` mode.
 
+The cache is keyed by frame number, not by shot content, so pass `--fresh` after changing shots (or
+the old frames are reused). A full song is slow on CPU: song 1 at 1080p60 with 2 samples took about
+1.2 s a frame on 3 workers, roughly 4.5 hours. Where jobs have a time limit, render in parts with
+`--from`/`--to` (use `--fresh` only on the first part), then run once without them to encode.
+
 ## Layout
 
 ```

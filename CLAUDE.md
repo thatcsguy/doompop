@@ -30,4 +30,7 @@ Code-rendered music videos. Read README.md for the pipeline and docs/ANIMATION_G
   per line in empty space. No static karaoke bar unless a song's direction asks for one.
 - Wide shots get set dressing and small moving details; a bare backdrop reads as unfinished.
 - A through-line (one set, one device, one escalating prop) beats a string of unrelated visuals.
-- Turn every note the director gives into a written rule here or in the song's docs, the same day.
+- Turn every note the director gives into a written rule the same day. A note that would apply to any
+  song (flicker, lighting, quality bar) goes here or in docs/ANIMATION_GUIDE.md, not only in the song's
+  DIRECTION.md, because the next song's agent never reads the last song's docs.
+- Overlapping cut-outs flicker unless they sit at different depths (ANIMATION_GUIDE hard rule 7).
