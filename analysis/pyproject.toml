@@ -1,0 +1,15 @@
+[project]
+name = "doompop-analysis"
+version = "0.1.0"
+description = "Measures a song for the renderer: stems, beat map, hits, word timing"
+requires-python = ">=3.11,<3.13"
+dependencies = [
+  "numpy<2.3",
+  "scipy",
+  "soundfile",
+  "librosa>=0.10",
+  "torch>=2.5",
+  "torchaudio>=2.5",
+  "demucs>=4.0.1",
+  "faster-whisper>=1.1",
+]
