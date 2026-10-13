@@ -21,6 +21,8 @@ export interface PostSettings {
   vignette: number;
   exposure: number;
   toneMap: boolean;       // filmic tone mapping; turn off for flat-colour art so the palette stays exact
+  tint: string;           // colour multiply over the final image (white = none): night blue, alarm red
+  saturation: number;     // 1 = as drawn, 0 = greyscale
 }
 
 /** What a shot's build() returns. Built once, then update(f) is called for every frame. */

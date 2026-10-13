@@ -8,16 +8,18 @@ import type { PostSettings } from './types';
 
 export const DEFAULT_POST: PostSettings = {
   bloom: 0.6, bloomRadius: 0.4, bloomThreshold: 0.8, grain: 0.04, vignette: 0.25, exposure: 1, toneMap: true,
+  tint: '#ffffff', saturation: 1,
 };
 
 const GrainShader = {
-  uniforms: { tDiffuse: { value: null }, seed: { value: 0 }, grain: { value: 0 }, vignette: { value: 0 } },
+  uniforms: { tDiffuse: { value: null }, seed: { value: 0 }, grain: { value: 0 }, vignette: { value: 0 }, tint: { value: new THREE.Color(1, 1, 1) }, saturation: { value: 1 } },
   vertexShader: /* glsl */`varying vec2 vUv; void main(){ vUv = uv; gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0); }`,
   fragmentShader: /* glsl */`
-    uniform sampler2D tDiffuse; uniform float seed, grain, vignette; varying vec2 vUv;
+    uniform sampler2D tDiffuse; uniform float seed, grain, vignette, saturation; uniform vec3 tint; varying vec2 vUv;
     float h(vec2 p){ p = fract(p * vec2(443.897, 441.423) + seed); p += dot(p, p.yx + 19.19); return fract((p.x + p.y) * p.x); }
     void main(){
       vec4 c = texture2D(tDiffuse, vUv);
+      c.rgb = mix(vec3(dot(c.rgb, vec3(0.299, 0.587, 0.114))), c.rgb, saturation) * tint;
       c.rgb += (h(vUv * 1000.0) - 0.5) * grain;
       vec2 d = vUv - 0.5; c.rgb *= 1.0 - vignette * dot(d, d) * 2.0;
       gl_FragColor = c;
@@ -72,6 +74,9 @@ export class Stage {
     this.grain.uniforms.seed.value = (seed % 997) / 997;
     this.grain.uniforms.grain.value = post.grain;
     this.grain.uniforms.vignette.value = post.vignette;
+    // tint is a display-space multiply (the pass runs after the sRGB output pass)
+    this.grain.uniforms.tint.value.setStyle(post.tint, THREE.LinearSRGBColorSpace); // raw values, no sRGB decode
+    this.grain.uniforms.saturation.value = post.saturation;
     this.composer.render();
   }
 }

@@ -2,7 +2,7 @@
 //
 //   node tools/render.mjs video  --song <slug> [--from 0 --to 30] [--fps 60] [--samples 8] [--shutter 0.5] [--scale 1]
 //                                [--workers 2] [--crf 16] [--preset slow] [--out out/<slug>.mp4] [--fresh]
-//   node tools/render.mjs stills --song <slug> --t 1.5,12,30.2 [--scale 1] [--samples 8]
+//   node tools/render.mjs stills --song <slug> --t 1.5,12,30.2 [--scale 1] [--samples 8] [--no-lyrics]
 //   node tools/render.mjs sheet  --song <slug> [--from 0 --to 30] [--n 16] [--cuts] [--cols 4] [--w 480]
 //   node tools/render.mjs determinism --song <slug> [--n 8] [--samples 1]
 //   node tools/render.mjs gpu    --song <slug>
@@ -60,8 +60,8 @@ async function openPage(tag = '') {
   if (err) throw new Error(err);
   return page;
 }
-const frameAt = async (page, t, s = samples, type = 'image/jpeg', q = 0.97) => {
-  const url = await page.evaluate(([t, s, sh, type, q]) => window.doompop.frame(t, s, sh, type, q), [t, s, shutter, type, q]);
+const frameAt = async (page, t, s = samples, type = 'image/jpeg', q = 0.97, lyrics = true) => {
+  const url = await page.evaluate(([t, s, sh, type, q, ly]) => window.doompop.frame(t, s, sh, type, q, ly), [t, s, shutter, type, q, lyrics]);
   return Buffer.from(url.slice(url.indexOf(',') + 1), 'base64');
 };
 const run = (cmd, a) => new Promise((ok, bad) => {
@@ -78,7 +78,7 @@ try {
     const page = await openPage(), dir = join(OUT, 'stills'); mkdirSync(dir, { recursive: true });
     for (const t of String(args.t ?? '0').split(',').map(Number)) {
       const t0 = Date.now(), f = join(dir, `t${t.toFixed(2)}.png`);
-      writeFileSync(f, await frameAt(page, t, samples, 'image/png'));
+      writeFileSync(f, await frameAt(page, t, samples, 'image/png', 0.97, !args['no-lyrics']));
       console.log(`${f}  ${Date.now() - t0} ms`);
     }
   } else if (mode === 'sheet') {

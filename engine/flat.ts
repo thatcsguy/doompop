@@ -103,7 +103,10 @@ export function canvasPlane<F>(w: number, h: number, ppu: number, draw: (g: Canv
     update(f: F) {
       g.setTransform(1, 0, 0, 1, 0, 0);
       g.clearRect(0, 0, canvas.width, canvas.height);
+      // save/restore so a painter's shadow, alpha or font never leaks into the next frame
+      g.save();
       draw(g, f, canvas.width, canvas.height);
+      g.restore();
       tex.needsUpdate = true;
     },
   };
