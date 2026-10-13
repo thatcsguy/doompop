@@ -57,6 +57,23 @@ export function dropShape(r: number): THREE.Shape {
   return s;
 }
 
+/**
+ * The part of a shape on one side of the vertical line x = at (side -1: left of it, 1: right), as a
+ * polygon. For two-tone rim lights and other pairs of silhouette copies: give each colour its own
+ * half, so the copies never overlap at one depth (overlapping copies at one depth z-fight).
+ */
+export function halfShape(shape: THREE.Shape, side: number, at = 0, divisions = 96): THREE.Shape {
+  const pts = shape.getPoints(divisions);
+  const inside = (p: THREE.Vector2) => (side < 0 ? p.x <= at : p.x >= at);
+  const out: THREE.Vector2[] = [];
+  for (let i = 0; i < pts.length; i++) {
+    const a = pts[i], b = pts[(i + 1) % pts.length];
+    if (inside(a)) out.push(a);
+    if (inside(a) !== inside(b)) out.push(new THREE.Vector2(at, a.y + ((b.y - a.y) * (at - a.x)) / (b.x - a.x)));
+  }
+  return new THREE.Shape(out);
+}
+
 export function shapeMesh(shape: THREE.Shape, color: THREE.ColorRepresentation | THREE.Material, z = 0, segs = 12): THREE.Mesh {
   const mat = color instanceof THREE.Material ? color : flatMat(color);
   const m = new THREE.Mesh(new THREE.ShapeGeometry(shape, segs), mat);

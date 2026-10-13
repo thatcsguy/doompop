@@ -395,7 +395,7 @@ export class Club {
     this.add(shapeMesh(roundedRectShape(CONSOLE.w - 0.3, 0.05, 0.02), this.house(PAL.pink, 2.0), 0), 0, top - 0.06, cz + 0.02);
     const consoleTop = new THREE.Mesh(new THREE.PlaneGeometry(CONSOLE.w, CONSOLE.depth), ownMat('#2f2457'));
     consoleTop.rotation.x = -Math.PI / 2;
-    this.add(consoleTop, 0, top, cz - CONSOLE.depth / 2);
+    this.add(consoleTop, 0, top, cz - CONSOLE.depth / 2 - 0.005); // clear of the front's ink
     for (const side of [-1, 1]) {
       const deck = new THREE.Group();
       const plate = new THREE.Mesh(new THREE.PlaneGeometry(1.7, 0.62), ownMat('#1a1430'));
@@ -572,15 +572,16 @@ export class Club {
     for (const px of [ROPE.x - 1.4, ROPE.x + 1.4]) {
       const post = new THREE.Group();
       post.add(inkedRect(0.14, 1.2, 0.05, '#e3b341', 0.04));
-      const knob = inkedCircle(0.12, '#ffd36b', 0.03); knob.position.y = 0.66; post.add(knob);
-      const foot = inkedRect(0.5, 0.1, 0.05, '#e3b341', 0.04); foot.position.y = -0.58; post.add(foot);
+      // knob and foot a step in front of the post they overlap (at one depth they flickered)
+      const knob = inkedCircle(0.12, '#ffd36b', 0.03); knob.position.set(0, 0.66, 0.006); post.add(knob);
+      const foot = inkedRect(0.5, 0.1, 0.05, '#e3b341', 0.04); foot.position.set(0, -0.58, 0.006); post.add(foot);
       this.add(post, px, 0.62, ROPE.z);
     }
     const rope = new THREE.Shape();
     const N = 16;
     for (let i = 0; i <= N; i++) { const k = i / N; rope.lineTo(lerp(-1.35, 1.35, k), -Math.sin(k * Math.PI) * 0.35 + 0.04); }
     for (let i = N; i >= 0; i--) { const k = i / N; rope.lineTo(lerp(-1.35, 1.35, k), -Math.sin(k * Math.PI) * 0.35 - 0.06); }
-    this.add(shapeMesh(rope, '#b3122e', 0.01, 1), ROPE.x, 1.2, ROPE.z);
+    this.add(shapeMesh(rope, '#b3122e', 0.01, 1), ROPE.x, 1.2, ROPE.z + 0.014); // in front of the posts
   }
 
   // --- lights: truss with par cans, spotlight beams with pools, disco ball, wall sparkles ------

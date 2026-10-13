@@ -49,7 +49,7 @@ export class Pager {
     this.body.add(led);
     for (const [x, y] of [[0.4, 0.3], [0.4, 0.17]]) {
       const b = inkedRect(0.12, 0.08, 0.03, '#4a4558', 0.02);
-      b.position.set(x, y, 0.004);
+      b.position.set(x, y, 0.008); // in front of the grip stripe (at 0.004 they tied with it)
       this.body.add(b);
     }
   }
@@ -179,7 +179,7 @@ export class MasterSwitch {
     const stick = inkedRect(0.06, 0.42, 0.03, '#c9c5d8', 0.025);
     stick.position.y = 0.21;
     const knob = inkedCircle(0.1, PAL.red, 0.03);
-    knob.position.y = 0.44;
+    knob.position.set(0, 0.44, 0.006); // in front of the stick it caps (same depth flickered)
     this.lever.add(stick, knob);
     this.lever.position.set(0, 0.22, 0.01);
     this.root.add(this.lever);

@@ -366,13 +366,13 @@ export class Revolver {
     const hammerInk = new THREE.Shape();
     hammerInk.moveTo(-0.12, 0.08); hammerInk.lineTo(0.0, 0.08); hammerInk.lineTo(-0.04, 0.23); hammerInk.lineTo(-0.16, 0.21); hammerInk.closePath();
     const cyl = inkedRect(0.24, 0.21, 0.05, dark, 0.03);
-    cyl.position.set(0.14, 0.06, 0.008);
+    cyl.position.set(0.14, 0.06, 0.02);
     for (const y of [0.0, 0.07]) cyl.add(shapeMesh(roundedRectShape(0.18, 0.018, 0.009, 0, y - 0.03), '#46485a', 0.006));
     const barrel = inkedRect(0.5, 0.1, 0.03, steel, 0.03);
-    barrel.position.set(0.5, 0.09, 0.006);
+    barrel.position.set(0.5, 0.09, 0.01); // frame 0.004, sight 0.008, barrel 0.01, cylinder 0.02: no shared depths
     barrel.add(shapeMesh(roundedRectShape(0.42, 0.022, 0.011, -0.02, 0.022), '#e2e5f2', 0.006));
     const sight = inkedRect(0.04, 0.05, 0.01, steel, 0.02);
-    sight.position.set(0.71, 0.155, 0.005);
+    sight.position.set(0.71, 0.155, 0.007);
     this.root.add(shapeMesh(hammerInk, INK, 0), shapeMesh(hammer, dark, 0.002), grip, guard, trigger, frame, cyl, sight, barrel);
     this.muzzle.position.set(0.78, 0.09, 0.01);
     this.root.add(this.muzzle);

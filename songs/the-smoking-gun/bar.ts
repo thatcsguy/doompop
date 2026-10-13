@@ -175,14 +175,15 @@ export class NapkinInsert {
     (top.mesh.material as THREE.MeshBasicMaterial).transparent = false;
     this.root.add(top.mesh);
     const mug = new THREE.Group();
+    // saucer, handle, cup and coffee each a step in front of the last (shared depths flickered)
     mug.add(inkedCircle(0.5, '#5a1830', 0.03));
-    const cup = inkedCircle(0.36, '#f6f3ee', 0.035); cup.position.z = 0.004;
-    const handle = inkedRect(0.16, 0.12, 0.04, '#f6f3ee', 0.03); handle.position.set(0.42, 0, 0.002);
-    const coffee = shapeMesh(circleShape(0.29), '#4a2a1c', 0.008, 32);
-    const crema = shapeMesh(arcShape(0.23, 0.05, 0, Math.PI * 2), '#7a4a30', 0.01, 32);
-    const shine = shapeMesh(arcShape(0.2, 0.04, 2.2, 3.0), '#c99a7a', 0.012, 8);
+    const cup = inkedCircle(0.36, '#f6f3ee', 0.035); cup.position.z = 0.012;
+    const handle = inkedRect(0.16, 0.12, 0.04, '#f6f3ee', 0.03); handle.position.set(0.42, 0, 0.006);
+    const coffee = shapeMesh(circleShape(0.29), '#4a2a1c', 0.018, 32);
+    const crema = shapeMesh(arcShape(0.23, 0.05, 0, Math.PI * 2), '#7a4a30', 0.021, 32);
+    const shine = shapeMesh(arcShape(0.2, 0.04, 2.2, 3.0), '#c99a7a', 0.024, 8);
     mug.add(cup, handle, coffee, crema, shine);
-    mug.position.set(-1.6, 0.85, 0);
+    mug.position.set(-1.6, 0.85, 0.03); // in front of the napkin it overlaps
     this.root.add(mug);
 
     // the napkin, with a soft shadow under it
@@ -313,10 +314,10 @@ export class DomeBomb {
     const hi = shapeMesh(arcShape(0.06, 0.025, 1.9, 2.8), '#6b6880', 0.004, 8);
     hi.position.y = 0.12;
     const cap = inkedRect(0.07, 0.04, 0.01, '#8a8aa0', 0.015);
-    cap.position.set(0.04, 0.22, 0.002);
+    cap.position.set(0.04, 0.22, 0.008); // in front of the ball (at 0.002 its outline tied with the ball's fill)
     cap.rotation.z = -0.5;
-    const fuse = shapeMesh(arcShape(0.06, 0.018, -0.2, 1.9), '#c9b48a', 0.003, 10);
-    fuse.position.set(0.11, 0.25, 0);
+    const fuse = shapeMesh(arcShape(0.06, 0.018, -0.2, 1.9), '#c9b48a', 0.005, 10);
+    fuse.position.set(0.11, 0.25, 0.005);
     this.sparkMat = ownGlow(PAL.gold, 3);
     for (let i = 0; i < 6; i++) {
       const ray = shapeMesh(roundedRectShape(0.012, 0.05, 0.006, 0, 0.035), this.sparkMat, 0.004);
@@ -525,8 +526,8 @@ export class FloorSeam {
     // the pull tab: a little steel slider and a ring, standing up off the floor a touch
     const slider = inkedRect(0.12, 0.09, 0.02, '#d9dbe8', 0.02);
     const tab = inkedRect(0.07, 0.16, 0.03, '#c9c5d8', 0.02);
-    tab.position.set(0, -0.12, 0.002);
-    const hole = shapeMesh(roundedRectShape(0.03, 0.06, 0.015, 0, -0.14), '#1d1b26', 0.006);
+    tab.position.set(0, -0.12, -0.008); // behind the slider (at 0.002 its outline tied with the slider's fill)
+    const hole = shapeMesh(roundedRectShape(0.03, 0.06, 0.015, 0, -0.14), '#1d1b26', -0.003);
     this.pull.add(slider, tab, hole);
     this.pull.rotation.x = -Math.PI / 2 + 0.5;
     this.root.add(this.pull);
@@ -620,7 +621,7 @@ export class RunButton {
       this.root.add(shapeMesh(s, '#1d1b26', 0.004, 1));
     }
     const collar = inkedRect(0.44, 0.06, 0.02, '#3b3f52', 0.03);
-    collar.position.set(0, 0.23, 0.006);
+    collar.position.set(0, 0.23, 0.014); // in front of the dome's base (at 0.006 it tied with the dome)
     this.root.add(collar);
     this.lamp = ownGlow(PAL.red, 1.2);
     const dome = new THREE.Shape();
@@ -629,7 +630,7 @@ export class RunButton {
     domeInk.moveTo(-0.22, -0.01); domeInk.absellipse(0, -0.01, 0.22, 0.18, Math.PI, 0, true, 0); domeInk.lineTo(-0.22, -0.01);
     this.cap.add(shapeMesh(domeInk, INK, 0, 24), shapeMesh(dome, this.lamp, 0.002, 24));
     this.cap.add(shapeMesh(arcShape(0.12, 0.03, Math.PI * 0.55, Math.PI * 0.85), ownGlow('#ffffff', 1.5), 0.004, 8));
-    this.cap.position.set(0, 0.25, 0.004);
+    this.cap.position.set(0, 0.25, 0.006);
     this.root.add(this.cap);
     this.burst.root.position.set(0, 0.42, 0.05);
     this.root.add(this.burst.root);

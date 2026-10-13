@@ -6,7 +6,7 @@
 // Each has set(state, t) that sets every property it touches, origin between the feet. They all
 // get the two-tone neon rim, so they read in the dark club like Clawd does.
 import * as THREE from 'three';
-import { INK, arcShape, circleShape, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh, staticPlane } from '../../engine/flat';
+import { INK, arcShape, circleShape, halfShape, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh, staticPlane } from '../../engine/flat';
 import { clamp, lerp } from '../../engine/ease';
 import { hash } from '../../engine/rng';
 import { PAL, TERM_FONT, UI_FONT, cutout, ownGlow, setGlow } from './look';
@@ -38,11 +38,13 @@ export const sp = (p: Partial<SuspectState>): SuspectState => ({ ...SUSPECT_REST
 export class Rim {
   private parts: { mesh: THREE.Mesh; mat: THREE.MeshBasicMaterial; side: number }[] = [];
   add(shape: THREE.Shape, parent: THREE.Object3D, x: number, y: number, z: number, off = 0.045) {
-    const geo = new THREE.ShapeGeometry(shape, 8);
     for (const side of [-1, 1]) {
+      // each copy is cut at the shape's centre line and cyan sits a step behind, so where the two
+      // meet they never share a depth (overlapping copies at one depth z-fought and flickered)
+      const geo = new THREE.ShapeGeometry(halfShape(shape, side, -side * (off + 0.01), 64), 8);
       const mat = ownGlow(side < 0 ? PAL.pink : PAL.cyan, 1.3);
       const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(x + side * off, y + 0.015, z);
+      mesh.position.set(x + side * off, y + 0.015, z - (side > 0 ? 0.004 : 0));
       parent.add(mesh);
       this.parts.push({ mesh, mat, side });
     }
@@ -423,15 +425,17 @@ export class Cache {
     }
     this.shades.add(shapeMesh(roundedRectShape(0.14, 0.03, 0.01, 0, 0.05), PAL.chain, 0.004));
     this.body.add(this.shades);
-    // arms: blue sleeves, white cuffs, hands; the right hand can wag a finger
+    // arms: blue sleeves, white cuffs, hands; the right hand can wag a finger. They pass behind the
+    // cabinet, each layer a step in front of the last (the cuff and glove outline used to share a
+    // depth, and the gloves flickered)
     for (const side of [-1, 1]) {
       const pivot = new THREE.Group();
-      pivot.position.set(side * (W / 2 + 0.04), Y + 0.32, -0.006);
+      pivot.position.set(side * (W / 2 + 0.04), Y + 0.32, -0.024);
       const sleeve = inkedRect(0.5, 0.22, 0.08, suit, 0.035);
       sleeve.position.x = side * 0.22;
-      const cuff = shapeMesh(roundedRectShape(0.07, 0.22, 0.02, side * 0.46, 0), '#fff2d6', 0.004);
+      const cuff = shapeMesh(roundedRectShape(0.07, 0.22, 0.02, side * 0.46, 0), '#fff2d6', 0.006);
       const hand = inkedCircle(0.11, '#f0f0f5', 0.03);
-      hand.position.set(side * 0.56, 0, 0.004);
+      hand.position.set(side * 0.56, 0, 0.01);
       pivot.add(sleeve, cuff, hand);
       this.body.add(pivot);
       this.arms.push(pivot);
@@ -440,9 +444,9 @@ export class Cache {
     const f = inkedRect(0.06, 0.2, 0.03, '#f0f0f5', 0.025);
     f.position.y = 0.12;
     this.finger.add(f);
-    this.finger.position.set(0.56, 0.06, 0.008);
+    this.finger.position.set(0.56, 0.06, 0.016);
     this.arms[1].add(this.finger);
-    this.hand.position.set(0.58, 0, 0.02);
+    this.hand.position.set(0.58, 0, 0.022);
     this.arms[1].add(this.hand);
   }
 
@@ -461,7 +465,7 @@ export class Cache {
     this.arms[1].rotation.z = aR;
     this.arms.forEach((a, i) => {
       a.position.x = (i ? 1 : -1) * (Cache.W / 2 + 0.04 - cuff * 0.1);
-      a.position.z = cuff > 0.5 ? 0.03 : -0.006;
+      a.position.z = cuff > 0.5 ? 0.03 : -0.024;
     });
     this.finger.visible = wag > 0.05;
     this.finger.rotation.z = -aR + Math.sin(t * Math.PI * 2 * 2.15) * 0.45 * wag;
@@ -500,7 +504,7 @@ export class Field {
       const arm = inkedRect(0.2, 0.05, 0.02, '#e0c56a', 0.02);
       arm.position.x = side * 0.1;
       const mitt = inkedCircle(0.04, '#e0c56a', 0.018);
-      mitt.position.set(side * 0.2, 0, 0.002);
+      mitt.position.set(side * 0.2, 0, 0.006); // in front of the arm (at 0.002 its outline tied with the arm's fill)
       pivot.add(arm, mitt);
       if (side > 0) { this.hand.position.set(0.2, 0, 0.01); pivot.add(this.hand); }
       this.body.add(pivot);
@@ -523,15 +527,16 @@ export class Field {
     txt.position.set(0, 0.25, 0.006);
     this.body.add(txt);
     for (const side of [-1, 1]) {
+      // eyes in front of the tag's top edge (at 0.002 their outlines tied with the tag's fill)
       const eye = inkedCircle(0.1, '#ffffff', 0.025);
-      eye.position.set(side * 0.11, 0.52, 0.002);
-      const pupil = shapeMesh(circleShape(0.055), INK, 0.008, 14);
-      pupil.position.set(side * 0.11, 0.51, 0.008);
-      const shine = shapeMesh(circleShape(0.018), '#ffffff', 0.01, 8);
-      shine.position.set(0.02, 0.025, 0.002);
+      eye.position.set(side * 0.11, 0.52, 0.008);
+      const pupil = shapeMesh(circleShape(0.055), INK, 0.016, 14);
+      pupil.position.set(side * 0.11, 0.51, 0.016);
+      const shine = shapeMesh(circleShape(0.018), '#ffffff', 0.006, 8);
+      shine.position.set(0.02, 0.025, 0.006);
       pupil.add(shine);
-      const lid = shapeMesh(roundedRectShape(0.24, 0.1, 0.04), '#fff1b8', 0.012);
-      lid.position.set(side * 0.11, 0.6, 0.012);
+      const lid = shapeMesh(roundedRectShape(0.24, 0.1, 0.04), '#fff1b8', 0.03);
+      lid.position.set(side * 0.11, 0.6, 0.03);
       this.body.add(eye, pupil, lid);
       this.pupils.push(pupil);
       this.lids.push(lid);

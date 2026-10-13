@@ -113,8 +113,8 @@ export class HandlerPath {
     const relief = inkedRect(0.12, 0.16, 0.03, dark, 0.03);
     relief.position.set(0, 0.06, 0);
     const body = inkedRect(0.32, 0.36, 0.06, plastic, 0.035);
-    body.position.set(0, 0.3, 0.002);
-    const plate = shapeMesh(roundedRectShape(0.24, 0.06, 0.02, 0, 0.45), dark, 0.006);
+    body.position.set(0, 0.3, 0.006); // in front of the relief (at 0.002 its outline tied with the relief's fill)
+    const plate = shapeMesh(roundedRectShape(0.24, 0.06, 0.02, 0, 0.45), dark, 0.012);
     this.head.add(relief, body, plate);
     for (const side of [-1, 1]) {
       const prong = inkedRect(0.055, 0.17, 0.012, brass, 0.022);

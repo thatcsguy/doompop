@@ -5,6 +5,7 @@
 //   node tools/render.mjs stills --song <slug> --t 1.5,12,30.2 [--scale 1] [--samples 8] [--no-lyrics]
 //   node tools/render.mjs sheet  --song <slug> [--from 0 --to 30] [--n 16] [--cuts] [--cols 4] [--w 480]
 //   node tools/render.mjs determinism --song <slug> [--n 8] [--samples 1]
+//   node tools/render.mjs zfight --song <slug> [--from 0 --to 30] [--step 1] [--t 1.5,12] [--margin 8] [--min 4] [--images 12]
 //   node tools/render.mjs gpu    --song <slug>
 //
 // Frames go to out/<slug>/frames-<scale>x/ and are resumable: rerun the same command after a crash
@@ -85,6 +86,8 @@ try {
     await sheet();
   } else if (mode === 'determinism') {
     await determinism();
+  } else if (mode === 'zfight') {
+    await zfight();
   } else if (mode === 'video') {
     await video();
   } else {
@@ -191,6 +194,57 @@ async function determinism() {
   if (bad) process.exitCode = 1;
 }
 
+async function zfight() {
+  // Flicker check (engine/zfight.ts): samples every shot's start, middle and end plus every --step
+  // seconds, and lists each pair of overlapping surfaces too close in depth to stay put (including a
+  // see-through layer level with the surface under it), with the times it was seen. --margin is how many times coarser than the real depth buffer to test (so a
+  // pair that passes has that much headroom). Pairs of the same flat colour can't be seen and are
+  // left out, as are pairs under --min pixels. Marked frames go to out/<slug>/zfight/.
+  const page = await openPage();
+  const meta = await page.evaluate('({ duration: window.doompop.duration, shots: window.doompop.shots })');
+  const from = Number(args.from ?? 0), to = Math.min(meta.duration, Number(args.to ?? meta.duration));
+  const step = Number(args.step ?? 1), margin = Number(args.margin ?? 8), minPx = Number(args.min ?? 4);
+  let times;
+  if (args.t) times = String(args.t).split(',').map(Number);
+  else {
+    const set = new Set();
+    for (const s of meta.shots) for (const t of [s.start + 0.05, (s.start + s.end) / 2, s.end - 0.05]) if (t >= from && t < to) set.add(Number(t.toFixed(3)));
+    for (let t = from + step / 2; t < to; t += step) set.add(Number(t.toFixed(3)));
+    times = [...set].sort((a, b) => a - b);
+  }
+  const dir = join(OUT, 'zfight');
+  rmSync(dir, { recursive: true, force: true }); mkdirSync(dir, { recursive: true });
+  const found = new Map(), perTime = [];
+  let k = 0;
+  for (const t of times) {
+    const r = await page.evaluate(([t, m]) => window.doompop.zfight(t, m, false), [t, margin]);
+    let px = 0;
+    for (const p of r.pairs) {
+      if (p.same || p.pixels < minPx) continue;
+      px += p.pixels;
+      const key = `${r.shot}|${p.a.oid}|${p.b.oid}`;
+      let e = found.get(key);
+      if (!e) found.set(key, e = { shot: r.shot, a: p.a, b: p.b, times: [], max: 0 });
+      e.times.push(t); e.max = Math.max(e.max, p.pixels);
+    }
+    if (px) perTime.push({ t, px });
+    if (++k % 20 === 0) console.log(`${k}/${times.length} frames checked, ${found.size} pairs so far`);
+  }
+  const fmt = m => `${m.path} ${m.color}${m.clear ? ' (see-through)' : ''} z=${m.z} at (${m.pos.join(', ')}) ${m.size.join('x')}`;
+  const list = [...found.values()].sort((a, b) => b.max - a.max);
+  for (const e of list) {
+    const ts = e.times.length > 1 ? `${e.times[0]}..${e.times[e.times.length - 1]} (${e.times.length}x)` : `${e.times[0]}`;
+    console.log(`${e.shot}  t=${ts}  ${e.max}px\n    A: ${fmt(e.a)}\n    B: ${fmt(e.b)}`);
+  }
+  perTime.sort((a, b) => b.px - a.px);
+  for (const { t } of perTime.slice(0, Number(args.images ?? 12))) {
+    const r = await page.evaluate(([t, m]) => window.doompop.zfight(t, m, true), [t, margin]);
+    writeFileSync(join(dir, `t${t.toFixed(2)}.png`), Buffer.from(r.image.slice(r.image.indexOf(',') + 1), 'base64'));
+  }
+  console.log(list.length ? `FLICKER: ${list.length} pairs of surfaces too close in depth (marked frames in ${dir})` : `NO FLICKER: ${times.length} frames checked`);
+  if (list.length) process.exitCode = 1;
+}
+
 function readFileHead() {
-  return `usage: node tools/render.mjs <video|stills|sheet|determinism|gpu> --song <slug> [options]  (see the top of tools/render.mjs)`;
+  return `usage: node tools/render.mjs <video|stills|sheet|determinism|zfight|gpu> --song <slug> [options]  (see the top of tools/render.mjs)`;
 }

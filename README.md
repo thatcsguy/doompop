@@ -43,6 +43,7 @@ npm run render -- video  --song <slug> [--from 30 --to 45] [--samples 8] [--work
 npm run render -- sheet  --song <slug> [--from 0 --to 60] [--n 16] [--cuts]   # contact sheet
 npm run render -- stills --song <slug> --t 12.5,40
 npm run render -- determinism --song <slug>   # frames must match whatever order they render in
+npm run render -- zfight --song <slug>        # surfaces tied in depth, which flicker (must be none)
 npm run render -- gpu --song <slug>           # which GPU Chrome is using
 ```
 

@@ -235,7 +235,7 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     arrow.root.position.copy(ARROW_AT);
     const shaftMat = lightMat(PAL.gold, 0, beamTexture());
     const shaft = new THREE.Mesh(new THREE.PlaneGeometry(1.3, ARROW_AT.y - NeonArrow.TIP), shaftMat);
-    shaft.position.set(TILE.x, (ARROW_AT.y - NeonArrow.TIP) / 2, TILE.z);
+    shaft.position.set(TILE.x, (ARROW_AT.y - NeonArrow.TIP) / 2, TILE.z - 0.12); // behind Clawd and the arrow, not level
     const c = new DiscoClawd();
     const FROM = new THREE.Vector3(-1.0, 0, -2.3);
     const land = new Burst(PAL.gold, 12);

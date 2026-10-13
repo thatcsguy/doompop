@@ -91,7 +91,7 @@ export class Chief {
     shirt.moveTo(-0.19, SHOULDER_Y + 0.06); shirt.lineTo(0.19, SHOULDER_Y + 0.06); shirt.lineTo(0, 1.38); shirt.closePath();
     this.body.add(shapeMesh(shirt, '#f4f1ea', 0.004));
     const knot = inkedRect(0.1, 0.08, 0.02, '#c92f3c', 0.02);
-    knot.position.set(0, SHOULDER_Y + 0.0, 0.006);
+    knot.position.set(0, SHOULDER_Y + 0.0, 0.01); // in front of the tie (at 0.006 its outline tied with it)
     const tie = new THREE.Shape();
     tie.moveTo(-0.045, SHOULDER_Y - 0.04); tie.lineTo(0.045, SHOULDER_Y - 0.04); tie.lineTo(0.07, 1.42); tie.lineTo(0, 1.34); tie.lineTo(-0.07, 1.42); tie.closePath();
     this.body.add(knot, shapeMesh(tie, '#c92f3c', 0.006));
@@ -154,7 +154,8 @@ export class Chief {
       s.closePath();
       return s;
     };
-    this.body.add(shapeMesh(tash(0.025), INK, 0.016), shapeMesh(tash(0), GREY, 0.018));
+    // in front of the nose (at 0.016 its ink tied with the nose's fill and flickered)
+    this.body.add(shapeMesh(tash(0.025), INK, 0.022), shapeMesh(tash(0), GREY, 0.026));
 
     // the pointing arm (screen right): a sleeve, a white cuff, a hand and an index finger
     this.pointArm.position.set(0.47, SHOULDER_Y - 0.04, 0.02);
@@ -164,7 +165,7 @@ export class Chief {
     const hand = inkedCircle(0.11, SKIN, 0.03);
     hand.position.set(0, -0.78, 0.006);
     const finger = inkedRect(0.06, 0.2, 0.03, SKIN, 0.025);
-    finger.position.set(0, -0.92, 0.004);
+    finger.position.set(0, -0.92, 0); // behind the hand: at 0.004 its fill was level with the hand's ink
     this.finger = finger;
     this.fingertip.position.set(0, -1.03, 0);
     this.pointArm.add(sleeve, cuff, hand, finger, this.fingertip);
@@ -231,7 +232,7 @@ export class Chief {
     this.fore.rotation.z = bend;
     // the mug stays upright: undo the arm's rotation (and the body's lean)
     this.mug.rotation.z = -(a1 + bend) - s.lean;
-    this.mug.position.set(0, -FORE - 0.04, 0.012);
+    this.mug.position.set(0, -FORE - 0.04, 0.016); // in front of the hand (at 0.012 the handle tied with it)
     this.steam.forEach(({ mesh, mat, k }) => {
       const ph = (t * 0.7 + k / 3) % 1;
       mesh.position.set(Math.sin((t * 2 + k) * 2.1) * 0.03, 0.2 + ph * 0.3, 0.01);

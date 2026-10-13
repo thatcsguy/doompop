@@ -6,7 +6,7 @@
 // Origin is between his feet, as for the rig. Body top is at y = 1.02; the afro reaches ~2.05.
 import * as THREE from 'three';
 import { Clawd, MOODS, REST, mixMood, type Mood, type Pose } from '../../engine/characters/clawd';
-import { INK, arcShape, circleShape, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh } from '../../engine/flat';
+import { INK, arcShape, circleShape, halfShape, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh } from '../../engine/flat';
 import { clamp, decay, lerp } from '../../engine/ease';
 import { hash, noise1 } from '../../engine/rng';
 import { PAL, glowMat, halo, ownGlow, setGlow } from './look';
@@ -129,19 +129,19 @@ export class DiscoClawd {
     }
     this.body.add(this.afro);
 
-    // --- rim light: silhouette copies offset left and right, just behind the ink outlines
-    const addRim = (geo: THREE.BufferGeometry, side: number, base: THREE.Vector2, z: number, parent: THREE.Object3D) => {
+    // --- rim light: silhouette copies offset left and right, just behind the ink outlines. Each
+    // copy is cut at his centre line (pink left, cyan right), overlapping a hair there with cyan a
+    // step behind, so the two never share a depth where both show (that z-fought and flickered)
+    const addRim = (shape: THREE.Shape, side: number, base: THREE.Vector2, z: number, parent: THREE.Object3D) => {
       const mat = ownGlow(side < 0 ? PAL.pink : PAL.cyan, 1.4);
-      const mesh = new THREE.Mesh(geo, mat);
-      mesh.position.set(base.x, base.y, z);
+      const mesh = new THREE.Mesh(new THREE.ShapeGeometry(halfShape(shape, side, -base.x - side * 0.01), 1), mat);
+      mesh.position.set(base.x, base.y, z - (side > 0 ? 0.004 : 0));
       parent.add(mesh);
       this.rims.push({ mesh, mat, side, base });
     };
-    const afroGeo = new THREE.ShapeGeometry(afroShape(0.06), 1);
-    const torsoGeo = new THREE.ShapeGeometry(roundedRectShape(W + 0.12, H + 0.12, 0.03), 1);
     for (const side of [-1, 1]) {
-      addRim(afroGeo, side, new THREE.Vector2(side * 0.055, 0.03), -0.012, this.afroInner);
-      addRim(torsoGeo, side, new THREE.Vector2(side * 0.045, BODY_Y + 0.0), -0.06, this.body);
+      addRim(afroShape(0.06), side, new THREE.Vector2(side * 0.055, 0.03), -0.012, this.afroInner);
+      addRim(roundedRectShape(W + 0.12, H + 0.12, 0.03), side, new THREE.Vector2(side * 0.045, BODY_Y + 0.0), -0.06, this.body);
     }
 
     // --- shades: blocky lenses in a gold frame, with a neon reflection stripe and a glint
@@ -165,7 +165,7 @@ export class DiscoClawd {
     this.shades.add(bridge);
     for (const side of [-1, 1]) {
       const temple = inkedRect(0.16, 0.045, 0.01, PAL.chain, 0.02);
-      temple.position.set(side * 0.53, 0.07, -0.002);
+      temple.position.set(side * 0.53, 0.07, -0.006); // behind the lens frame (at -0.002 its fill tied with the frame's outline)
       this.shades.add(temple);
     }
     this.body.add(this.shades);
@@ -202,10 +202,11 @@ export class DiscoClawd {
       const g = new THREE.Group();
       const handle = inkedRect(0.36, 0.08, 0.02, '#7a4a2a', 0.025);
       handle.position.set(0.32, 0, 0.03);
-      const glass = shapeMesh(circleShape(0.21), ownMat('#9fe8ff', 0.22, true), 0.03, 24);
-      const inkRing = shapeMesh(arcShape(0.22, 0.1, 0, Math.PI * 2), INK, 0.032, 32);
-      const ring = shapeMesh(arcShape(0.22, 0.055, 0, Math.PI * 2), PAL.chain, 0.034, 32);
-      const shine = shapeMesh(arcShape(0.13, 0.035, 1.9, 2.9), ownGlow('#ffffff', 1.6), 0.036, 8);
+      // ring stack in front of the handle (the ink ring tied with the handle's fill)
+      const glass = shapeMesh(circleShape(0.21), ownMat('#9fe8ff', 0.22, true), 0.034, 24);
+      const inkRing = shapeMesh(arcShape(0.22, 0.1, 0, Math.PI * 2), INK, 0.036, 32);
+      const ring = shapeMesh(arcShape(0.22, 0.055, 0, Math.PI * 2), PAL.chain, 0.04, 32);
+      const shine = shapeMesh(arcShape(0.13, 0.035, 1.9, 2.9), ownGlow('#ffffff', 1.6), 0.044, 8);
       for (const m of [glass, inkRing, ring, shine]) m.position.x = 0.7;
       g.add(handle, glass, inkRing, ring, shine);
       return g;
@@ -215,7 +216,7 @@ export class DiscoClawd {
       const stick = inkedRect(0.04, 0.7, 0.01, '#d9c7a8', 0.02);
       stick.position.set(0.24, 0.3, 0.03);
       const cloth = inkedRect(0.3, 0.2, 0.01, PAL.red, 0.02);
-      cloth.position.set(0.41, 0.55, 0.03);
+      cloth.position.set(0.41, 0.55, 0.036); // in front of the stick it hangs from
       g.add(stick, cloth);
       return g;
     })();

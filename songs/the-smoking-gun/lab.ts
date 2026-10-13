@@ -306,10 +306,11 @@ export function labStand(h: number) {
   const g = new THREE.Group();
   const pole = inkedRect(0.07, h, 0.03, '#7c76a0', 0.025);
   pole.position.y = h / 2;
+  // collar and foot overlap the pole, so each sits a step in front of it (at one depth they flickered)
   const collar = inkedRect(0.14, 0.08, 0.03, '#4a4466', 0.025);
-  collar.position.y = h * 0.55;
+  collar.position.set(0, h * 0.55, 0.006);
   const foot = inkedRect(0.9, 0.07, 0.03, '#3a3456', 0.03);
-  foot.position.y = 0.09;
+  foot.position.set(0, 0.09, 0.006);
   g.add(pole, collar, foot);
   for (const side of [-1, 1]) {
     const w = inkedCircle(0.05, '#15111f', 0.02);
@@ -342,12 +343,15 @@ export function sash(text: string, color: string) {
 export function mirrorFrame(w = 1.7, h = 2.7) {
   const g = new THREE.Group();
   const t = 0.16;
+  // each piece a step in front of what it overlaps (overlapping pieces at one depth flickered):
+  // stiles, then the rails across their ends, then the corner scrolls, the crest and its gem
   const bar = (bw: number, bh: number, x: number, y: number) => {
+    const z = bw > bh ? 0.008 : 0;
     const b = inkedRect(bw, bh, 0.04, PAL.chain, 0.04);
-    b.position.set(x, y, 0);
+    b.position.set(x, y, z);
     const shade = shapeMesh(roundedRectShape(bw * 0.86, bh * 0.86, 0.02, 0, 0), PAL.chainShade, 0.005);
     shade.scale.set(bw > bh ? 1 : 0.35, bw > bh ? 0.35 : 1, 1);
-    shade.position.set(x + (bw > bh ? 0 : t * 0.18), y - (bw > bh ? t * 0.18 : 0), 0.004);
+    shade.position.set(x + (bw > bh ? 0 : t * 0.18), y - (bw > bh ? t * 0.18 : 0), z + 0.004);
     g.add(b, shade);
   };
   const y0 = 0.25;
@@ -357,19 +361,19 @@ export function mirrorFrame(w = 1.7, h = 2.7) {
   bar(w + t, t, 0, y0 + h);
   // a crest on top and scrolls on the corners
   const crest = inkedCircle(0.2, PAL.chain, 0.04);
-  crest.position.set(0, y0 + h + 0.18, 0.01);
-  const gem = shapeMesh(circleShape(0.08), glowMat(PAL.pink, 1.6), 0.03, 16);
-  gem.position.set(0, y0 + h + 0.18, 0.012);
+  crest.position.set(0, y0 + h + 0.18, 0.016);
+  const gem = shapeMesh(circleShape(0.08), glowMat(PAL.pink, 1.6), 0.022, 16);
+  gem.position.set(0, y0 + h + 0.18, 0.022);
   g.add(crest, gem);
   for (const [x, y] of [[-w / 2, y0], [w / 2, y0], [-w / 2, y0 + h], [w / 2, y0 + h]]) {
     const s = shapeMesh(arcShape(0.13, 0.05, 0, Math.PI * 1.6), PAL.chainShade, 0.012, 16);
-    s.position.set(x, y, 0.01);
+    s.position.set(x, y, 0.018);
     s.rotation.z = Math.atan2(y - y0 - h / 2, x) + 0.6;
     g.add(s);
   }
   for (const side of [-1, 1]) {
     const foot = inkedRect(0.36, 0.12, 0.05, PAL.chainShade, 0.03);
-    foot.position.set(side * (w / 2), 0.06, 0.01);
+    foot.position.set(side * (w / 2), 0.06, -0.01); // behind the frame
     g.add(foot);
   }
   return g;
@@ -550,6 +554,7 @@ export class GearTower {
       const parent = this.layers.length ? this.layers[this.layers.length - 1] : this.root;
       // each layer sits on the one below, so leaning a low layer carries everything above it
       g.position.y = this.layers.length ? (parent.userData.h as number) : 0;
+      g.position.z = this.layers.length ? 0.03 : 0; // and in front of it (overlapping edges at one depth flickered)
       g.userData.h = h;
       parent.add(g);
       this.layers.push(g);

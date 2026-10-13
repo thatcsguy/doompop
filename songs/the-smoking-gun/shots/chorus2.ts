@@ -330,7 +330,7 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     });
     const shaftMat = lightMat(PAL.gold, 0, beamTexture());
     const shaft = new THREE.Mesh(new THREE.PlaneGeometry(1.3, 4.6), shaftMat);
-    shaft.position.set(TILE2.x, 2.3, TILE2.z);
+    shaft.position.set(TILE2.x, 2.3, TILE2.z - 0.12); // behind Clawd once he lands, not level
     const path = new HandlerPath();
     const c = new DiscoClawd();
     const FROM = new THREE.Vector3(TILE2.x + 2.3, 0, TILE2.z + 0.9);
