@@ -128,6 +128,16 @@ export function bridgeShots(audio: AudioData, lyrics: LyricsData): Shot[] {
   //     in: his pen copy of the ticker's pair, prod's odd byte circled in red. He taps the circle;
   //     Clawd's magnifier slides over it.
   const THAT = W(50, 0), WHAT = W(50, 2), KNOW = W(50, 4);
+  // Where his finger stops (Patrick, 2:21): NapkinInsert.set brings the palm to PALM_AT from the
+  // circle, which lays the finger across the circled "32" that the magnifier then shows again. The
+  // shot re-poses the hand so the finger comes in from the lower left and stops on the red ring,
+  // short of the number, and draws back a little as the magnifier slides over, so the lens (which
+  // magnifies the napkin only) never shows paper the finger is lying on.
+  const PALM_AT = new THREE.Vector2(-0.42, -0.04);      // NapkinInsert.set's palm target, from the circle
+  const FINGERTIP = new THREE.Vector2(0.535, 0.08);     // the inked fingertip in the hand's frame
+  const TIP_AT = new THREE.Vector2(-0.13, -0.125);      // where the fingertip stops, from the circle
+  const AIM = 0.6;                                      // the hand's angle there (0.12 while pushing)
+  const palmShift = TIP_AT.clone().sub(FINGERTIP.clone().rotateAround(new THREE.Vector2(), AIM)).sub(PALM_AT);
   shots.push(shot('br50-napkin', BT(299.5), BT(302.5), ({ scene, camera }) => {
     const nap = new NapkinInsert();
     scene.add(nap.root);
@@ -139,6 +149,11 @@ export function bridgeShots(audio: AudioData, lyrics: LyricsData): Shot[] {
       frameCam(camera, lerp(-0.15, 0.05, k), lerp(0.05, -0.12, k), lerp(2.6, 2.05, k));
       camera.rotation.z = 0.04;
       nap.set(f.t, clamp((f.t - THAT + 0.08) / 0.4), f.t - WHAT, clamp((f.t - KNOW + 0.04) / 0.32));
+      const reach = easeOutCubic(clamp((f.t - WHAT + 0.3) / 0.25));       // as NapkinInsert.set's
+      const back = 0.12 * smooth(clamp((f.t - (KNOW - 0.12)) / 0.25));
+      nap.hand.rotation.z = lerp(0.12, AIM, reach);
+      nap.hand.position.x += reach * palmShift.x - back * Math.cos(AIM);
+      nap.hand.position.y += reach * palmShift.y - back * Math.sin(AIM);
     };
   }, { club: false }));
 

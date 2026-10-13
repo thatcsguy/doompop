@@ -262,7 +262,6 @@ export function finaleShots(audio: AudioData, lyrics: LyricsData): Shot[] {
   shots.push(shot('f61-patch', BT(350.5), B(355), ({ scene, camera, club }) => {
     const patch = new Plaster();
     patch.root.position.copy(PATCH_AT);
-    patch.root.scale.setScalar(1.25);
     const runners = CROSS.map((_, j) => new Dancer(outfit(30 + j * 3), j === JUMPER ? 1.0 : 0.86));
     runners.forEach(r => scene.add(r.root));
     const cheer = new Burst(PAL.gold, 14);
@@ -293,7 +292,8 @@ export function finaleShots(audio: AudioData, lyrics: LyricsData): Shot[] {
           if (dt > -0.32 && dt < 0) body = { ...STAND, aL: 2.4, aR: 2.4, lL: 0.5, lR: 0.5, lean: -0.1, turn: 0.2, bob: 0, hip: 0, squash: -0.3 };
           if (stay) body = { ...STAND, aL: 1.6, aR: 1.6, lL: 0.35, lR: 0.35, squash: 0.7 * decay(dt, 0.1) + 0.2, bob: -0.1 * decay(dt, 0.1), turn: 0.2, lean: 0, hip: 0 };
         }
-        r.root.position.set(x, y, PATCH_AT.z - 0.08 + (j % 2) * 0.12);
+        // along the plaster's back half, behind its face, so no shoe ever covers the smile
+        r.root.position.set(x, y, PATCH_AT.z - 0.22 + (j % 2) * 0.1);
         r.root.visible = x > PATCH_AT.x - 6 && x < PATCH_AT.x + 6;
         r.set(body, 0, f.t + j * 0.3, 1, j === JUMPER ? 0 : 0.3);
         // under a foot: squashed

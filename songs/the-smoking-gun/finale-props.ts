@@ -132,27 +132,31 @@ export class Plaster {
       sq.position.set(side * 0.1, 0.05, 0);
       this.face.add(sq);
       this.squint.push(sq);
-      // happy arcs (^ ^)
+      // happy arcs (^ ^), on the eyes' layer (at z 0 they sat under the pad and never showed)
       const hp = shapeMesh(arcShape(0.04, 0.02, 0.2, Math.PI - 0.2), INK, 0.006, 8);
-      hp.position.set(side * 0.1, 0.035, 0);
+      hp.position.set(side * 0.1, 0.035, 0.006);
       this.face.add(hp);
       this.happy.push(hp);
     }
-    this.smile = shapeMesh(arcShape(0.06, 0.02, Math.PI * 1.15, Math.PI * 1.85), INK, 0.006, 10);
-    this.smile.position.y = 0.0;
-    this.grin = shapeMesh(new THREE.Shape().absarc(0, 0, 0.075, Math.PI, Math.PI * 2, false), '#7a2a3a', 0.006, 12);
-    this.grin.position.y = -0.005;
+    // the smile stays on all the way through (Patrick, 2:45): pressed flat while it's stood on, and
+    // on the cheer it widens and opens into a grin, a mouth that fills the curve under its ink
+    this.smile = shapeMesh(arcShape(0.06, 0.02, Math.PI * 1.15, Math.PI * 1.85), INK, 0.01, 10);
+    const lip = 0.058 * Math.sin(0.36);      // the mouth's top edge, level with the smile's ends
+    this.grin = shapeMesh(new THREE.Shape().absarc(0, lip, 0.058, Math.PI + 0.36, Math.PI * 2 - 0.36, false), '#7a2a3a', -0.004, 12);
+    this.grin.position.y = -lip;
+    this.smile.add(this.grin);
     const cheeks = [-1, 1].map(side => {
       const ch = shapeMesh(circleShape(0.03), '#ff9fb0', 0.005, 8);
       ch.position.set(side * 0.16, -0.01, 0);
       return ch;
     });
-    this.face.add(this.smile, this.grin, ...cheeks);
+    this.face.add(this.smile, ...cheeks);
     this.face.position.z = 0.002;
     flat.add(this.face);
+    // the puff from a stomp comes out from under it (lying on top, its glow bleached the face)
     this.dust = new Burst('#fff2df', 10);
     this.dust.root.rotation.x = -Math.PI / 2;
-    this.dust.root.position.y = 0.05;
+    this.dust.root.position.y = -0.006;
     this.root.add(this.dust.root);
   }
 
@@ -163,13 +167,13 @@ export class Plaster {
     this.eyes.forEach(e => { e.visible = sq < 0.5 && cheer < 0.5; });
     this.squint.forEach(e => { e.visible = sq >= 0.5; });
     this.happy.forEach(e => { e.visible = sq < 0.5 && cheer >= 0.5; });
-    this.smile.visible = cheer < 0.5;
-    this.smile.scale.set(1, sq >= 0.5 ? -0.6 : 1, 1);
-    this.grin.visible = cheer >= 0.5;
-    this.grin.scale.setScalar(lerp(0.6, 1, clamp(cheer * 2 - 1)));
+    const c = clamp(cheer);
+    this.smile.scale.set((1 + 0.2 * sq) * (1 + 0.45 * c), (1 - 0.3 * sq) * (1 + 0.6 * c), 1);
+    this.grin.visible = c > 0.01;
+    this.grin.scale.set(1, Math.max(0.01, c), 1);
     const flap = cheer * (0.75 + 0.25 * Math.sin(t * 16));
     this.wings.forEach((w, i) => { w.rotation.y = (i ? -1 : 1) * flap * 0.9; });
-    this.dust.set(dust, 0.6);
+    this.dust.set(dust, 0.95);
   }
 }
 

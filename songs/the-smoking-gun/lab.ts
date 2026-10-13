@@ -8,7 +8,7 @@ import * as THREE from 'three';
 import { INK, arcShape, canvasPlane, circleShape, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh, staticPlane } from '../../engine/flat';
 import { clamp, easeOutBack, easeOutCubic, lerp } from '../../engine/ease';
 import { hash, noise1 } from '../../engine/rng';
-import { REQUEST_LINES } from './club';
+import { REQUEST_LINES, fitFont } from './club';
 import { CRT_FONT, DISCO_FONT, PAL, TERM_FONT, UI_FONT, cutout, glowMat, lightMat, ownGlow, setGlow, solid } from './look';
 
 const v3 = new THREE.Vector3();
@@ -403,12 +403,18 @@ export class LightBox {
         g.strokeStyle = k ? 'rgba(255,120,190,0.55)' : 'rgba(120,230,255,0.55)';
         g.lineWidth = cw * 0.004;
         for (let r = 1; r <= 9; r++) { g.beginPath(); g.ellipse(cw * 0.78, ch * 0.78, r * cw * 0.014, r * cw * 0.018, 0.3, 0.2, Math.PI * 1.85); g.stroke(); }
+        // the labels sit at opposite corners, so once the films lie on top of each other they
+        // read STAGING ... PROD rather than one printed over the other
+        const pad = cw * 0.06, inner = cw - 2 * pad;
         g.fillStyle = k ? '#ff9fd0' : '#9ff0ff';
-        g.font = `700 ${ch * 0.055}px ${TERM_FONT}`; g.textBaseline = 'middle'; g.textAlign = 'left';
-        g.fillText(label, cw * 0.06, ch * 0.07);
+        g.textBaseline = 'middle'; g.textAlign = k ? 'right' : 'left';
+        fitFont(g, [label], ch * 0.055, inner * 0.45, TERM_FONT, 700);
+        g.fillText(label, k ? cw - pad : pad, ch * 0.07);
+        // the request, its type sized so the widest line fits inside the film's margins
+        g.textAlign = 'left';
         g.fillStyle = 'rgba(245,250,255,0.92)';
-        g.font = `700 ${ch * 0.048}px ${TERM_FONT}`;
-        REQUEST_LINES.forEach((l, i) => g.fillText(l, cw * 0.06, ch * (0.18 + i * 0.075)));
+        fitFont(g, REQUEST_LINES, ch * 0.048, inner, TERM_FONT, 700);
+        REQUEST_LINES.forEach((l, i) => g.fillText(l, pad, ch * (0.18 + i * 0.075)));
       });
       const mat = sheet.material as THREE.MeshBasicMaterial;
       mat.depthWrite = false;
@@ -586,7 +592,8 @@ export class GearTower {
     add(0.5, g => {
       g.add(inkedRect(0.95, 0.5, 0.05, '#1a1430', 0.04).translateY(0.25));
       const lbl = staticPlane(0.85, 0.18, 300, (c, W, H) => {
-        c.fillStyle = '#e8e2ff'; c.font = `700 ${H * 0.55}px ${UI_FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+        c.fillStyle = '#e8e2ff'; c.textAlign = 'center'; c.textBaseline = 'middle';
+        fitFont(c, ['DAYS SINCE INCIDENT'], H * 0.55, W * 0.94, UI_FONT, 700); // measured to fit the sign
         c.fillText('DAYS SINCE INCIDENT', W / 2, H * 0.5);
       });
       cutout(lbl, 0.4);
@@ -737,16 +744,28 @@ export class TraceCoil {
       this.web.add(st);
     }
     this.root.add(this.web);
-    // the tag: an old paper luggage tag on a string
-    const tag = staticPlane(0.34, 0.17, 400, (g, W, H) => {
-      g.fillStyle = '#efe1bd'; g.beginPath(); g.moveTo(W * 0.12, 0); g.lineTo(W, 0); g.lineTo(W, H); g.lineTo(W * 0.12, H); g.lineTo(0, H / 2); g.closePath(); g.fill();
-      g.fillStyle = '#2b1d16'; g.beginPath(); g.arc(W * 0.14, H / 2, H * 0.1, 0, Math.PI * 2); g.fill();
-      g.font = `700 ${H * 0.5}px ${TERM_FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText('handler', W * 0.58, H * 0.55);
+    // the tag: an old paper luggage tag on a string, cut as long as its word needs (measured)
+    const TAG_H = 0.17, TAG_PPU = 400, TAG_WORD = 'handler';
+    const tagFont = `700 ${TAG_H * TAG_PPU * 0.5}px ${TERM_FONT}`;
+    const ruler = document.createElement('canvas').getContext('2d')!;
+    ruler.font = tagFont;
+    const holeX = TAG_H * 0.28, textX = TAG_H * 0.56;
+    const tagW = textX + ruler.measureText(TAG_WORD).width / TAG_PPU + TAG_H * 0.24;
+    const tag = staticPlane(tagW, TAG_H, TAG_PPU, (g, W, H) => {
+      const e = H * 0.03; // half the ink line: keeps the outline inside the canvas
+      g.beginPath(); g.moveTo(H * 0.24, e); g.lineTo(W - e, e); g.lineTo(W - e, H - e); g.lineTo(H * 0.24, H - e); g.lineTo(e, H / 2); g.closePath();
+      g.fillStyle = '#efe1bd'; g.fill();
+      g.strokeStyle = INK; g.lineWidth = 2 * e; g.lineJoin = 'round'; g.stroke();
+      g.fillStyle = INK; g.beginPath(); g.arc(holeX * TAG_PPU, H / 2, H * 0.1, 0, Math.PI * 2); g.fill();
+      g.font = tagFont; g.textAlign = 'left'; g.textBaseline = 'middle';
+      g.fillText(TAG_WORD, textX * TAG_PPU, H * 0.55);
     });
     cutout(tag, 0.4);
-    tag.position.set(0.38, -0.2, 0.07);
-    tag.rotation.z = -0.35;
+    // the hole stays where the string ties on and the tag runs out from it, as long as it needs
+    // to be; it sits 0.007 in front of the string
+    const TAG_ROT = -0.35, along = tagW / 2 - holeX;
+    tag.position.set(0.265 + along * Math.cos(TAG_ROT), -0.158 + along * Math.sin(TAG_ROT), 0.072);
+    tag.rotation.z = TAG_ROT;
     const string = shapeMesh(roundedRectShape(0.16, 0.012, 0.005), '#d9c7a8', 0.065);
     string.position.set(0.24, -0.12, 0.065);
     string.rotation.z = -0.7;

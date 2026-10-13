@@ -813,7 +813,9 @@ function drawTests(g: CanvasRenderingContext2D, x: number, y: number, w: number,
   g.fillStyle = '#45ff8a'; g.fillRect(x + pad, by, (w - pad * 2) * prog, lineH * 0.22);
   const top = by + lineH * 0.5;
   g.save(); g.beginPath(); g.rect(x, top, w, y + h - top); g.clip();
-  g.font = `400 ${lineH * 0.95}px ${CRT_FONT}`;
+  // a row is a tick, the test's name and its timing: the type is sized (measured) so the longest
+  // name and the widest timing fit side by side with a gap, and never run into each other
+  fitFont(g, TEST_NAMES.map(t => `${t}  00ms`), lineH * 0.95, w - 2 * pad - lineH * 0.7, CRT_FONT);
   const scroll = dt * 9 + i * 3.7, n0 = Math.floor(scroll), frac = scroll - n0;
   const rows = Math.ceil(h / lineH) + 1;
   for (let r = 0; r < rows; r++) {
@@ -918,19 +920,46 @@ function drawCredits(g: CanvasRenderingContext2D, W: number, H: number, u: numbe
   g.textAlign = 'left'; g.textBaseline = 'top';
 }
 
-/** One request body in a box: a header, the lines, the lit line and the ticks (the 'json' mode). */
+/** Set `g.font` to the largest size up to `px` at which every one of `texts` fits in `maxW`
+ *  pixels (measured), and return that size. */
+export function fitFont(g: CanvasRenderingContext2D, texts: readonly string[], px: number, maxW: number, family: string, weight = 400) {
+  let size = px;
+  for (let i = 0; i < 4; i++) {
+    g.font = `${weight} ${size}px ${family}`;
+    const wide = Math.max(...texts.map(t => g.measureText(t).width));
+    if (wide <= maxW) break;
+    size *= (maxW / wide) * 0.995;
+  }
+  return size;
+}
+
+/** One request body in a box: a header, the lines, the lit line and the ticks (the 'json' mode).
+ *  Every line is measured to fit inside its own box, padding and tick column included, and the
+ *  box is clipped, so the two bodies side by side on the big screen never run into each other. */
 function drawRequest(g: CanvasRenderingContext2D, x: number, y: number, w: number, h: number, u: number, prod: boolean, s: ClubState, f: Frame) {
+  g.save();
+  g.beginPath(); g.rect(x, y, w, h); g.clip();
+  const padL = 0.07 * u, padR = 0.05 * u;
   const head = Math.max(0.16 * u, h * 0.13);
   g.fillStyle = prod ? '#3a0f2a' : '#0b2a36';
   g.fillRect(x, y, w, head);
   g.fillStyle = prod ? '#ff6fbf' : '#5fe8ff';
-  g.font = `400 ${head * 0.8}px ${CRT_FONT}`;
   g.textBaseline = 'middle';
-  g.fillText(prod ? 'prod  POST /checkout' : 'staging  POST /checkout', x + 0.06 * u, y + head * 0.55);
-  const lh = Math.max(0.12 * u, (h - head) / 7.2);
-  g.font = `400 ${lh * 0.9}px ${CRT_FONT}`;
+  const title = prod ? 'prod  POST /checkout' : 'staging  POST /checkout';
+  fitFont(g, [title], head * 0.8, w - padL - padR, CRT_FONT);
+  g.fillText(title, x + padL, y + head * 0.55);
+  // the body: the widest line and a tick column 1.3 em wide share the box, so the type shrinks
+  // until both fit (solved from one measurement, then measured again to be sure); if it had to
+  // shrink, the lines close up as well, so a narrow box shows the whole body without scrolling
+  const n = REQUEST_LINES.length;
+  const lh0 = Math.max(0.12 * u, (h - head) / 7.2), px0 = lh0 * 0.9;
+  g.font = `400 ${px0}px ${CRT_FONT}`;
+  const ems = Math.max(...REQUEST_LINES.map(l => g.measureText(l).width)) / px0;
+  const tickW = 1.3 * Math.min(px0, (w - padL - padR) / (ems + 1.3));
+  const px = fitFont(g, REQUEST_LINES, px0, w - padL - padR - tickW, CRT_FONT);
+  const lh = Math.min(lh0, Math.max((h - head) / (n + 0.4), px * 1.25));
   const rows = Math.floor((h - head) / lh) - 1;
-  const hi = s.termLine, n = REQUEST_LINES.length;
+  const hi = s.termLine;
   // small screens scroll to keep the lit line in view
   const scroll = clamp(Math.floor(hi) - rows + 2, 0, Math.max(0, n - rows - 1));
   const match = clamp(s.termSync), pulse = s.termSync > 1 ? s.termSync - 1 : 0;
@@ -944,12 +973,15 @@ function drawRequest(g: CanvasRenderingContext2D, x: number, y: number, w: numbe
       g.fillRect(x, yy - lh * 0.5, w, lh);
     }
     g.fillStyle = match > 0 ? '#9dffc0' : lit ? '#ffffff' : done ? '#b9ffd2' : '#7f86ad';
-    g.fillText(REQUEST_LINES[L], x + 0.06 * u, yy);
+    g.fillText(REQUEST_LINES[L], x + padL, yy);
     if ((done || match > 0) && L > 0 && L < n - 1) {
-      g.fillStyle = '#45ff8a';
-      g.fillText('✓', x + w - lh * 0.9, yy);
+      // a drawn tick in its own column (the CRT font has no check mark)
+      const cx = x + w - padR - tickW / 2, k = Math.min(px * 0.55, tickW * 0.8);
+      g.strokeStyle = '#45ff8a'; g.lineWidth = Math.max(1.5, px * 0.11); g.lineCap = 'round'; g.lineJoin = 'round';
+      g.beginPath(); g.moveTo(cx - k * 0.45, yy); g.lineTo(cx - k * 0.1, yy + k * 0.35); g.lineTo(cx + k * 0.5, yy - k * 0.4); g.stroke();
     }
   }
+  g.restore();
   void f;
 }
 
@@ -1004,12 +1036,21 @@ function drawTerminals(g: CanvasRenderingContext2D, W: number, H: number, TW: { 
       g.fillStyle = 'rgba(2,8,6,0.5)'; g.fillRect(x, y, w, h);
     } else if (mode === 'logs' || mode === 'grep') {
       const speed = mode === 'grep' ? 14 : 4;
+      // grep's lines are long: the type is sized (measured) so the longest line that can scroll
+      // past fits inside the screen's padding, the same size on every frame, and where that
+      // shrinks it a lot the rows close up a little so the results still fill the screen (every
+      // log line already fits every screen at full size, so logs keep it)
+      let rowH = lineH;
+      if (mode === 'grep') {
+        const px = fitFont(g, GREP_FILES.map(file => `${file}:000: handler.run(`), lineH * 0.95, w - 2 * pad, CRT_FONT);
+        rowH = Math.min(lineH, Math.max(px * 1.2, lineH * 0.8));
+      }
       const scroll = dt * speed + i * 3.7 + s.termOffset;
       const n0 = Math.floor(scroll), frac = scroll - n0;
-      const rows = Math.ceil(h / lineH) + 1;
+      const rows = Math.ceil(h / rowH) + 1;
       for (let r = 0; r < rows; r++) {
         const n = n0 + r;
-        const yy = y + pad + (r - frac) * lineH;
+        const yy = y + pad + (r - frac) * rowH;
         if (mode === 'grep') {
           const file = GREP_FILES[Math.floor(hash(n, i, 61) * GREP_FILES.length)];
           const line = 10 + Math.floor(hash(n, i, 62) * 400);
