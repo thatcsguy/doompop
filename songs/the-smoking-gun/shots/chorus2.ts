@@ -263,7 +263,7 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
   // 43. "One change before the failure": up on the timeline itself, a little Clawd moonwalks back
   //     along the line, through the X and under the deploy tag, to the new tag; he points up at it,
   //     and on "failure" the X slams down again behind him and he points back at it too.
-  const MW = 0.55;   // Clawd's scale up on the line
+  const MW = 0.48;   // Clawd's scale up on the line: small enough that his afro fits between the two flags' text
   shots.push(shot('c43-moonwalk', B(240), B(243), ({ scene, camera }) => {
     const tl = new Timeline([TAG2]);
     tl.root.position.copy(TL);
@@ -277,15 +277,18 @@ export function chorus2Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
       chorusState(s, f);
       s.sign = 0.08;
       const slide = tlSlide(f.t);
-      const mid = TL.x + slide + 2.1;
       const k = easeInOutCubic(f.p);
-      aimCam(camera, mid + lerp(0.5, 0.15, k), lerp(8.25, 8.35, k), lerp(-4.4, -5.3, k), mid, 8.75, WALL_Z);
+      // drifting left with the moonwalk, and pushing in only so far that the new tag's text (on the
+      // left) and the X (on the right) both stay in shot when he points at one and then the other
+      const mid = TL.x + slide + lerp(2.25, 1.8, k);
+      aimCam(camera, mid + lerp(0.5, 0.15, k), lerp(8.25, 8.35, k), lerp(-4.1, -4.7, k), mid, 8.75, WALL_Z);
       shake(camera, f, FAILURE, 0.06, 0.2);
-      tl.set(f.t, { slide, pop: () => 1, tag: 0.45, cross: crossAt(f.t), extra: [{ size: 1 + 0.25 * decay(f.t - THE43, 0.25), glow: 0.45 + 0.6 * decay(f.t - THE43, 0.3) }] });
+      // the new tag lights up as he points at it (a small swell: it grows from its pole, off to the left)
+      tl.set(f.t, { slide, pop: () => 1, tag: 0.45, cross: crossAt(f.t), extra: [{ size: 1 + 0.08 * decay(f.t - THE43, 0.25), glow: 0.45 + 0.6 * decay(f.t - THE43, 0.3) }] });
       // the glide: from past the X back to between the two poles, feet sliding the other way
       const u = clamp((f.t - (B(240) - 0.05)) / (THE43 - B(240) + 0.05));
       const glide = smooth(u);
-      const lx = lerp(4.6, 1.12, glide);
+      const lx = lerp(Timeline.X_X + 0.7, 1.11, glide);
       const moving = u > 0 && u < 1;
       holder.position.set(TL.x + slide + lx, TL.y + 0.07, TL.z + 0.17);
       const b = f.clock.beat(f.t);

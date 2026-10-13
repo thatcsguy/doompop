@@ -93,49 +93,82 @@ export class FloorLogs {
 }
 
 // ---------------------------------------------------------------------------------------------
-/** A neon timeline for the back wall, origin at the middle of the line, time running to the right. */
-/** A tag on the timeline: a pole and a gold flag with `text` on it, pointing right (dir 1) or left. */
-function flagTag(text: string, dir: 1 | -1, mat: THREE.MeshBasicMaterial) {
+/** Flag type: its size (world units), the room either side of it, the pole's half width, the point. */
+const FLAG = { font: 0.2, pad: 0.12, pole: 0.035, tip: 0.3, min: 1.2 };
+/**
+ * How long a flag's body (pole to where the point starts) must be for `text`, and the type size:
+ * the text is measured in the font, and the body grows to fit it with FLAG.pad either side, up to
+ * maxLen; a text too long even for that gets smaller type instead of running off the flag.
+ */
+function flagFit(text: string, maxLen: number) {
+  const m = document.createElement('canvas').getContext('2d')!;
+  m.font = `700 100px ${TERM_FONT}`;
+  const em = m.measureText(text).width / 100;       // the text's width per unit of type size
+  const len = clamp(FLAG.pole + 2 * FLAG.pad + em * FLAG.font, FLAG.min, Math.max(FLAG.min, maxLen));
+  return { len, font: Math.min(FLAG.font, (len - FLAG.pole - 2 * FLAG.pad) / em) };
+}
+
+/** A tag on the timeline: a pole and a gold flag with `text` on it, pointing right (dir 1) or left;
+ *  the flag is as long as its text needs (see flagFit). light(t, k) sets its glow, 0 unlit .. 1 lit. */
+function flagTag(text: string, dir: 1 | -1, maxLen = 2.6) {
+  const { len, font } = flagFit(text, maxLen);
+  const tube = ownGlow(PAL.gold, 0.7), core = ownGlow(PAL.gold, 0.7);
   const g = new THREE.Group();
-  const h = halo(1.4, PAL.gold, 0);
-  h.position.set(0.75 * dir, 0.95, -0.05);
+  const h = halo(0.7 * (len + FLAG.tip), PAL.gold, 0);
+  h.position.set((len / 2) * dir, 0.95, -0.05);
   g.add(h);
-  g.add(tubeRun([[0, 0.05], [0, 1.25]], mat, 0.06));
-  const flag = ([[0, 0.72], [1.55, 0.72], [1.85, 0.97], [1.55, 1.22], [0, 1.22]] as [number, number][]).map(([x, y]): [number, number] => [x * dir, y]);
+  g.add(tubeRun([[0, 0.05], [0, 1.25]], tube, 0.06));
+  const flag = ([[0, 0.72], [len, 0.72], [len + FLAG.tip, 0.97], [len, 1.22], [0, 1.22]] as [number, number][]).map(([x, y]): [number, number] => [x * dir, y]);
+  // layers 0.006 apart: the dark flag, its tube, the tube's bright core (the type sits inside the tube)
   g.add(shapeMesh(polyShape(flag), '#1d1230', 0.002));
-  g.add(tubeRun(flag, mat, 0.07, true, 0.004));
-  const txt = staticPlane(1.5, 0.42, 200, (c, W, H) => {
-    c.font = `700 ${H * 0.5}px ${TERM_FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
+  g.add(tubeRun(flag, tube, 0.07, true, 0.008));
+  g.add(tubeRun(flag, core, 0.024, true, 0.014));
+  // the text box runs from the pole to where the point starts; the text sits centred in it
+  const tw = len - FLAG.pole;
+  const txt = staticPlane(tw, 0.42, 200, (c, W, H) => {
+    const px = font * (W / tw);
+    c.font = `700 ${px}px ${TERM_FONT}`; c.textAlign = 'center'; c.textBaseline = 'middle';
     c.fillStyle = '#ffffff'; c.fillText(text, W / 2, H * 0.54);
   });
   cutout(txt, 0.4);
-  txt.position.set(0.8 * dir, 0.97, 0.008);
+  txt.position.set((FLAG.pole + tw / 2) * dir, 0.97, 0.008);
   g.add(txt);
-  return { g, halo: h, text: txt.material as THREE.MeshBasicMaterial };
+  const type = txt.material as THREE.MeshBasicMaterial;
+  // Bloom takes every pixel whose luminance passes 1.0, at full strength, and spreads it wide: a
+  // whole lit tube over that line fills the little flag with haze, and white type over it smears.
+  // So lit, only the tube's thin core passes it (gold does at about 1.66; the shimmer never dips it
+  // under), the tube and the type stay under it, and the tag glows with its text still clear.
+  const light = (t: number, k: number) => {
+    setGlow(tube, PAL.gold, lerp(0.7, 1.45, k));
+    setGlow(core, PAL.gold, lerp(0.7, 2.1, k) * (1 + 0.04 * Math.sin(t * 9) * k));
+    type.color.setScalar(lerp(0.75, 0.96, k));
+    (h.material as THREE.MeshBasicMaterial).opacity = 0.32 * k;
+  };
+  return { g, light };
 }
 
+/** A neon timeline for the back wall, origin at the middle of the line, time running to the right. */
 export class Timeline {
   readonly root = new THREE.Group();
   /** Everything that slides (the root stays put; this moves along x). */
   readonly track = new THREE.Group();
   static readonly LEN = 30;
   static readonly STEP = 1.5;
-  /** Local x of the gold commit tag, and of the red X that lands just after it. */
+  /** Local x of the gold commit tag, and of the red X that lands just after it (far enough along
+   *  that the deploy flag's point stays about 0.1 clear of the X's arm). */
   static readonly TAG_X = 1.5;
-  static readonly X_X = 3.75;
+  static readonly X_X = 4.15;
   readonly markerX: number[] = [];
   private lineMat = ownGlow(PAL.cyan, 2.2);
   private markers: { g: THREE.Group; mat: THREE.MeshBasicMaterial; color: string }[] = [];
   private tag = new THREE.Group();
-  private tagMat = ownGlow(PAL.gold, 0.6);
-  private tagText: THREE.MeshBasicMaterial;
-  private tagHalo: THREE.Mesh;
+  private tagLight: (t: number, k: number) => void;
   private cross = new THREE.Group();
   private crossMat = ownGlow(PAL.red, 2.6);
   private crossHalo: THREE.Mesh;
   readonly burst = new Burst(PAL.red, 12);
   /** More gold tags (chorus 2's "path refactor"), each with its own glow; set's `extra` drives them. */
-  private extras: { g: THREE.Group; mat: THREE.MeshBasicMaterial; text: THREE.MeshBasicMaterial; halo: THREE.Mesh }[] = [];
+  private extras: { g: THREE.Group; light: (t: number, k: number) => void }[] = [];
 
   /** extra: more gold tags along the line (local x, the flag's text, which way the flag points). */
   constructor(extra: { x: number; text: string; dir?: 1 | -1 }[] = []) {
@@ -180,20 +213,18 @@ export class Timeline {
       this.markers.push({ g, mat, color });
       this.markerX.push(mx);
     }
-    // the commit tag: a pole and a gold flag with the deploy on it
-    const deploy = flagTag('deploy #4127', 1, this.tagMat);
+    // the commit tag: a pole and a gold flag with the deploy on it, its point short of the X
+    const deploy = flagTag('deploy #4127', 1, Timeline.X_X - Timeline.TAG_X - 0.87);
     this.tag.add(deploy.g);
-    this.tagHalo = deploy.halo;
-    this.tagText = deploy.text;
+    this.tagLight = deploy.light;
     this.tag.position.set(Timeline.TAG_X, 0, 0.03);
     this.track.add(this.tag);
     for (const e of extra) {
-      const mat = ownGlow(PAL.gold, 0.6);
-      const ft = flagTag(e.text, e.dir ?? 1, mat);
+      const ft = flagTag(e.text, e.dir ?? 1);
       ft.g.position.set(e.x, 0, 0.03);
       ft.g.visible = false;
       this.track.add(ft.g);
-      this.extras.push({ g: ft.g, mat, text: ft.text, halo: ft.halo });
+      this.extras.push(ft);
     }
     // the red X: two crossed bars with an ink backing
     this.crossHalo = halo(1.1, PAL.red, 0);
@@ -223,10 +254,8 @@ export class Timeline {
     this.extras.forEach((e, i) => {
       const k = o.extra?.[i]?.size ?? 0, g = clamp(o.extra?.[i]?.glow ?? 0);
       e.g.visible = k > 0.01;
-      e.g.scale.setScalar(Math.max(0.01, k));
-      setGlow(e.mat, PAL.gold, lerp(0.7, 1.9, g) * (1 + 0.08 * Math.sin(t * 9) * g));
-      e.text.color.setScalar(lerp(0.75, 1.15, g));
-      (e.halo.material as THREE.MeshBasicMaterial).opacity = 0.45 * g;
+      e.g.scale.set(Math.max(0.01, k), Math.max(0.01, k), 1);
+      e.light(t, g);
     });
     this.track.position.x = o.slide;
     setGlow(this.lineMat, PAL.cyan, 2.2 * lit * (0.93 + 0.07 * Math.sin(t * 5)));
@@ -237,10 +266,11 @@ export class Timeline {
       setGlow(m.mat, m.color, (1.8 + 1.4 * Math.exp(-k * 3)) * lit);
     });
     const tg = clamp(o.tag);
-    setGlow(this.tagMat, PAL.gold, lerp(0.7, 1.9, tg) * (1 + 0.08 * Math.sin(t * 9) * tg));
-    this.tagText.color.setScalar(lerp(0.75, 1.15, tg));
-    (this.tagHalo.material as THREE.MeshBasicMaterial).opacity = 0.45 * tg;
-    this.tag.scale.setScalar(1 + 0.12 * tg * Math.exp(-Math.max(0, o.tag - 1) * 4));
+    this.tagLight(t, tg);
+    // it swells a little as it lights; the kick past 1 (o.tag up to 1.3) is a quick pop on top. Kept
+    // small: the flag's point sits close to the X.
+    const swell = 1 + 0.03 * tg + 0.12 * clamp(o.tag - 1);
+    this.tag.scale.set(swell, swell, 1);
     const c = o.cross;
     this.cross.visible = c >= 0;
     if (c >= 0) {

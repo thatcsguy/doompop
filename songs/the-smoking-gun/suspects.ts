@@ -257,13 +257,20 @@ export class Bouncer {
       lap.moveTo(side * 0.2, 2.42); lap.lineTo(side * 0.42, 2.42); lap.lineTo(side * 0.06, 1.62); lap.closePath();
       this.body.add(shapeMesh(lap, '#262335', 0.005));
     }
-    const badge = staticPlane(0.42, 0.14, 300, (g, W, H) => {
-      g.fillStyle = '#f0c75e'; g.beginPath(); g.roundRect(1, 1, W - 2, H - 2, 6); g.fill();
-      g.fillStyle = '#2b1d16'; g.font = `800 ${H * 0.6}px ${UI_FONT}`; g.textAlign = 'center'; g.textBaseline = 'middle';
-      g.fillText('HANDLER', W / 2, H * 0.55);
+    // The badge sits where nothing covers it: right of a hanging arm's inner edge (x -0.54), above
+    // the crossed arms (up to y 2.09) and left of the shirt. The name is measured and fitted to it.
+    const BW = 0.35, BH = 0.13, NAME = 'HANDLER';
+    const badge = staticPlane(BW, BH, 600, (g, W, H) => {
+      g.fillStyle = '#f0c75e'; g.beginPath(); g.roundRect(1, 1, W - 2, H - 2, H * 0.2); g.fill();
+      g.font = `800 100px ${UI_FONT}`;
+      const px = Math.min(H * 0.6, (W * 0.88) / (g.measureText(NAME).width / 100));
+      g.font = `800 ${px}px ${UI_FONT}`;
+      const m = g.measureText(NAME);
+      g.fillStyle = '#2b1d16'; g.textAlign = 'center'; g.textBaseline = 'alphabetic';
+      g.fillText(NAME, W / 2, (H + m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2);
     });
     cutout(badge);
-    badge.position.set(-0.42, 2.1, 0.008);
+    badge.position.set(-0.355, 2.195, 0.011);   // 0.006 over the lapel it overlaps
     this.body.add(badge);
     // head: bald, shades, earpiece with a coiled wire
     const neck = shapeMesh(roundedRectShape(0.34, 0.2, 0.05, 0, 2.5), skin, -0.001);
