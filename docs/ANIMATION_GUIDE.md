@@ -50,7 +50,9 @@ shot), `w`/`h` (pixels) and `clock`.
    nothing that depends on the previous frame. Objects keep a stable identity: derive their index
    from position or time, as `tunnel.ts` does for its rings.
 2. **Set everything you animate, every frame.** The world persists between frames, so a property you
-   set in one shot window and forget to reset will leak.
+   set in one shot window and forget to reset will leak. A colour string passed to `shapeMesh` or
+   `inkedRect` gets a cached material that every mesh of that colour shares, in every shot: never
+   change its colour or opacity. Anything you animate gets its own `ownMat(...)`.
 3. **Lyrics at sung time.** Words appear at their measured start (a frame or two early reads as on
    time). Don't snap words to beats. Each line's kinetic layout (position, size, animation) is set per
    line in the song's lyric layout; put it in the shot's empty space, away from faces and key action.
@@ -59,6 +61,14 @@ shot), `w`/`h` (pixels) and `clock`.
 5. **Photosensitivity.** No more than three full-frame flashes in any second.
 6. **Cost.** Aim for under ~1 s per frame at 1 sample in software rendering. Prefer instancing and
    simple materials; avoid huge shadow maps and per-frame geometry rebuilds.
+7. **No flicker (z-fighting).** Flat cut-outs are thin planes, and an `inkedRect`/`inkedCircle` fill
+   sits only 0.002 in front of its own outline. Two cut-outs that overlap on screen at nearly the same
+   depth fight, and their outlines flicker from frame to frame. Give every overlapping cut-out its own
+   depth, about 0.03 apart (balloons, people in a crowd, papers on a floor, keys on a ring), and
+   layer a figure's parts in z steps of 0.006 or more so each clears the one below (head, then hair,
+   then collar). Scaling a group scales its z gaps too, so a scaled-down figure must keep its full
+   depth spacing: `root.scale.set(s, s, 1)`, never `setScalar(s)`. Stacked things go one in front
+   of the next, so an ink line shows where they meet. Look for flicker in a moving clip, not a still.
 
 ## Craft
 
@@ -66,9 +76,17 @@ shot), `w`/`h` (pixels) and `clock`.
 - One idea per shot, readable in a second. Cuts every 1.5–3 s in busy sections, longer in calm ones.
 - Through-lines beat novelty: a recurring set or prop that escalates each chorus.
 - Light text. Big sound-effect words rarely; never captions that repeat the lyric.
+- One quality bar for the whole video: the main character big in close shots (about a third of the
+  frame height), a different framing every shot or two, set dressing and a small moving detail in
+  every frame, an action on each line.
+- Lights match their sources: a beam leaves a lamp in the direction the shade points.
+- Lyric hand-offs never overlap: a line still leaving must not collide with the next one arriving,
+  so alternate placements or let the old line leave sooner.
 
 ## Checking
 
 - `npm run render -- sheet --song <slug> --from A --to B` and look at the image.
 - `npm run render -- determinism --song <slug>` after any change.
-- `npm run render -- video --song <slug> --from A --to B --samples 2` for a quick clip with audio.
+- `npm run render -- video --song <slug> --from A --to B --samples 2 --fresh` for a quick clip with
+  audio. Frames are cached by frame number, so without `--fresh` a clip after shot changes can keep
+  stale frames from the old version (they show as one- or two-frame flashes).

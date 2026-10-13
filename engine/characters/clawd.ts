@@ -51,10 +51,14 @@ export interface Pose {
 export const REST: Pose = { bounce: 0, squash: 0, lean: 0, turn: 0, armL: 0, armR: 0, walk: 0 };
 
 const W = 1.3, H = 0.8, R = 0.015, BODY_Y = 0.62; // blocky: near-square corners
+const NO_LOOK = { x: 0, y: 0 };
 
 export class Clawd {
   readonly root = new THREE.Group();
-  private body = new THREE.Group();
+  /** The torso group: add props here (name tags, badges) so they move with his body. */
+  readonly body = new THREE.Group();
+  /** Empty groups at the tips of his arms ([left, right]): add held props here. */
+  readonly paws: THREE.Group[] = [];
   private bodyFill: THREE.MeshBasicMaterial;
   private shadeFill: THREE.MeshBasicMaterial;
   private eyes: { box: THREE.Mesh; arc: THREE.Object3D; group: THREE.Group }[] = [];
@@ -85,7 +89,10 @@ export class Clawd {
       pivot.position.set(side * (W / 2 - 0.02), BODY_Y + 0.02, -0.005);
       const arm = inkedRect(0.24, 0.2, 0.01, this.bodyFill, 0.04);
       arm.position.x = side * 0.1;
-      pivot.add(arm);
+      const paw = new THREE.Group();
+      paw.position.set(side * 0.23, 0, 0.01);
+      pivot.add(arm, paw);
+      this.paws.push(paw);
       this.body.add(pivot);
       this.arms.push(pivot);
     }
@@ -137,8 +144,12 @@ export class Clawd {
     }
   }
 
-  /** t is song time, used only for continuous motion (jitter, drips, blinks). */
-  setMood(m: Mood, t: number) {
+  /**
+   * t is song time, used only for continuous motion (jitter, drips, blinks). look shifts his eyes
+   * and brows toward what he is watching, -1..1 on each axis (+x toward screen right, +y up).
+   * twitch (0..1) makes his right eye flicker, for a smile held too long.
+   */
+  setMood(m: Mood, t: number, look: { x: number; y: number } = NO_LOOK, twitch = 0) {
     this.bodyFill.color.set(CLAWD_ORANGE).lerp(new THREE.Color(GREY), m.grey);
     this.shadeFill.color.set(SHADE).lerp(new THREE.Color(GREY_SHADE), m.grey);
     const blink = noise1(t * 0.7, 9) > 0.92 ? 0.12 : 1; // occasional deterministic blink
@@ -147,14 +158,15 @@ export class Clawd {
       box.visible = m.happy < 0.5;
       arc.visible = m.happy >= 0.5;
       box.scale.set(1 + Math.max(0, m.open - 1) * 0.6 + m.squint * 0.35, Math.max(0.12, m.open * (1 - m.squint * 0.55) * blink), 1);
-      group.rotation.z = side * m.droop * 0.12;
-      group.position.y = BODY_Y + 0.08 - m.droop * 0.04;
+      const tw = side > 0 && twitch > 0 ? twitch * Math.max(0, noise1(t * 9, 21)) : 0;
+      group.rotation.z = side * m.droop * 0.12 + tw * 0.35 * Math.sin(t * 70);
+      group.position.set(side * 0.27 + look.x * 0.07, BODY_Y + 0.08 - m.droop * 0.04 + look.y * 0.05 + tw * 0.025 * Math.sin(t * 90), 0.012);
     });
     this.brows.forEach((b, i) => {
       const side = i === 0 ? -1 : 1;
       b.visible = Math.abs(m.brow) > 0.05 && m.happy < 0.5;
       b.rotation.z = -side * m.brow * 0.42;
-      b.position.set(side * 0.27, BODY_Y + 0.25 + Math.max(0, m.open - 1) * 0.07 - m.squint * 0.04, 0.014);
+      b.position.set(side * 0.27 + look.x * 0.07, BODY_Y + 0.25 + Math.max(0, m.open - 1) * 0.07 - m.squint * 0.04 + look.y * 0.05, 0.014);
     });
     this.cheeks.forEach(c => {
       c.visible = m.blush > 0.01;

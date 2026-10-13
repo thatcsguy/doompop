@@ -35,8 +35,8 @@ async function main() {
       shots: engine.shots.map(s => ({ id: s.id, start: s.start, end: s.end })),
       sections: song.audio.sections,
       /** Render frame at time t and return it as a data URL. */
-      frame(t: number, samples = 1, shutter = 0.5, type = 'image/jpeg', quality = 0.95) {
-        return engine.renderAt(t, { samples, shutter }).toDataURL(type, quality);
+      frame(t: number, samples = 1, shutter = 0.5, type = 'image/jpeg', quality = 0.95, lyrics = true) {
+        return engine.renderAt(t, { samples, shutter, lyrics }).toDataURL(type, quality);
       },
       /** Raw RGBA pixels as base64, for exact comparisons. */
       pixels(t: number, samples = 1) {
