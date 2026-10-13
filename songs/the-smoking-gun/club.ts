@@ -10,7 +10,7 @@
 //   disco ball          (0, 8.6, -3)        lighting truss  y = 11
 import * as THREE from 'three';
 import type { Frame } from '../../engine/types';
-import { INK, arcShape, canvasPlane, circleShape, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh, staticPlane } from '../../engine/flat';
+import { INK, arcShape, canvasPlane, circleShape, fitFont, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh, staticPlane } from '../../engine/flat';
 import { clamp, easeOutCubic, lerp, smooth } from '../../engine/ease';
 import { hash, noise1 } from '../../engine/rng';
 import { CRT_FONT, DISCO_FONT, PAL, SIGN_FONT, TERM_FONT, UI_FONT, beamTexture, cutout, glowMat, lightMat, ownGlow, radialTexture, setGlow, solid } from './look';
@@ -919,19 +919,6 @@ function drawCredits(g: CanvasRenderingContext2D, W: number, H: number, u: numbe
   });
   g.globalAlpha = 1;
   g.textAlign = 'left'; g.textBaseline = 'top';
-}
-
-/** Set `g.font` to the largest size up to `px` at which every one of `texts` fits in `maxW`
- *  pixels (measured), and return that size. */
-export function fitFont(g: CanvasRenderingContext2D, texts: readonly string[], px: number, maxW: number, family: string, weight = 400) {
-  let size = px;
-  for (let i = 0; i < 4; i++) {
-    g.font = `${weight} ${size}px ${family}`;
-    const wide = Math.max(...texts.map(t => g.measureText(t).width));
-    if (wide <= maxW) break;
-    size *= (maxW / wide) * 0.995;
-  }
-  return size;
 }
 
 /** One request body in a box: a header, the lines, the lit line and the ticks (the 'json' mode).

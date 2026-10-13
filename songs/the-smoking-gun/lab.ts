@@ -5,10 +5,10 @@
 // overlay). Also a mechanic's creeper for rolling under the booth. Everything is set from t and the
 // shot's values.
 import * as THREE from 'three';
-import { INK, arcShape, canvasPlane, circleShape, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh, staticPlane } from '../../engine/flat';
+import { INK, arcShape, canvasPlane, circleShape, fitFont, inkedCircle, inkedRect, ownMat, roundedRectShape, shapeMesh, staticPlane } from '../../engine/flat';
 import { clamp, easeOutBack, easeOutCubic, lerp } from '../../engine/ease';
 import { hash, noise1 } from '../../engine/rng';
-import { REQUEST_LINES, fitFont } from './club';
+import { REQUEST_LINES } from './club';
 import { CRT_FONT, DISCO_FONT, PAL, TERM_FONT, UI_FONT, cutout, glowMat, lightMat, ownGlow, setGlow, solid } from './look';
 
 const v3 = new THREE.Vector3();

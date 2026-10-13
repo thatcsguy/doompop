@@ -146,3 +146,17 @@ export function rrPath(g: CanvasRenderingContext2D, x: number, y: number, w: num
   g.beginPath();
   g.roundRect(x, y, w, h, r);
 }
+
+/** Set `g.font` to the largest size up to `px` at which every one of `texts` fits in `maxW`
+ *  pixels (measured), and return that size. Use it for any text drawn into a sign, tag or screen,
+ *  so nothing runs off its box (ANIMATION_GUIDE hard rule 8). */
+export function fitFont(g: CanvasRenderingContext2D, texts: readonly string[], px: number, maxW: number, family: string, weight = 400) {
+  let size = px;
+  for (let i = 0; i < 4; i++) {
+    g.font = `${weight} ${size}px ${family}`;
+    const wide = Math.max(...texts.map(t => g.measureText(t).width));
+    if (wide <= maxW) break;
+    size *= (maxW / wide) * 0.995;
+  }
+  return size;
+}
