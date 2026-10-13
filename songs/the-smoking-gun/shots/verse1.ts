@@ -223,7 +223,6 @@ export function verse1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     ], PAL.cyan, 0.05);
     const bo = new Bouncer();
     bo.root.position.set(13.7, 0, -6.0);
-    bo.root.scale.setScalar(0.92);
     const c = new DiscoClawd();
     c.root.position.copy(BOOTH_SPOT);
     scene.add(path.root, bo.root, c.root);

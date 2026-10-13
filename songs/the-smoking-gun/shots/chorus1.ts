@@ -559,7 +559,6 @@ export function chorus1Shots(audio: AudioData, lyrics: LyricsData): Shot[] {
     const cuffs = new Cuffs(0.3);
     cuffs.root.position.copy(Cache.CUFF_AT);
     ca.body.add(cuffs.root);
-    bo.root.scale.setScalar(0.92);
     scene.add(ca.root, bo.root);
     return (f: Frame, lookBack = 0) => {
       const p = escortAt(f.t), walking = f.t > ESC0 && f.t < ESC1;
