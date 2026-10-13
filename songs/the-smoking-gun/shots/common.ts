@@ -58,9 +58,9 @@ export function shot(id: string, start: number, end: number, setup: (c: Ctx) => 
           update(f, s, now);
           if (useClub) club.apply(s, f);
         },
-        overlay(g, f) {
+        overlay(g, f, opts) {
           if (o.overlay) { g.save(); o.overlay(g, f); g.restore(); }
-          drawDiscoLyrics(g, f, DISCO_LYRICS);
+          if (opts?.lyrics !== false) drawDiscoLyrics(g, f, DISCO_LYRICS);
         },
         post: (f: Frame) => ({ ...CLUB_POST, ...o.post?.(f) }),
         lyrics: false,

@@ -72,7 +72,7 @@ export class Engine {
     // 2D layers are drawn once, sharp, at t
     const i = this.shotIndexAt(t), shot = this.shots[i], world = this.world(shot);
     const f = this.frame(shot, t);
-    if (world.overlay) { o.save(); world.overlay(o, f); o.restore(); }
+    if (world.overlay) { o.save(); world.overlay(o, f, { lyrics: opts.lyrics !== false }); o.restore(); }
     if (world.lyrics !== false && opts.lyrics !== false) {
       const style = world.lyricStyle ? { ...this.lyricStyle, ...world.lyricStyle } : this.lyricStyle;
       if (style.mode === 'kinetic') drawKinetic(o, f, style, this.song.kinetic ?? {});
