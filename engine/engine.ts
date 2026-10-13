@@ -8,6 +8,7 @@ import type { Frame, PostSettings, Shot, ShotWorld, Song, LyricStyle } from './t
 export interface RenderOptions {
   samples?: number;  // sub-frames averaged for motion blur (1 = none)
   shutter?: number;  // fraction of a frame the shutter is open (0..1)
+  lyrics?: boolean;  // false leaves the lyric layer out (thumbnails, clean plates)
 }
 
 /**
@@ -71,7 +72,7 @@ export class Engine {
     const i = this.shotIndexAt(t), shot = this.shots[i], world = this.world(shot);
     const f = this.frame(shot, t);
     if (world.overlay) { o.save(); world.overlay(o, f); o.restore(); }
-    if (world.lyrics !== false) {
+    if (world.lyrics !== false && opts.lyrics !== false) {
       const style = world.lyricStyle ? { ...this.lyricStyle, ...world.lyricStyle } : this.lyricStyle;
       if (style.mode === 'kinetic') drawKinetic(o, f, style, this.song.kinetic ?? {});
       else drawLyrics(o, f, style);
