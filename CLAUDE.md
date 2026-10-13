@@ -21,6 +21,9 @@ Code-rendered music videos. Read README.md for the pipeline and docs/ANIMATION_G
   a passage; read the image. `--cuts` shows every shot boundary.
 - Before calling a passage done, render a short clip with audio (`video --from A --to B --samples 2`).
 - Typecheck with `npm run typecheck`.
+- `npm run render -- zfight --song <slug>` must print NO FLICKER before any review render. It finds
+  every pair of overlapping surfaces tied in depth (the flicker you can't see in a still) and marks them
+  in `out/<slug>/zfight/`.
 
 ## Taste rules (from the genre's best videos)
 
@@ -33,4 +36,7 @@ Code-rendered music videos. Read README.md for the pipeline and docs/ANIMATION_G
 - Turn every note the director gives into a written rule the same day. A note that would apply to any
   song (flicker, lighting, quality bar) goes here or in docs/ANIMATION_GUIDE.md, not only in the song's
   DIRECTION.md, because the next song's agent never reads the last song's docs.
-- Overlapping cut-outs flicker unless they sit at different depths (ANIMATION_GUIDE hard rule 7).
+- Overlapping cut-outs flicker unless they sit at different depths (ANIMATION_GUIDE hard rule 7), and
+  that includes two copies of one silhouette, like a two-tone rim light.
+- Every word drawn in the scene must be readable: measured to fit its sign or screen, not washed out
+  by glow, not covered by a hand or prop while it matters (ANIMATION_GUIDE hard rule 8).

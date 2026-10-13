@@ -36,7 +36,7 @@ export class Stage {
 
   constructor(readonly width: number, readonly height: number, background = '#000000') {
     const canvas = document.createElement('canvas');
-    this.gl = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance' });
+    this.gl = new THREE.WebGLRenderer({ canvas, antialias: true, preserveDrawingBuffer: true, powerPreference: 'high-performance', logarithmicDepthBuffer: true });
     this.gl.setPixelRatio(1);
     this.gl.setSize(width, height, false);
     this.gl.setClearColor(new THREE.Color(background), 1);

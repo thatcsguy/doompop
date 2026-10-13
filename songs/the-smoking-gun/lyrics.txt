@@ -1,0 +1,88 @@
+[Verse 1]
+I start up the dev server
+And reproduce the crash
+I trace it through the handler
+And follow every path
+
+The key insight seems obvious
+This function must be wrong
+Upon closer inspection
+It's been like this too long
+
+I search for every caller
+I map the data flow
+This strongly points to caching
+But traces tell me no
+
+I've isolated the issue
+The evidence looks strong
+To three competing causes
+So something here is wrong
+
+[Chorus]
+The logs are lining up now
+The timeline makes it clear
+One change before the failure
+One signal pointing here
+
+The traces tell the same story
+The evidence has won
+I think we finally found it
+The smoking gun
+
+[Verse 2]
+I pull up all the metrics
+The pattern looks exact
+The staging and production calls
+Are matching fact for fact
+
+The request bodies match now
+I verify the same
+Byte-for-byte identical
+Except one field has changed
+
+Good catch, that changes everything
+The scope is narrower now
+The cache path's load-bearing
+I'm highly certain how
+
+One thing worth flagging here though
+There's one more thread to chase
+The actual root cause may be
+The path I first misplaced
+
+[Chorus]
+The logs are lining up now
+The timeline makes it clear
+One change before the failure
+One signal pointing here
+
+The traces tell the same story
+The evidence has won
+I think we finally found it
+The smoking gun
+
+[Bridge]
+You're absolutely right there
+That changes what we know
+The blast radius is bounded
+At least the graphs say so
+
+I found the load-bearing seam now
+The happy path is clean
+I run the regression suite once more
+And everything stays green
+
+[Final Chorus]
+The graphs are finally flattening
+The alerts begin to clear
+The same request that broke it
+Now passes every tier
+
+The patch survived production
+The errors all are done
+All because we found it
+The smoking gun
+The smoking gun
+
+The smoking gun

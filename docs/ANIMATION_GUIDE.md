@@ -61,14 +61,42 @@ shot), `w`/`h` (pixels) and `clock`.
 5. **Photosensitivity.** No more than three full-frame flashes in any second.
 6. **Cost.** Aim for under ~1 s per frame at 1 sample in software rendering. Prefer instancing and
    simple materials; avoid huge shadow maps and per-frame geometry rebuilds.
-7. **No flicker (z-fighting).** Flat cut-outs are thin planes, and an `inkedRect`/`inkedCircle` fill
-   sits only 0.002 in front of its own outline. Two cut-outs that overlap on screen at nearly the same
-   depth fight, and their outlines flicker from frame to frame. Give every overlapping cut-out its own
-   depth, about 0.03 apart (balloons, people in a crowd, papers on a floor, keys on a ring), and
-   layer a figure's parts in z steps of 0.006 or more so each clears the one below (head, then hair,
-   then collar). Scaling a group scales its z gaps too, so a scaled-down figure must keep its full
-   depth spacing: `root.scale.set(s, s, 1)`, never `setScalar(s)`. Stacked things go one in front
-   of the next, so an ink line shows where they meet. Look for flicker in a moving clip, not a still.
+7. **No flicker (z-fighting).** Flat cut-outs are thin planes stacked a few thousandths of a unit
+   apart. Where two surfaces overlap on screen at the same depth, the depth test can't pick one, so
+   the one that shows changes from frame to frame (and between motion-blur sub-frames) and their
+   edges flicker. The stage renders with a logarithmic depth buffer (`engine/stage.ts`), so any real
+   gap, 0.002 and up, holds at every distance the camera uses. What still flickers is surfaces at
+   *equal* depth, so give everything that overlaps on screen its own depth:
+   - Parts of one figure or prop sit at least 0.004 apart, in the order they stack (head, then hair,
+     then collar; a stick, then its knob; a glove, then its cuff). An `inkedRect`/`inkedCircle` puts
+     its fill 0.002 in front of its own outline, so a part laid over an inked part starts at least
+     0.004 in front of it, never level with it or at +0.002 (that is the fill's depth).
+   - Separate things that can overlap sit about 0.03 apart: balloons, people in a crowd, papers on
+     a floor, keys on a ring, a mug in front of a hand.
+   - Two copies of one silhouette (a two-tone rim light, a shadow, a glow) never share a depth. Cut
+     each copy to its own side with `halfShape` (`engine/flat.ts`) or give each its own z.
+   - A see-through layer laid on a surface (canvas text on a sign or screen, a shadow on a floor)
+     sits at least 0.002 in front of it, never level with it.
+   - Scaling a group scales its z gaps too: `root.scale.set(s, s, 1)`, never `setScalar(s)`.
+
+   Flicker hides in stills, so check with the tool, not by eye: `npm run render -- zfight --song
+   <slug>` draws each sampled frame twice, in opposite draw orders and with a depth buffer 8 times
+   coarser than the real one, and lists every pair of surfaces whose winner changed (see-through
+   layers get the same test against the surface under them), with marked frames in
+   `out/<slug>/zfight/`. It samples each shot's start, middle and end and every second;
+   narrow it with `--from A --to B` or `--t 12.5,40`. It must print NO FLICKER before a review render.
+8. **Every word on screen can be read.** Most of the director's notes on song 2 were about text in the
+   scene (signs, tags, flags, screens, paper) that couldn't be read, so:
+   - Text fits its box with a margin at the size it's drawn. Measure every canvas string and shrink
+     the font (`fitFont` in `engine/flat.ts`) or widen the box; never let a line run off its tag or
+     screen. Side-by-side columns each clip to their own column. Labels that can end up on top of
+     each other (two sheets sliding together) go in different corners.
+   - Glow never washes out letters. A glowing sign keeps its letters clearly darker or brighter than
+     the panel behind them after bloom; check the word in a still, not just the shape.
+   - Nothing covers the word or number a shot is about while it's being read: a pointing finger
+     stops short of it, and a magnifier shows what the paper under it shows.
+   - A character's identifying feature (a face, a smile, a nametag) stays visible through the whole
+     shot: bursts and glows go behind it, and feet and props pass behind it.
 
 ## Craft
 
@@ -87,6 +115,8 @@ shot), `w`/`h` (pixels) and `clock`.
 
 - `npm run render -- sheet --song <slug> --from A --to B` and look at the image.
 - `npm run render -- determinism --song <slug>` after any change.
+- `npm run render -- zfight --song <slug>` after any change to a figure, prop or set: it must print
+  NO FLICKER (hard rule 7).
 - `npm run render -- video --song <slug> --from A --to B --samples 2 --fresh` for a quick clip with
   audio. Frames are cached by frame number, so without `--fresh` a clip after shot changes can keep
   stale frames from the old version (they show as one- or two-frame flashes).

@@ -3,6 +3,7 @@ import { SongClock } from './song';
 import { DEFAULT_LYRIC_STYLE, drawLyrics } from './lyrics';
 import { drawKinetic } from './kinetic';
 import { clamp } from './ease';
+import { findZFights, type ZResult } from './zfight';
 import type { Frame, PostSettings, Shot, ShotWorld, Song, LyricStyle } from './types';
 
 export interface RenderOptions {
@@ -71,7 +72,7 @@ export class Engine {
     // 2D layers are drawn once, sharp, at t
     const i = this.shotIndexAt(t), shot = this.shots[i], world = this.world(shot);
     const f = this.frame(shot, t);
-    if (world.overlay) { o.save(); world.overlay(o, f); o.restore(); }
+    if (world.overlay) { o.save(); world.overlay(o, f, { lyrics: opts.lyrics !== false }); o.restore(); }
     if (world.lyrics !== false && opts.lyrics !== false) {
       const style = world.lyricStyle ? { ...this.lyricStyle, ...world.lyricStyle } : this.lyricStyle;
       if (style.mode === 'kinetic') drawKinetic(o, f, style, this.song.kinetic ?? {});
@@ -79,6 +80,42 @@ export class Engine {
     }
     this.drawTransitionFlash(o, shot, t);
     return this.out;
+  }
+
+  /**
+   * Z-fighting check at t (engine/zfight.ts): the pairs of surfaces too close in depth to stay put.
+   * With image = true, also a PNG of the frame (no lyrics) with the fights in magenta, numbered.
+   */
+  zfight(t: number, margin = 8, image = false) {
+    const shot = this.shotAt(t), world = this.world(shot);
+    world.update(this.frame(shot, t));
+    const r = findZFights(this.stage.gl, world.scene, world.camera, this.width, this.height, margin);
+    return { shot: shot.id, meshes: r.meshes, pairs: r.pairs, image: image ? this.zfightImage(t, r) : '' };
+  }
+
+  private zfightImage(t: number, r: ZResult) {
+    const frame = this.renderAt(t, { samples: 1, lyrics: false });
+    const c = mkCanvas(this.width, this.height), g = c.getContext('2d')!;
+    g.globalAlpha = 0.5; g.drawImage(frame, 0, 0); g.globalAlpha = 1;
+    const img = g.getImageData(0, 0, c.width, c.height), W = c.width, H = c.height;
+    for (let y = 0; y < H; y++) for (let x = 0; x < W; x++) {
+      if (!r.mask[y * W + x]) continue;
+      for (let dy = -1; dy <= 1; dy++) for (let dx = -1; dx <= 1; dx++) {
+        const xx = x + dx, yy = y + dy;
+        if (xx < 0 || yy < 0 || xx >= W || yy >= H) continue;
+        const k = (yy * W + xx) * 4;
+        img.data[k] = 255; img.data[k + 1] = 0; img.data[k + 2] = 255; img.data[k + 3] = 255;
+      }
+    }
+    g.putImageData(img, 0, 0);
+    g.lineWidth = 2; g.font = 'bold 24px monospace';
+    r.pairs.slice(0, 20).forEach((p, k) => {
+      const [x0, y0, x1, y1] = p.box;
+      g.strokeStyle = p.same ? '#9a9a9a' : '#ffe600';
+      g.strokeRect(x0 - 5, y0 - 5, x1 - x0 + 10, y1 - y0 + 10);
+      g.fillStyle = g.strokeStyle; g.fillText(String(k + 1), x0 - 5, y0 - 10);
+    });
+    return c.toDataURL('image/png');
   }
 
   private composeScene(t: number) {

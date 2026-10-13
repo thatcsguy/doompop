@@ -1,0 +1,2748 @@
+{
+ "meta": {
+  "method": "MMS_FA CTC forced alignment of the vocal stem",
+  "source": "vocals.wav"
+ },
+ "lines": [
+  {
+   "text": "I start up the dev server",
+   "section": "Verse 1",
+   "start": 14.875,
+   "end": 16.777,
+   "words": [
+    {
+     "w": "I",
+     "start": 14.875,
+     "end": 14.915,
+     "conf": 0.96,
+     "src": "ctc"
+    },
+    {
+     "w": "start",
+     "start": 14.955,
+     "end": 15.336,
+     "conf": 0.96,
+     "src": "ctc"
+    },
+    {
+     "w": "up",
+     "start": 15.476,
+     "end": 15.616,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "the",
+     "start": 15.776,
+     "end": 15.856,
+     "conf": 0.87,
+     "src": "ctc"
+    },
+    {
+     "w": "dev",
+     "start": 15.996,
+     "end": 16.317,
+     "conf": 0.81,
+     "src": "ctc"
+    },
+    {
+     "w": "server",
+     "start": 16.357,
+     "end": 16.777,
+     "conf": 0.89,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "And reproduce the crash",
+   "section": "Verse 1",
+   "start": 17.238,
+   "end": 18.779,
+   "words": [
+    {
+     "w": "And",
+     "start": 17.238,
+     "end": 17.458,
+     "conf": 0.78,
+     "src": "ctc"
+    },
+    {
+     "w": "reproduce",
+     "start": 17.498,
+     "end": 18.099,
+     "conf": 0.71,
+     "src": "ctc"
+    },
+    {
+     "w": "the",
+     "start": 18.139,
+     "end": 18.219,
+     "conf": 0.87,
+     "src": "ctc"
+    },
+    {
+     "w": "crash",
+     "start": 18.259,
+     "end": 18.779,
+     "conf": 0.93,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "I trace it through the handler",
+   "section": "Verse 1",
+   "start": 19.2,
+   "end": 20.681,
+   "words": [
+    {
+     "w": "I",
+     "start": 19.2,
+     "end": 19.23,
+     "conf": 0.95,
+     "src": "ctc"
+    },
+    {
+     "w": "trace",
+     "start": 19.3,
+     "end": 19.62,
+     "conf": 0.93,
+     "src": "ctc"
+    },
+    {
+     "w": "it",
+     "start": 19.66,
+     "end": 19.74,
+     "conf": 0.64,
+     "src": "ctc"
+    },
+    {
+     "w": "through",
+     "start": 19.8,
+     "end": 20.041,
+     "conf": 0.84,
+     "src": "ctc"
+    },
+    {
+     "w": "the",
+     "start": 20.061,
+     "end": 20.141,
+     "conf": 0.91,
+     "src": "ctc"
+    },
+    {
+     "w": "handler",
+     "start": 20.181,
+     "end": 20.681,
+     "conf": 0.75,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "And follow every path",
+   "section": "Verse 1",
+   "start": 20.942,
+   "end": 22.383,
+   "words": [
+    {
+     "w": "And",
+     "start": 20.942,
+     "end": 21.112,
+     "conf": 0.97,
+     "src": "ctc"
+    },
+    {
+     "w": "follow",
+     "start": 21.222,
+     "end": 21.662,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "every",
+     "start": 21.702,
+     "end": 22.013,
+     "conf": 0.86,
+     "src": "ctc"
+    },
+    {
+     "w": "path",
+     "start": 22.083,
+     "end": 22.383,
+     "conf": 0.7,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The key insight seems obvious",
+   "section": "Verse 1",
+   "start": 22.463,
+   "end": 24.675,
+   "words": [
+    {
+     "w": "The",
+     "start": 22.463,
+     "end": 22.543,
+     "conf": 0.93,
+     "src": "ctc"
+    },
+    {
+     "w": "key",
+     "start": 22.663,
+     "end": 22.924,
+     "conf": 0.6,
+     "src": "ctc"
+    },
+    {
+     "w": "insight",
+     "start": 22.964,
+     "end": 23.584,
+     "conf": 0.56,
+     "src": "ctc"
+    },
+    {
+     "w": "seems",
+     "start": 23.624,
+     "end": 24.205,
+     "conf": 0.78,
+     "src": "ctc"
+    },
+    {
+     "w": "obvious",
+     "start": 24.245,
+     "end": 24.675,
+     "conf": 0.54,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "This function must be wrong",
+   "section": "Verse 1",
+   "start": 24.745,
+   "end": 26.337,
+   "words": [
+    {
+     "w": "This",
+     "start": 24.745,
+     "end": 25.026,
+     "conf": 0.85,
+     "src": "ctc"
+    },
+    {
+     "w": "function",
+     "start": 25.066,
+     "end": 25.506,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "must",
+     "start": 25.546,
+     "end": 25.767,
+     "conf": 0.9,
+     "src": "ctc"
+    },
+    {
+     "w": "be",
+     "start": 25.807,
+     "end": 25.887,
+     "conf": 0.97,
+     "src": "ctc"
+    },
+    {
+     "w": "wrong",
+     "start": 25.927,
+     "end": 26.337,
+     "conf": 0.85,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "Upon closer inspection",
+   "section": "Verse 1",
+   "start": 26.808,
+   "end": 28.409,
+   "words": [
+    {
+     "w": "Upon",
+     "start": 26.808,
+     "end": 27.098,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "closer",
+     "start": 27.208,
+     "end": 27.628,
+     "conf": 0.91,
+     "src": "ctc"
+    },
+    {
+     "w": "inspection",
+     "start": 27.668,
+     "end": 28.409,
+     "conf": 0.99,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "It's been like this too long",
+   "section": "Verse 1",
+   "start": 28.71,
+   "end": 30.491,
+   "words": [
+    {
+     "w": "It's",
+     "start": 28.71,
+     "end": 28.85,
+     "conf": 0.82,
+     "src": "ctc"
+    },
+    {
+     "w": "been",
+     "start": 28.93,
+     "end": 29.13,
+     "conf": 1.0,
+     "src": "ctc"
+    },
+    {
+     "w": "like",
+     "start": 29.17,
+     "end": 29.37,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "this",
+     "start": 29.41,
+     "end": 29.58,
+     "conf": 0.65,
+     "src": "ctc"
+    },
+    {
+     "w": "too",
+     "start": 29.63,
+     "end": 29.871,
+     "conf": 0.72,
+     "src": "ctc"
+    },
+    {
+     "w": "long",
+     "start": 29.911,
+     "end": 30.491,
+     "conf": 0.96,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "I search for every caller",
+   "section": "Verse 1",
+   "start": 30.531,
+   "end": 32.093,
+   "words": [
+    {
+     "w": "I",
+     "start": 30.531,
+     "end": 30.601,
+     "conf": 0.02,
+     "src": "ctc-low"
+    },
+    {
+     "w": "search",
+     "start": 30.712,
+     "end": 31.032,
+     "conf": 0.71,
+     "src": "ctc"
+    },
+    {
+     "w": "for",
+     "start": 31.092,
+     "end": 31.232,
+     "conf": 0.79,
+     "src": "ctc"
+    },
+    {
+     "w": "every",
+     "start": 31.412,
+     "end": 31.633,
+     "conf": 0.61,
+     "src": "ctc"
+    },
+    {
+     "w": "caller",
+     "start": 31.693,
+     "end": 32.093,
+     "conf": 0.52,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "I map the data flow",
+   "section": "Verse 1",
+   "start": 32.574,
+   "end": 33.855,
+   "words": [
+    {
+     "w": "I",
+     "start": 32.574,
+     "end": 32.654,
+     "conf": 0.01,
+     "src": "ctc-low"
+    },
+    {
+     "w": "map",
+     "start": 32.694,
+     "end": 32.874,
+     "conf": 0.1,
+     "src": "ctc-low"
+    },
+    {
+     "w": "the",
+     "start": 33.034,
+     "end": 33.114,
+     "conf": 0.87,
+     "src": "ctc"
+    },
+    {
+     "w": "data",
+     "start": 33.254,
+     "end": 33.535,
+     "conf": 0.71,
+     "src": "ctc"
+    },
+    {
+     "w": "flow",
+     "start": 33.595,
+     "end": 33.855,
+     "conf": 0.65,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "This strongly points to caching",
+   "section": "Verse 1",
+   "start": 34.335,
+   "end": 36.117,
+   "words": [
+    {
+     "w": "This",
+     "start": 34.335,
+     "end": 34.535,
+     "conf": 0.78,
+     "src": "ctc"
+    },
+    {
+     "w": "strongly",
+     "start": 34.576,
+     "end": 35.036,
+     "conf": 0.95,
+     "src": "ctc"
+    },
+    {
+     "w": "points",
+     "start": 35.136,
+     "end": 35.396,
+     "conf": 0.93,
+     "src": "ctc"
+    },
+    {
+     "w": "to",
+     "start": 35.416,
+     "end": 35.476,
+     "conf": 0.93,
+     "src": "ctc"
+    },
+    {
+     "w": "caching",
+     "start": 35.517,
+     "end": 36.117,
+     "conf": 0.96,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "But traces tell me no",
+   "section": "Verse 1",
+   "start": 36.157,
+   "end": 37.839,
+   "words": [
+    {
+     "w": "But",
+     "start": 36.157,
+     "end": 36.257,
+     "conf": 0.3,
+     "src": "ctc-low"
+    },
+    {
+     "w": "traces",
+     "start": 36.317,
+     "end": 36.978,
+     "conf": 0.66,
+     "src": "ctc"
+    },
+    {
+     "w": "tell",
+     "start": 37.058,
+     "end": 37.298,
+     "conf": 0.54,
+     "src": "ctc"
+    },
+    {
+     "w": "me",
+     "start": 37.318,
+     "end": 37.418,
+     "conf": 0.6,
+     "src": "ctc"
+    },
+    {
+     "w": "no",
+     "start": 37.459,
+     "end": 37.839,
+     "conf": 0.88,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "I've isolated the issue",
+   "section": "Verse 1",
+   "start": 37.879,
+   "end": 39.751,
+   "words": [
+    {
+     "w": "I've",
+     "start": 37.879,
+     "end": 38.109,
+     "conf": 0.4,
+     "src": "ctc-low"
+    },
+    {
+     "w": "isolated",
+     "start": 38.179,
+     "end": 38.9,
+     "conf": 0.96,
+     "src": "ctc"
+    },
+    {
+     "w": "the",
+     "start": 38.98,
+     "end": 39.08,
+     "conf": 0.83,
+     "src": "ctc"
+    },
+    {
+     "w": "issue",
+     "start": 39.28,
+     "end": 39.751,
+     "conf": 0.82,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The evidence looks strong",
+   "section": "Verse 1",
+   "start": 39.901,
+   "end": 41.903,
+   "words": [
+    {
+     "w": "The",
+     "start": 39.901,
+     "end": 40.271,
+     "conf": 0.93,
+     "src": "ctc"
+    },
+    {
+     "w": "evidence",
+     "start": 40.442,
+     "end": 40.882,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "looks",
+     "start": 40.922,
+     "end": 41.162,
+     "conf": 0.66,
+     "src": "ctc"
+    },
+    {
+     "w": "strong",
+     "start": 41.202,
+     "end": 41.903,
+     "conf": 0.94,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "To three competing causes",
+   "section": "Verse 1",
+   "start": 42.063,
+   "end": 43.665,
+   "words": [
+    {
+     "w": "To",
+     "start": 42.063,
+     "end": 42.163,
+     "conf": 0.97,
+     "src": "ctc"
+    },
+    {
+     "w": "three",
+     "start": 42.203,
+     "end": 42.494,
+     "conf": 0.93,
+     "src": "ctc"
+    },
+    {
+     "w": "competing",
+     "start": 42.544,
+     "end": 43.084,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "causes",
+     "start": 43.124,
+     "end": 43.665,
+     "conf": 0.93,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "So something here is wrong",
+   "section": "Verse 1",
+   "start": 43.965,
+   "end": 47.417,
+   "words": [
+    {
+     "w": "So",
+     "start": 43.965,
+     "end": 44.085,
+     "conf": 0.94,
+     "src": "ctc"
+    },
+    {
+     "w": "something",
+     "start": 44.185,
+     "end": 44.646,
+     "conf": 0.87,
+     "src": "ctc"
+    },
+    {
+     "w": "here",
+     "start": 44.686,
+     "end": 44.886,
+     "conf": 0.72,
+     "src": "ctc"
+    },
+    {
+     "w": "is",
+     "start": 44.906,
+     "end": 45.046,
+     "conf": 0.12,
+     "src": "ctc-low"
+    },
+    {
+     "w": "wrong",
+     "start": 45.086,
+     "end": 47.417,
+     "conf": 0.21,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "The logs are lining up now",
+   "section": "Chorus",
+   "start": 47.789,
+   "end": 49.441,
+   "words": [
+    {
+     "w": "The",
+     "start": 47.789,
+     "end": 47.889,
+     "conf": 0.7,
+     "src": "ctc"
+    },
+    {
+     "w": "logs",
+     "start": 47.929,
+     "end": 48.29,
+     "conf": 0.53,
+     "src": "ctc"
+    },
+    {
+     "w": "are",
+     "start": 48.35,
+     "end": 48.47,
+     "conf": 0.25,
+     "src": "ctc-low"
+    },
+    {
+     "w": "lining",
+     "start": 48.51,
+     "end": 48.91,
+     "conf": 0.64,
+     "src": "ctc"
+    },
+    {
+     "w": "up",
+     "start": 48.93,
+     "end": 49.03,
+     "conf": 0.75,
+     "src": "ctc"
+    },
+    {
+     "w": "now",
+     "start": 49.131,
+     "end": 49.441,
+     "conf": 0.86,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The timeline makes it clear",
+   "section": "Chorus",
+   "start": 49.811,
+   "end": 51.073,
+   "words": [
+    {
+     "w": "The",
+     "start": 49.811,
+     "end": 49.971,
+     "conf": 0.08,
+     "src": "ctc-low"
+    },
+    {
+     "w": "timeline",
+     "start": 50.011,
+     "end": 50.392,
+     "conf": 0.2,
+     "src": "ctc-low"
+    },
+    {
+     "w": "makes",
+     "start": 50.392,
+     "end": 50.652,
+     "conf": 0.18,
+     "src": "ctc-low"
+    },
+    {
+     "w": "it",
+     "start": 50.672,
+     "end": 50.712,
+     "conf": 0.22,
+     "src": "ctc-low"
+    },
+    {
+     "w": "clear",
+     "start": 50.752,
+     "end": 51.073,
+     "conf": 0.19,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "One change before the failure",
+   "section": "Chorus",
+   "start": 51.573,
+   "end": 53.315,
+   "words": [
+    {
+     "w": "One",
+     "start": 51.573,
+     "end": 51.733,
+     "conf": 0.74,
+     "src": "ctc"
+    },
+    {
+     "w": "change",
+     "start": 51.793,
+     "end": 52.074,
+     "conf": 0.97,
+     "src": "ctc"
+    },
+    {
+     "w": "before",
+     "start": 52.114,
+     "end": 52.534,
+     "conf": 0.9,
+     "src": "ctc"
+    },
+    {
+     "w": "the",
+     "start": 52.554,
+     "end": 52.614,
+     "conf": 0.88,
+     "src": "ctc"
+    },
+    {
+     "w": "failure",
+     "start": 52.674,
+     "end": 53.315,
+     "conf": 0.14,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "One signal pointing here",
+   "section": "Chorus",
+   "start": 53.355,
+   "end": 54.937,
+   "words": [
+    {
+     "w": "One",
+     "start": 53.355,
+     "end": 53.675,
+     "conf": 0.97,
+     "src": "ctc"
+    },
+    {
+     "w": "signal",
+     "start": 53.715,
+     "end": 54.116,
+     "conf": 0.97,
+     "src": "ctc"
+    },
+    {
+     "w": "pointing",
+     "start": 54.196,
+     "end": 54.556,
+     "conf": 0.52,
+     "src": "ctc"
+    },
+    {
+     "w": "here",
+     "start": 54.596,
+     "end": 54.937,
+     "conf": 0.47,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "The traces tell the same story",
+   "section": "Chorus",
+   "start": 54.937,
+   "end": 57.069,
+   "words": [
+    {
+     "w": "The",
+     "start": 54.937,
+     "end": 55.027,
+     "conf": 0.05,
+     "src": "ctc-low"
+    },
+    {
+     "w": "traces",
+     "start": 55.097,
+     "end": 55.567,
+     "conf": 0.9,
+     "src": "ctc"
+    },
+    {
+     "w": "tell",
+     "start": 55.617,
+     "end": 55.867,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "the",
+     "start": 55.918,
+     "end": 56.058,
+     "conf": 0.35,
+     "src": "ctc-low"
+    },
+    {
+     "w": "same",
+     "start": 56.098,
+     "end": 56.458,
+     "conf": 1.0,
+     "src": "ctc"
+    },
+    {
+     "w": "story",
+     "start": 56.498,
+     "end": 57.069,
+     "conf": 1.0,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The evidence has won",
+   "section": "Chorus",
+   "start": 57.319,
+   "end": 58.92,
+   "words": [
+    {
+     "w": "The",
+     "start": 57.319,
+     "end": 57.429,
+     "conf": 0.94,
+     "src": "ctc"
+    },
+    {
+     "w": "evidence",
+     "start": 57.619,
+     "end": 58.06,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "has",
+     "start": 58.12,
+     "end": 58.34,
+     "conf": 0.89,
+     "src": "ctc"
+    },
+    {
+     "w": "won",
+     "start": 58.36,
+     "end": 58.92,
+     "conf": 0.65,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "I think we finally found it",
+   "section": "Chorus",
+   "start": 59.321,
+   "end": 60.903,
+   "words": [
+    {
+     "w": "I",
+     "start": 59.321,
+     "end": 59.381,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "think",
+     "start": 59.421,
+     "end": 59.641,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "we",
+     "start": 59.701,
+     "end": 59.771,
+     "conf": 0.97,
+     "src": "ctc"
+    },
+    {
+     "w": "finally",
+     "start": 59.882,
+     "end": 60.202,
+     "conf": 0.27,
+     "src": "ctc-low"
+    },
+    {
+     "w": "found",
+     "start": 60.322,
+     "end": 60.763,
+     "conf": 0.71,
+     "src": "ctc"
+    },
+    {
+     "w": "it",
+     "start": 60.823,
+     "end": 60.903,
+     "conf": 0.03,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "The smoking gun",
+   "section": "Chorus",
+   "start": 62.004,
+   "end": 63.505,
+   "words": [
+    {
+     "w": "The",
+     "start": 62.004,
+     "end": 62.144,
+     "conf": 0.19,
+     "src": "ctc-low"
+    },
+    {
+     "w": "smoking",
+     "start": 62.184,
+     "end": 63.115,
+     "conf": 0.41,
+     "src": "ctc-low"
+    },
+    {
+     "w": "gun",
+     "start": 63.185,
+     "end": 63.505,
+     "conf": 0.14,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "I pull up all the metrics",
+   "section": "Verse 2",
+   "start": 78.18,
+   "end": 79.702,
+   "words": [
+    {
+     "w": "I",
+     "start": 78.18,
+     "end": 78.21,
+     "conf": 0.03,
+     "src": "ctc-low"
+    },
+    {
+     "w": "pull",
+     "start": 78.321,
+     "end": 78.521,
+     "conf": 0.26,
+     "src": "ctc-low"
+    },
+    {
+     "w": "up",
+     "start": 78.561,
+     "end": 78.661,
+     "conf": 0.02,
+     "src": "ctc-low"
+    },
+    {
+     "w": "all",
+     "start": 78.901,
+     "end": 79.001,
+     "conf": 0.15,
+     "src": "ctc-low"
+    },
+    {
+     "w": "the",
+     "start": 79.041,
+     "end": 79.141,
+     "conf": 0.24,
+     "src": "ctc-low"
+    },
+    {
+     "w": "metrics",
+     "start": 79.181,
+     "end": 79.702,
+     "conf": 0.25,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "The pattern looks exact",
+   "section": "Verse 2",
+   "start": 79.722,
+   "end": 81.554,
+   "words": [
+    {
+     "w": "The",
+     "start": 79.722,
+     "end": 80.062,
+     "conf": 0.59,
+     "src": "ctc"
+    },
+    {
+     "w": "pattern",
+     "start": 80.182,
+     "end": 80.623,
+     "conf": 0.76,
+     "src": "ctc"
+    },
+    {
+     "w": "looks",
+     "start": 80.663,
+     "end": 80.923,
+     "conf": 0.96,
+     "src": "ctc"
+    },
+    {
+     "w": "exact",
+     "start": 80.963,
+     "end": 81.554,
+     "conf": 0.94,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The staging and production calls",
+   "section": "Verse 2",
+   "start": 81.844,
+   "end": 83.766,
+   "words": [
+    {
+     "w": "The",
+     "start": 81.844,
+     "end": 81.984,
+     "conf": 0.93,
+     "src": "ctc"
+    },
+    {
+     "w": "staging",
+     "start": 82.024,
+     "end": 82.605,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "and",
+     "start": 82.645,
+     "end": 82.745,
+     "conf": 0.86,
+     "src": "ctc"
+    },
+    {
+     "w": "production",
+     "start": 82.785,
+     "end": 83.326,
+     "conf": 0.97,
+     "src": "ctc"
+    },
+    {
+     "w": "calls",
+     "start": 83.366,
+     "end": 83.766,
+     "conf": 0.89,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "Are matching fact for fact",
+   "section": "Verse 2",
+   "start": 83.806,
+   "end": 85.208,
+   "words": [
+    {
+     "w": "Are",
+     "start": 83.806,
+     "end": 83.926,
+     "conf": 0.78,
+     "src": "ctc"
+    },
+    {
+     "w": "matching",
+     "start": 83.966,
+     "end": 84.357,
+     "conf": 0.86,
+     "src": "ctc"
+    },
+    {
+     "w": "fact",
+     "start": 84.427,
+     "end": 84.607,
+     "conf": 0.27,
+     "src": "ctc-low"
+    },
+    {
+     "w": "for",
+     "start": 84.667,
+     "end": 84.767,
+     "conf": 0.68,
+     "src": "ctc"
+    },
+    {
+     "w": "fact",
+     "start": 84.887,
+     "end": 85.208,
+     "conf": 0.75,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The request bodies match now",
+   "section": "Verse 2",
+   "start": 85.628,
+   "end": 87.55,
+   "words": [
+    {
+     "w": "The",
+     "start": 85.628,
+     "end": 85.728,
+     "conf": 0.95,
+     "src": "ctc"
+    },
+    {
+     "w": "request",
+     "start": 85.768,
+     "end": 86.249,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "bodies",
+     "start": 86.329,
+     "end": 86.649,
+     "conf": 0.74,
+     "src": "ctc"
+    },
+    {
+     "w": "match",
+     "start": 86.689,
+     "end": 86.989,
+     "conf": 0.92,
+     "src": "ctc"
+    },
+    {
+     "w": "now",
+     "start": 87.03,
+     "end": 87.55,
+     "conf": 0.91,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "I verify the same",
+   "section": "Verse 2",
+   "start": 87.59,
+   "end": 89.352,
+   "words": [
+    {
+     "w": "I",
+     "start": 87.59,
+     "end": 87.69,
+     "conf": 0.04,
+     "src": "ctc-low"
+    },
+    {
+     "w": "verify",
+     "start": 87.73,
+     "end": 88.331,
+     "conf": 0.81,
+     "src": "ctc"
+    },
+    {
+     "w": "the",
+     "start": 88.371,
+     "end": 88.611,
+     "conf": 0.73,
+     "src": "ctc"
+    },
+    {
+     "w": "same",
+     "start": 88.651,
+     "end": 89.352,
+     "conf": 0.95,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "Byte-for-byte identical",
+   "section": "Verse 2",
+   "start": 89.392,
+   "end": 91.054,
+   "words": [
+    {
+     "w": "Byte-for-byte",
+     "start": 89.392,
+     "end": 90.433,
+     "conf": 0.44,
+     "src": "ctc-low"
+    },
+    {
+     "w": "identical",
+     "start": 90.473,
+     "end": 91.054,
+     "conf": 0.93,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "Except one field has changed",
+   "section": "Verse 2",
+   "start": 91.194,
+   "end": 92.876,
+   "words": [
+    {
+     "w": "Except",
+     "start": 91.194,
+     "end": 91.634,
+     "conf": 0.35,
+     "src": "ctc-low"
+    },
+    {
+     "w": "one",
+     "start": 91.774,
+     "end": 91.875,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "field",
+     "start": 91.935,
+     "end": 92.215,
+     "conf": 0.86,
+     "src": "ctc"
+    },
+    {
+     "w": "has",
+     "start": 92.215,
+     "end": 92.325,
+     "conf": 0.36,
+     "src": "ctc-low"
+    },
+    {
+     "w": "changed",
+     "start": 92.375,
+     "end": 92.876,
+     "conf": 0.82,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "Good catch, that changes everything",
+   "section": "Verse 2",
+   "start": 92.896,
+   "end": 94.677,
+   "words": [
+    {
+     "w": "Good",
+     "start": 92.896,
+     "end": 93.056,
+     "conf": 0.65,
+     "src": "ctc"
+    },
+    {
+     "w": "catch",
+     "start": 93.096,
+     "end": 93.556,
+     "conf": 0.61,
+     "src": "ctc"
+    },
+    {
+     "w": "that",
+     "start": 93.616,
+     "end": 93.736,
+     "conf": 0.43,
+     "src": "ctc-low"
+    },
+    {
+     "w": "changes",
+     "start": 93.817,
+     "end": 94.257,
+     "conf": 0.97,
+     "src": "ctc"
+    },
+    {
+     "w": "everything",
+     "start": 94.297,
+     "end": 94.677,
+     "conf": 0.82,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The scope is narrower now",
+   "section": "Verse 2",
+   "start": 94.677,
+   "end": 96.619,
+   "words": [
+    {
+     "w": "The",
+     "start": 94.677,
+     "end": 94.737,
+     "conf": 0.01,
+     "src": "ctc-low"
+    },
+    {
+     "w": "scope",
+     "start": 94.757,
+     "end": 95.058,
+     "conf": 0.75,
+     "src": "ctc"
+    },
+    {
+     "w": "is",
+     "start": 95.078,
+     "end": 95.198,
+     "conf": 0.48,
+     "src": "ctc-low"
+    },
+    {
+     "w": "narrower",
+     "start": 95.238,
+     "end": 95.899,
+     "conf": 0.6,
+     "src": "ctc"
+    },
+    {
+     "w": "now",
+     "start": 95.939,
+     "end": 96.619,
+     "conf": 0.51,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The cache path's load-bearing",
+   "section": "Verse 2",
+   "start": 96.86,
+   "end": 98.682,
+   "words": [
+    {
+     "w": "The",
+     "start": 96.86,
+     "end": 96.94,
+     "conf": 0.38,
+     "src": "ctc-low"
+    },
+    {
+     "w": "cache",
+     "start": 96.98,
+     "end": 97.32,
+     "conf": 0.69,
+     "src": "ctc"
+    },
+    {
+     "w": "path's",
+     "start": 97.32,
+     "end": 97.62,
+     "conf": 0.39,
+     "src": "ctc-low"
+    },
+    {
+     "w": "load-bearing",
+     "start": 97.821,
+     "end": 98.682,
+     "conf": 0.86,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "I'm highly certain how",
+   "section": "Verse 2",
+   "start": 98.722,
+   "end": 100.363,
+   "words": [
+    {
+     "w": "I'm",
+     "start": 98.722,
+     "end": 98.902,
+     "conf": 0.28,
+     "src": "ctc-low"
+    },
+    {
+     "w": "highly",
+     "start": 98.942,
+     "end": 99.382,
+     "conf": 0.91,
+     "src": "ctc"
+    },
+    {
+     "w": "certain",
+     "start": 99.422,
+     "end": 99.743,
+     "conf": 0.97,
+     "src": "ctc"
+    },
+    {
+     "w": "how",
+     "start": 99.783,
+     "end": 100.363,
+     "conf": 0.26,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "One thing worth flagging here though",
+   "section": "Verse 2",
+   "start": 100.403,
+   "end": 102.225,
+   "words": [
+    {
+     "w": "One",
+     "start": 100.403,
+     "end": 100.553,
+     "conf": 0.9,
+     "src": "ctc"
+    },
+    {
+     "w": "thing",
+     "start": 100.604,
+     "end": 101.004,
+     "conf": 0.9,
+     "src": "ctc"
+    },
+    {
+     "w": "worth",
+     "start": 101.044,
+     "end": 101.224,
+     "conf": 0.19,
+     "src": "ctc-low"
+    },
+    {
+     "w": "flagging",
+     "start": 101.244,
+     "end": 101.645,
+     "conf": 0.41,
+     "src": "ctc-low"
+    },
+    {
+     "w": "here",
+     "start": 101.665,
+     "end": 101.965,
+     "conf": 0.69,
+     "src": "ctc"
+    },
+    {
+     "w": "though",
+     "start": 102.005,
+     "end": 102.225,
+     "conf": 0.45,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "There's one more thread to chase",
+   "section": "Verse 2",
+   "start": 102.265,
+   "end": 103.907,
+   "words": [
+    {
+     "w": "There's",
+     "start": 102.265,
+     "end": 102.566,
+     "conf": 0.44,
+     "src": "ctc-low"
+    },
+    {
+     "w": "one",
+     "start": 102.766,
+     "end": 102.886,
+     "conf": 0.95,
+     "src": "ctc"
+    },
+    {
+     "w": "more",
+     "start": 102.926,
+     "end": 103.106,
+     "conf": 0.38,
+     "src": "ctc-low"
+    },
+    {
+     "w": "thread",
+     "start": 103.126,
+     "end": 103.346,
+     "conf": 0.38,
+     "src": "ctc-low"
+    },
+    {
+     "w": "to",
+     "start": 103.386,
+     "end": 103.466,
+     "conf": 0.47,
+     "src": "ctc-low"
+    },
+    {
+     "w": "chase",
+     "start": 103.506,
+     "end": 103.907,
+     "conf": 0.78,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The actual root cause may be",
+   "section": "Verse 2",
+   "start": 104.327,
+   "end": 106.149,
+   "words": [
+    {
+     "w": "The",
+     "start": 104.327,
+     "end": 104.447,
+     "conf": 0.93,
+     "src": "ctc"
+    },
+    {
+     "w": "actual",
+     "start": 104.487,
+     "end": 105.008,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "root",
+     "start": 105.048,
+     "end": 105.248,
+     "conf": 0.56,
+     "src": "ctc"
+    },
+    {
+     "w": "cause",
+     "start": 105.248,
+     "end": 105.448,
+     "conf": 0.2,
+     "src": "ctc-low"
+    },
+    {
+     "w": "may",
+     "start": 105.489,
+     "end": 105.799,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "be",
+     "start": 105.849,
+     "end": 106.149,
+     "conf": 0.97,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The path I first misplaced",
+   "section": "Verse 2",
+   "start": 106.189,
+   "end": 109.813,
+   "words": [
+    {
+     "w": "The",
+     "start": 106.189,
+     "end": 106.249,
+     "conf": 0.81,
+     "src": "ctc"
+    },
+    {
+     "w": "path",
+     "start": 106.309,
+     "end": 106.73,
+     "conf": 0.44,
+     "src": "ctc-low"
+    },
+    {
+     "w": "I",
+     "start": 106.73,
+     "end": 106.82,
+     "conf": 0.02,
+     "src": "ctc-low"
+    },
+    {
+     "w": "first",
+     "start": 106.89,
+     "end": 107.11,
+     "conf": 0.42,
+     "src": "ctc-low"
+    },
+    {
+     "w": "misplaced",
+     "start": 107.13,
+     "end": 109.813,
+     "conf": 0.37,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "The logs are lining up now",
+   "section": "Chorus",
+   "start": 109.893,
+   "end": 111.495,
+   "words": [
+    {
+     "w": "The",
+     "start": 109.893,
+     "end": 110.013,
+     "conf": 0.61,
+     "src": "ctc"
+    },
+    {
+     "w": "logs",
+     "start": 110.053,
+     "end": 110.414,
+     "conf": 0.47,
+     "src": "ctc-low"
+    },
+    {
+     "w": "are",
+     "start": 110.474,
+     "end": 110.614,
+     "conf": 0.17,
+     "src": "ctc-low"
+    },
+    {
+     "w": "lining",
+     "start": 110.634,
+     "end": 111.014,
+     "conf": 0.56,
+     "src": "ctc"
+    },
+    {
+     "w": "up",
+     "start": 111.054,
+     "end": 111.154,
+     "conf": 0.79,
+     "src": "ctc"
+    },
+    {
+     "w": "now",
+     "start": 111.214,
+     "end": 111.495,
+     "conf": 0.74,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The timeline makes it clear",
+   "section": "Chorus",
+   "start": 111.775,
+   "end": 113.076,
+   "words": [
+    {
+     "w": "The",
+     "start": 111.775,
+     "end": 111.855,
+     "conf": 0.74,
+     "src": "ctc"
+    },
+    {
+     "w": "timeline",
+     "start": 111.895,
+     "end": 112.476,
+     "conf": 0.69,
+     "src": "ctc"
+    },
+    {
+     "w": "makes",
+     "start": 112.496,
+     "end": 112.716,
+     "conf": 0.1,
+     "src": "ctc-low"
+    },
+    {
+     "w": "it",
+     "start": 112.756,
+     "end": 112.796,
+     "conf": 0.17,
+     "src": "ctc-low"
+    },
+    {
+     "w": "clear",
+     "start": 112.816,
+     "end": 113.076,
+     "conf": 0.54,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "One change before the failure",
+   "section": "Chorus",
+   "start": 113.617,
+   "end": 115.309,
+   "words": [
+    {
+     "w": "One",
+     "start": 113.617,
+     "end": 113.797,
+     "conf": 0.77,
+     "src": "ctc"
+    },
+    {
+     "w": "change",
+     "start": 113.837,
+     "end": 114.117,
+     "conf": 0.59,
+     "src": "ctc"
+    },
+    {
+     "w": "before",
+     "start": 114.137,
+     "end": 114.558,
+     "conf": 0.48,
+     "src": "ctc-low"
+    },
+    {
+     "w": "the",
+     "start": 114.558,
+     "end": 114.638,
+     "conf": 0.84,
+     "src": "ctc"
+    },
+    {
+     "w": "failure",
+     "start": 114.698,
+     "end": 115.309,
+     "conf": 0.46,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "One signal pointing here",
+   "section": "Chorus",
+   "start": 115.359,
+   "end": 116.88,
+   "words": [
+    {
+     "w": "One",
+     "start": 115.359,
+     "end": 115.659,
+     "conf": 0.92,
+     "src": "ctc"
+    },
+    {
+     "w": "signal",
+     "start": 115.699,
+     "end": 116.119,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "pointing",
+     "start": 116.18,
+     "end": 116.52,
+     "conf": 0.76,
+     "src": "ctc"
+    },
+    {
+     "w": "here",
+     "start": 116.56,
+     "end": 116.88,
+     "conf": 0.71,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The traces tell the same story",
+   "section": "Chorus",
+   "start": 116.92,
+   "end": 118.892,
+   "words": [
+    {
+     "w": "The",
+     "start": 116.92,
+     "end": 117.0,
+     "conf": 0.93,
+     "src": "ctc"
+    },
+    {
+     "w": "traces",
+     "start": 117.08,
+     "end": 117.501,
+     "conf": 0.94,
+     "src": "ctc"
+    },
+    {
+     "w": "tell",
+     "start": 117.561,
+     "end": 117.821,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "the",
+     "start": 117.861,
+     "end": 117.981,
+     "conf": 0.8,
+     "src": "ctc"
+    },
+    {
+     "w": "same",
+     "start": 118.021,
+     "end": 118.402,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "story",
+     "start": 118.442,
+     "end": 118.892,
+     "conf": 0.98,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The evidence has won",
+   "section": "Chorus",
+   "start": 119.243,
+   "end": 120.784,
+   "words": [
+    {
+     "w": "The",
+     "start": 119.243,
+     "end": 119.323,
+     "conf": 0.88,
+     "src": "ctc"
+    },
+    {
+     "w": "evidence",
+     "start": 119.523,
+     "end": 119.963,
+     "conf": 0.94,
+     "src": "ctc"
+    },
+    {
+     "w": "has",
+     "start": 120.023,
+     "end": 120.224,
+     "conf": 0.89,
+     "src": "ctc"
+    },
+    {
+     "w": "won",
+     "start": 120.364,
+     "end": 120.784,
+     "conf": 0.6,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "I think we finally found it",
+   "section": "Chorus",
+   "start": 121.165,
+   "end": 122.866,
+   "words": [
+    {
+     "w": "I",
+     "start": 121.165,
+     "end": 121.245,
+     "conf": 0.84,
+     "src": "ctc"
+    },
+    {
+     "w": "think",
+     "start": 121.285,
+     "end": 121.485,
+     "conf": 0.81,
+     "src": "ctc"
+    },
+    {
+     "w": "we",
+     "start": 121.565,
+     "end": 121.655,
+     "conf": 0.89,
+     "src": "ctc"
+    },
+    {
+     "w": "finally",
+     "start": 121.745,
+     "end": 122.106,
+     "conf": 0.66,
+     "src": "ctc"
+    },
+    {
+     "w": "found",
+     "start": 122.186,
+     "end": 122.646,
+     "conf": 0.95,
+     "src": "ctc"
+    },
+    {
+     "w": "it",
+     "start": 122.686,
+     "end": 122.866,
+     "conf": 0.82,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The smoking gun",
+   "section": "Chorus",
+   "start": 123.827,
+   "end": 132.276,
+   "words": [
+    {
+     "w": "The",
+     "start": 123.827,
+     "end": 123.947,
+     "conf": 0.2,
+     "src": "ctc-low"
+    },
+    {
+     "w": "smoking",
+     "start": 123.988,
+     "end": 124.828,
+     "conf": 0.26,
+     "src": "ctc-low"
+    },
+    {
+     "w": "gun",
+     "start": 124.969,
+     "end": 132.276,
+     "conf": 0.15,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "You're absolutely right there",
+   "section": "Bridge",
+   "start": 139.163,
+   "end": 140.905,
+   "words": [
+    {
+     "w": "You're",
+     "start": 139.163,
+     "end": 139.373,
+     "conf": 0.2,
+     "src": "ctc-low"
+    },
+    {
+     "w": "absolutely",
+     "start": 139.443,
+     "end": 140.244,
+     "conf": 0.68,
+     "src": "ctc"
+    },
+    {
+     "w": "right",
+     "start": 140.284,
+     "end": 140.585,
+     "conf": 0.86,
+     "src": "ctc"
+    },
+    {
+     "w": "there",
+     "start": 140.645,
+     "end": 140.905,
+     "conf": 0.76,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "That changes what we know",
+   "section": "Bridge",
+   "start": 141.446,
+   "end": 142.807,
+   "words": [
+    {
+     "w": "That",
+     "start": 141.446,
+     "end": 141.626,
+     "conf": 0.43,
+     "src": "ctc-low"
+    },
+    {
+     "w": "changes",
+     "start": 141.626,
+     "end": 142.086,
+     "conf": 0.95,
+     "src": "ctc"
+    },
+    {
+     "w": "what",
+     "start": 142.126,
+     "end": 142.286,
+     "conf": 0.86,
+     "src": "ctc"
+    },
+    {
+     "w": "we",
+     "start": 142.346,
+     "end": 142.427,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "know",
+     "start": 142.467,
+     "end": 142.807,
+     "conf": 0.88,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The blast radius is bounded",
+   "section": "Bridge",
+   "start": 142.847,
+   "end": 144.889,
+   "words": [
+    {
+     "w": "The",
+     "start": 142.847,
+     "end": 142.967,
+     "conf": 0.96,
+     "src": "ctc"
+    },
+    {
+     "w": "blast",
+     "start": 143.007,
+     "end": 143.508,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "radius",
+     "start": 143.548,
+     "end": 144.048,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "is",
+     "start": 144.128,
+     "end": 144.238,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "bounded",
+     "start": 144.328,
+     "end": 144.889,
+     "conf": 1.0,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "At least the graphs say so",
+   "section": "Bridge",
+   "start": 144.969,
+   "end": 146.611,
+   "words": [
+    {
+     "w": "At",
+     "start": 144.969,
+     "end": 145.109,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "least",
+     "start": 145.149,
+     "end": 145.44,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "the",
+     "start": 145.49,
+     "end": 145.55,
+     "conf": 0.84,
+     "src": "ctc"
+    },
+    {
+     "w": "graphs",
+     "start": 145.59,
+     "end": 146.03,
+     "conf": 0.54,
+     "src": "ctc"
+    },
+    {
+     "w": "say",
+     "start": 146.07,
+     "end": 146.27,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "so",
+     "start": 146.311,
+     "end": 146.611,
+     "conf": 0.99,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "I found the load-bearing seam now",
+   "section": "Bridge",
+   "start": 146.651,
+   "end": 148.813,
+   "words": [
+    {
+     "w": "I",
+     "start": 146.651,
+     "end": 146.691,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "found",
+     "start": 146.731,
+     "end": 147.011,
+     "conf": 1.0,
+     "src": "ctc"
+    },
+    {
+     "w": "the",
+     "start": 147.031,
+     "end": 147.171,
+     "conf": 0.88,
+     "src": "ctc"
+    },
+    {
+     "w": "load-bearing",
+     "start": 147.211,
+     "end": 148.092,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "seam",
+     "start": 148.132,
+     "end": 148.473,
+     "conf": 0.55,
+     "src": "ctc"
+    },
+    {
+     "w": "now",
+     "start": 148.513,
+     "end": 148.813,
+     "conf": 0.96,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The happy path is clean",
+   "section": "Bridge",
+   "start": 148.853,
+   "end": 150.595,
+   "words": [
+    {
+     "w": "The",
+     "start": 148.853,
+     "end": 148.993,
+     "conf": 0.88,
+     "src": "ctc"
+    },
+    {
+     "w": "happy",
+     "start": 149.033,
+     "end": 149.354,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "path",
+     "start": 149.394,
+     "end": 149.674,
+     "conf": 0.95,
+     "src": "ctc"
+    },
+    {
+     "w": "is",
+     "start": 149.734,
+     "end": 149.844,
+     "conf": 0.99,
+     "src": "ctc"
+    },
+    {
+     "w": "clean",
+     "start": 149.894,
+     "end": 150.595,
+     "conf": 0.97,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "I run the regression suite once more",
+   "section": "Bridge",
+   "start": 150.635,
+   "end": 152.697,
+   "words": [
+    {
+     "w": "I",
+     "start": 150.635,
+     "end": 150.655,
+     "conf": 0.82,
+     "src": "ctc"
+    },
+    {
+     "w": "run",
+     "start": 150.695,
+     "end": 150.895,
+     "conf": 0.84,
+     "src": "ctc"
+    },
+    {
+     "w": "the",
+     "start": 150.935,
+     "end": 151.055,
+     "conf": 0.55,
+     "src": "ctc"
+    },
+    {
+     "w": "regression",
+     "start": 151.115,
+     "end": 151.736,
+     "conf": 0.89,
+     "src": "ctc"
+    },
+    {
+     "w": "suite",
+     "start": 151.776,
+     "end": 152.036,
+     "conf": 0.34,
+     "src": "ctc-low"
+    },
+    {
+     "w": "once",
+     "start": 152.096,
+     "end": 152.277,
+     "conf": 0.9,
+     "src": "ctc"
+    },
+    {
+     "w": "more",
+     "start": 152.317,
+     "end": 152.697,
+     "conf": 0.51,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "And everything stays green",
+   "section": "Bridge",
+   "start": 153.057,
+   "end": 157.622,
+   "words": [
+    {
+     "w": "And",
+     "start": 153.057,
+     "end": 153.278,
+     "conf": 0.88,
+     "src": "ctc"
+    },
+    {
+     "w": "everything",
+     "start": 153.318,
+     "end": 153.758,
+     "conf": 0.68,
+     "src": "ctc"
+    },
+    {
+     "w": "stays",
+     "start": 153.838,
+     "end": 154.339,
+     "conf": 0.93,
+     "src": "ctc"
+    },
+    {
+     "w": "green",
+     "start": 154.399,
+     "end": 157.622,
+     "conf": 0.41,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "The graphs are finally flattening",
+   "section": "Final Chorus",
+   "start": 157.622,
+   "end": 159.684,
+   "words": [
+    {
+     "w": "The",
+     "start": 157.622,
+     "end": 157.692,
+     "conf": 0.01,
+     "src": "ctc-low"
+    },
+    {
+     "w": "graphs",
+     "start": 157.742,
+     "end": 158.103,
+     "conf": 0.05,
+     "src": "ctc-low"
+    },
+    {
+     "w": "are",
+     "start": 158.163,
+     "end": 158.263,
+     "conf": 0.02,
+     "src": "ctc-low"
+    },
+    {
+     "w": "finally",
+     "start": 158.283,
+     "end": 159.004,
+     "conf": 0.04,
+     "src": "ctc-low"
+    },
+    {
+     "w": "flattening",
+     "start": 159.084,
+     "end": 159.684,
+     "conf": 0.08,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "The alerts begin to clear",
+   "section": "Final Chorus",
+   "start": 159.724,
+   "end": 161.336,
+   "words": [
+    {
+     "w": "The",
+     "start": 159.724,
+     "end": 159.844,
+     "conf": 0.03,
+     "src": "ctc-low"
+    },
+    {
+     "w": "alerts",
+     "start": 159.884,
+     "end": 160.305,
+     "conf": 0.27,
+     "src": "ctc-low"
+    },
+    {
+     "w": "begin",
+     "start": 160.365,
+     "end": 160.765,
+     "conf": 0.14,
+     "src": "ctc-low"
+    },
+    {
+     "w": "to",
+     "start": 160.805,
+     "end": 160.906,
+     "conf": 0.03,
+     "src": "ctc-low"
+    },
+    {
+     "w": "clear",
+     "start": 160.906,
+     "end": 161.336,
+     "conf": 0.23,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "The same request that broke it",
+   "section": "Final Chorus",
+   "start": 161.746,
+   "end": 163.348,
+   "words": [
+    {
+     "w": "The",
+     "start": 161.746,
+     "end": 161.846,
+     "conf": 0.53,
+     "src": "ctc"
+    },
+    {
+     "w": "same",
+     "start": 161.887,
+     "end": 162.207,
+     "conf": 0.81,
+     "src": "ctc"
+    },
+    {
+     "w": "request",
+     "start": 162.227,
+     "end": 162.627,
+     "conf": 0.34,
+     "src": "ctc-low"
+    },
+    {
+     "w": "that",
+     "start": 162.667,
+     "end": 162.807,
+     "conf": 0.49,
+     "src": "ctc-low"
+    },
+    {
+     "w": "broke",
+     "start": 162.888,
+     "end": 163.208,
+     "conf": 0.55,
+     "src": "ctc"
+    },
+    {
+     "w": "it",
+     "start": 163.248,
+     "end": 163.348,
+     "conf": 0.15,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "Now passes every tier",
+   "section": "Final Chorus",
+   "start": 163.388,
+   "end": 164.95,
+   "words": [
+    {
+     "w": "Now",
+     "start": 163.388,
+     "end": 163.708,
+     "conf": 0.96,
+     "src": "ctc"
+    },
+    {
+     "w": "passes",
+     "start": 163.789,
+     "end": 164.189,
+     "conf": 0.98,
+     "src": "ctc"
+    },
+    {
+     "w": "every",
+     "start": 164.269,
+     "end": 164.519,
+     "conf": 0.86,
+     "src": "ctc"
+    },
+    {
+     "w": "tier",
+     "start": 164.589,
+     "end": 164.95,
+     "conf": 0.47,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "The patch survived production",
+   "section": "Final Chorus",
+   "start": 164.99,
+   "end": 166.922,
+   "words": [
+    {
+     "w": "The",
+     "start": 164.99,
+     "end": 165.09,
+     "conf": 0.38,
+     "src": "ctc-low"
+    },
+    {
+     "w": "patch",
+     "start": 165.17,
+     "end": 165.62,
+     "conf": 0.79,
+     "src": "ctc"
+    },
+    {
+     "w": "survived",
+     "start": 165.871,
+     "end": 166.291,
+     "conf": 0.25,
+     "src": "ctc-low"
+    },
+    {
+     "w": "production",
+     "start": 166.351,
+     "end": 166.922,
+     "conf": 0.98,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "The errors all are done",
+   "section": "Final Chorus",
+   "start": 167.252,
+   "end": 168.924,
+   "words": [
+    {
+     "w": "The",
+     "start": 167.252,
+     "end": 167.362,
+     "conf": 0.86,
+     "src": "ctc"
+    },
+    {
+     "w": "errors",
+     "start": 167.552,
+     "end": 167.833,
+     "conf": 0.37,
+     "src": "ctc-low"
+    },
+    {
+     "w": "all",
+     "start": 167.913,
+     "end": 168.153,
+     "conf": 0.54,
+     "src": "ctc"
+    },
+    {
+     "w": "are",
+     "start": 168.193,
+     "end": 168.353,
+     "conf": 0.23,
+     "src": "ctc-low"
+    },
+    {
+     "w": "done",
+     "start": 168.413,
+     "end": 168.924,
+     "conf": 0.89,
+     "src": "ctc"
+    }
+   ]
+  },
+  {
+   "text": "All because we found it",
+   "section": "Final Chorus",
+   "start": 169.494,
+   "end": 174.96,
+   "words": [
+    {
+     "w": "All",
+     "start": 169.494,
+     "end": 169.815,
+     "conf": 0.29,
+     "src": "ctc-low"
+    },
+    {
+     "w": "because",
+     "start": 169.855,
+     "end": 170.595,
+     "conf": 0.82,
+     "src": "ctc"
+    },
+    {
+     "w": "we",
+     "start": 170.636,
+     "end": 170.946,
+     "conf": 0.83,
+     "src": "ctc"
+    },
+    {
+     "w": "found",
+     "start": 171.196,
+     "end": 171.697,
+     "conf": 0.15,
+     "src": "ctc-low"
+    },
+    {
+     "w": "it",
+     "start": 171.777,
+     "end": 174.96,
+     "conf": 0.01,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "The smoking gun",
+   "section": "Final Chorus",
+   "start": 175.561,
+   "end": 177.282,
+   "words": [
+    {
+     "w": "The",
+     "start": 175.561,
+     "end": 175.681,
+     "conf": 0.53,
+     "src": "ctc"
+    },
+    {
+     "w": "smoking",
+     "start": 175.721,
+     "end": 176.522,
+     "conf": 0.46,
+     "src": "ctc-low"
+    },
+    {
+     "w": "gun",
+     "start": 176.542,
+     "end": 177.282,
+     "conf": 0.23,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "The smoking gun",
+   "section": "Final Chorus",
+   "start": 177.382,
+   "end": 184.44,
+   "words": [
+    {
+     "w": "The",
+     "start": 177.382,
+     "end": 183.048,
+     "conf": 0.0,
+     "src": "ctc-low"
+    },
+    {
+     "w": "smoking",
+     "start": 183.068,
+     "end": 184.029,
+     "conf": 0.05,
+     "src": "ctc-low"
+    },
+    {
+     "w": "gun",
+     "start": 184.069,
+     "end": 184.44,
+     "conf": 0.02,
+     "src": "ctc-low"
+    }
+   ]
+  },
+  {
+   "text": "The smoking gun",
+   "section": "Final Chorus",
+   "start": 190.736,
+   "end": 191.697,
+   "words": [
+    {
+     "w": "The",
+     "start": 190.736,
+     "end": 190.836,
+     "conf": 0.09,
+     "src": "ctc-low"
+    },
+    {
+     "w": "smoking",
+     "start": 190.876,
+     "end": 191.357,
+     "conf": 0.46,
+     "src": "ctc-low"
+    },
+    {
+     "w": "gun",
+     "start": 191.417,
+     "end": 191.697,
+     "conf": 0.31,
+     "src": "ctc-low"
+    }
+   ]
+  }
+ ]
+}

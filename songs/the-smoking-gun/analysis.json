@@ -1,0 +1,6 @@
+{
+  "word_fixes": [
+    { "line": 64, "word": 0, "start": 182.87, "note": "line 65 'The': the aligner stretched it over the 5 s instrumental gap from 177.4; the vocal envelope starts at 182.87" },
+    { "line": 64, "word": 2, "end": 185.3, "note": "line 65 'gun' rings on to 185.3 in the vocal envelope (a held ad-lib follows to 187.8)" }
+  ]
+}

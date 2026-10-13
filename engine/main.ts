@@ -46,6 +46,10 @@ async function main() {
         for (let i = 0; i < d.length; i += 0x8000) s += String.fromCharCode(...d.subarray(i, i + 0x8000));
         return btoa(s);
       },
+      /** Z-fighting check at t (engine/zfight.ts), for tools/render.mjs zfight. */
+      zfight(t: number, margin = 8, image = false) {
+        return engine.zfight(t, margin, image);
+      },
       gpu() {
         const gl = engine.stage.gl.getContext();
         const ext = gl.getExtension('WEBGL_debug_renderer_info');

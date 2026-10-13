@@ -43,6 +43,7 @@ npm run render -- video  --song <slug> [--from 30 --to 45] [--samples 8] [--work
 npm run render -- sheet  --song <slug> [--from 0 --to 60] [--n 16] [--cuts]   # contact sheet
 npm run render -- stills --song <slug> --t 12.5,40
 npm run render -- determinism --song <slug>   # frames must match whatever order they render in
+npm run render -- zfight --song <slug>        # surfaces tied in depth, which flicker (must be none)
 npm run render -- gpu --song <slug>           # which GPU Chrome is using
 ```
 
@@ -54,6 +55,9 @@ The cache is keyed by frame number, not by shot content, so pass `--fresh` after
 the old frames are reused). A full song is slow on CPU: song 1 at 1080p60 with 2 samples took about
 1.2 s a frame on 3 workers, roughly 4.5 hours. Where jobs have a time limit, render in parts with
 `--from`/`--to` (use `--fresh` only on the first part), then run once without them to encode.
+Size the parts from the ms/frame a render prints, with room left for the part's own encode at the
+end: song 2 renders at 2.3 to 2.7 s a frame (1080p30, 2 samples, 3 workers), so its first half
+(2916 frames) ran past a 2-hour job limit while encoding, and quarters of the song fit easily.
 
 ## Layout
 

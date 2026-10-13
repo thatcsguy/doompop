@@ -31,8 +31,10 @@ export interface ShotWorld {
   camera: THREE.Camera;
   /** Set EVERY animated property from f. Never accumulate (x += ...) or read the previous frame. */
   update(f: Frame): void;
-  /** Optional 2D drawing on top of the 3D image (titles, HUD, graphics). Not motion-blurred. */
-  overlay?(g: CanvasRenderingContext2D, f: Frame): void;
+  /** Optional 2D drawing on top of the 3D image (titles, HUD, graphics). Not motion-blurred.
+   *  `opts.lyrics` is false when the render leaves the lyrics out (thumbnails, clean plates), so a
+   *  shot that draws its own lyric layer here skips it then. */
+  overlay?(g: CanvasRenderingContext2D, f: Frame, opts?: { lyrics: boolean }): void;
   /** Optional per-frame post settings; merged over the song's defaults. */
   post?(f: Frame): Partial<PostSettings>;
   /** Set false to hide the default lyric layer during this shot (e.g. when the shot draws its own). */
